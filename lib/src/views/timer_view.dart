@@ -73,7 +73,7 @@ class _TimerViewState extends State<TimerView> {
     final newEntry = HistoryEntry(
       date: todayDate,
       value: widget.item.todayValue,
-      done_today: true,
+      doneToday: true,
     );
 
     final updatedHistory = widget.item.history
@@ -92,6 +92,9 @@ class _TimerViewState extends State<TimerView> {
     );
 
     await widget.dataManager.updateDailyThing(updatedItem);
+    if (!mounted) {
+      return; // Ensure the widget is still mounted before using context
+    }
     widget.onExitCallback();
     Navigator.of(context).pop();
   }

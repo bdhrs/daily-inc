@@ -1,0 +1,64 @@
+name: Build Android and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+          channel: 'stable'
+          cache: true
+
+      - name: Get commit count
+        id: commit_count
+        run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set version
+        run: |
+          # Get current version parts
+          CURRENT_VERSION=$(grep -oP 'version: \K[0-9.]+' pubspec.yaml)
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MINOR_VERSION=$((VERSION_PARTS[2] + 1))
+          
+          # Update version in pubspec.yaml
+          sed -i "s/version: .*/version: 0.0.$MINOR_VERSION+${{ github.run_number }}/" pubspec.yaml
+          
+          # Update version in Android build.gradle.kts
+          sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
+          sed -i "s/versionName = .*/versionName = \"0.0.$MINOR_VERSION\"/" android/app/build.gradle.kts
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build appbundle --build-number=${{ github.run_number }}
+        env:
+          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: appbundle
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Create test release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Test Build v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
+          draft: true
+          prerelease: true
+          files: build/app/outputs/bundle/release/app-release.aab

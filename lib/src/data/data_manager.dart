@@ -17,7 +17,6 @@ class DataManager {
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error loading data: $e');
       return [];
     }
   }
@@ -47,8 +46,6 @@ class DataManager {
     if (index != -1) {
       items[index] = updatedItem;
       await saveData(items);
-    } else {
-      print('Item to update not found: ${updatedItem.name}');
-    }
+    } else {}
   }
 }

@@ -89,12 +89,15 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
           await widget.dataManager.updateDailyThing(newItem);
         }
 
+        if (!mounted) return;
         widget.onSubmitCallback();
         Navigator.of(context).pop();
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        // Ensure the widget is still mounted before showing a SnackBar
+        // as this code runs after an async operation.
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -296,11 +299,11 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                     ElevatedButton(
                       onPressed: _submitDailyItem,
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                            theme.colorScheme.primary),
-                        foregroundColor: MaterialStateProperty.all(
+                        backgroundColor:
+                            WidgetStateProperty.all(theme.colorScheme.primary),
+                        foregroundColor: WidgetStateProperty.all(
                             theme.colorScheme.onPrimary),
-                        shape: MaterialStateProperty.all(
+                        shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),

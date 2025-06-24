@@ -103,13 +103,13 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       DateTime.now().day,
     );
     final isCompletedToday = item.history
-        .any((entry) => entry.date == todayDate && entry.done_today == true);
+        .any((entry) => entry.date == todayDate && entry.doneToday == true);
     final hasTodayEntry = item.history.any(
       (entry) =>
           entry.date.year == todayDate.year &&
           entry.date.month == todayDate.month &&
           entry.date.day == todayDate.day &&
-          entry.done_today,
+          entry.doneToday,
     );
 
     return Card(
@@ -242,7 +242,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Inc Timer'),
+        title: const Text('Daily Inc. Timer'),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
@@ -263,52 +263,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           setState(() {
             if (newIndex > oldIndex) {
               newIndex -= 1;
-
-              Future<void> _saveHistoryToFile() async {
-                try {
-                  final String? outputFile = await FilePicker.platform.saveFile(
-                    dialogTitle: 'Save History Data',
-                    fileName: 'daily_inc_timer_history.json',
-                    allowedExtensions: ['json'],
-                    type: FileType.custom,
-                  );
-
-                  if (outputFile != null) {
-                    final file = File(outputFile);
-                    final jsonData = {
-                      'dailyThings':
-                          _dailyThings.map((thing) => thing.toJson()).toList(),
-                      'savedAt': DateTime.now().toIso8601String(),
-                    };
-                    await file.writeAsString(json.encode(jsonData));
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('History saved successfully'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Failed to save history: $e',
-                          style: TextStyle(
-                              color:
-                                  Theme.of(context).textTheme.bodyLarge?.color),
-                        ),
-                        duration: const Duration(seconds: 4),
-                        backgroundColor: Colors.grey.shade800,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                }
-              }
             }
             final item = _dailyThings.removeAt(oldIndex);
             _dailyThings.insert(newIndex, item);
