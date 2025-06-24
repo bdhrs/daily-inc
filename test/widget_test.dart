@@ -16,7 +16,7 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     // Verify that the AppBar with the correct title is present.
-    expect(find.text('Daily Inc Timer'), findsOneWidget);
+    expect(find.text('Daily Inc. Timer'), findsOneWidget);
 
     // Verify that the "Add" button is present.
     expect(find.byIcon(Icons.add), findsOneWidget);
