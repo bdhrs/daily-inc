@@ -1,0 +1,320 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:daily_inc_timer_flutter/src/data/data_manager.dart';
+import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
+import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
+
+class AddDailyItemPopup extends StatefulWidget {
+  final DataManager dataManager;
+  final DailyThing? dailyThing;
+  final VoidCallback onSubmitCallback;
+
+  const AddDailyItemPopup({
+    super.key,
+    required this.dataManager,
+    this.dailyThing,
+    required this.onSubmitCallback,
+  });
+
+  @override
+  State<AddDailyItemPopup> createState() => _AddDailyItemPopupState();
+}
+
+class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _startDateController;
+  late TextEditingController _startValueController;
+  late TextEditingController _durationController;
+  late TextEditingController _endValueController;
+  ItemType _selectedItemType = ItemType.minutes;
+
+  @override
+  void initState() {
+    super.initState();
+    final existingItem = widget.dailyThing;
+    _nameController = TextEditingController(text: existingItem?.name ?? '');
+    _startDateController = TextEditingController(
+      text: existingItem?.startDate != null
+          ? DateFormat('yyyy-MM-dd').format(existingItem!.startDate)
+          : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    );
+    _startValueController = TextEditingController(
+      text: existingItem?.startValue.toString() ?? '0.0',
+    );
+    _durationController = TextEditingController(
+      text: existingItem?.duration.toString() ?? '30',
+    );
+    _endValueController = TextEditingController(
+      text: existingItem?.endValue.toString() ?? '0.0',
+    );
+    if (existingItem != null) {
+      _selectedItemType = existingItem.itemType;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _startDateController.dispose();
+    _startValueController.dispose();
+    _durationController.dispose();
+    _endValueController.dispose();
+    super.dispose();
+  }
+
+  void _submitDailyItem() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final startDate = DateFormat(
+          'yyyy-MM-dd',
+        ).parse(_startDateController.text);
+        final startValue = double.parse(_startValueController.text);
+        final duration = int.parse(_durationController.text);
+        final endValue = double.parse(_endValueController.text);
+
+        final newItem = DailyThing(
+          name: _nameController.text,
+          itemType: _selectedItemType,
+          startDate: startDate,
+          startValue: startValue,
+          duration: duration,
+          endValue: endValue,
+          history: widget.dailyThing?.history ?? [],
+        );
+
+        if (widget.dailyThing == null) {
+          await widget.dataManager.addDailyThing(newItem);
+        } else {
+          await widget.dataManager.updateDailyThing(newItem);
+        }
+
+        widget.onSubmitCallback();
+        Navigator.of(context).pop();
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  widget.dailyThing == null
+                      ? 'New Daily Thing'
+                      : 'Edit Daily Thing',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // Basic Info Section
+                Text(
+                  'Basic Information',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<ItemType>(
+                  value: _selectedItemType,
+                  items: ItemType.values.map((type) {
+                    return DropdownMenuItem(
+                        value: type,
+                        child: Text(
+                          type.toString().split('.').last.toUpperCase(),
+                        ));
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedItemType = value!;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Type',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Progress Tracking Section
+                Text(
+                  'Progress Tracking',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _startDateController,
+                  decoration: InputDecoration(
+                    labelText: 'Start Date (YYYY-MM-DD)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    prefixIcon: const Icon(Icons.calendar_today),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a start date';
+                    }
+                    try {
+                      DateFormat('yyyy-MM-dd').parse(value);
+                      return null;
+                    } catch (e) {
+                      return 'Invalid date format';
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _startValueController,
+                        decoration: InputDecoration(
+                          labelText: 'Start Value',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a start value';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _endValueController,
+                        decoration: InputDecoration(
+                          labelText: 'End Value',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter an end value';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _durationController,
+                  decoration: InputDecoration(
+                    labelText: 'Duration (days)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    prefixIcon: const Icon(Icons.schedule),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a duration';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Action Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.onSurface,
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _submitDailyItem,
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                            theme.colorScheme.primary),
+                        foregroundColor: MaterialStateProperty.all(
+                            theme.colorScheme.onPrimary),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      child: Text(widget.dailyThing == null ? 'Add' : 'Update'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
