@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.pub-cache
@@ -27,20 +27,18 @@ jobs:
       - name: Get commit count
         id: commit_count
         run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
-
+ 
       - name: Set version
         run: |
-          # Get current version parts
-          CURRENT_VERSION=$(grep -oP 'version: \K[0-9.]+' pubspec.yaml)
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          MINOR_VERSION=$((VERSION_PARTS[2] + 1))
+          # Set version based on commit count, which seems to be the intent
+          NEW_VERSION_NAME="0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}"
           
           # Update version in pubspec.yaml
-          sed -i "s/version: .*/version: 0.0.$MINOR_VERSION+${{ github.run_number }}/" pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION_NAME+${{ github.run_number }}/" pubspec.yaml
           
           # Update version in Android build.gradle.kts
           sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
-          sed -i "s/versionName = .*/versionName = \"0.0.$MINOR_VERSION\"/" android/app/build.gradle.kts
+          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION_NAME\"/" android/app/build.gradle.kts
 
       - run: flutter pub get
       - run: flutter analyze
@@ -50,15 +48,16 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: appbundle
           path: build/app/outputs/bundle/release/app-release.aab
 
       - name: Create test release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Test Build v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
+          tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}+${{ github.run_number }}
           draft: true
           prerelease: true
           files: build/app/outputs/bundle/release/app-release.aab
