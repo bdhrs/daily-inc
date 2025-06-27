@@ -1,7 +1,9 @@
 import 'package:daily_inc_timer_flutter/src/models/history_entry.dart';
 import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
+import 'package:uuid/uuid.dart';
 
 class DailyThing {
+  final String id;
   final String name;
   final ItemType itemType;
   final DateTime startDate;
@@ -11,6 +13,7 @@ class DailyThing {
   final List<HistoryEntry> history;
 
   DailyThing({
+    String? id,
     required this.name,
     required this.itemType,
     required this.startDate,
@@ -18,7 +21,7 @@ class DailyThing {
     required this.duration,
     required this.endValue,
     this.history = const [],
-  });
+  }) : id = id ?? const Uuid().v4();
 
   double get increment {
     if (duration <= 0) return 0.0;
@@ -85,6 +88,7 @@ class DailyThing {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'itemType': itemType.toString().split('.').last,
       'startDate': startDate.toIso8601String(),
@@ -97,6 +101,7 @@ class DailyThing {
 
   factory DailyThing.fromJson(Map<String, dynamic> json) {
     return DailyThing(
+      id: json['id'] as String?,
       name: json['name'] as String,
       itemType: ItemType.values.firstWhere(
         (e) => e.toString().split('.').last == json['itemType'],

@@ -74,6 +74,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
         final endValue = double.parse(_endValueController.text);
 
         final newItem = DailyThing(
+          id: widget.dailyThing?.id,
           name: _nameController.text,
           itemType: _selectedItemType,
           startDate: startDate,
@@ -91,7 +92,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
 
         if (!mounted) return;
         widget.onSubmitCallback();
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(newItem);
       } catch (e) {
         // Ensure the widget is still mounted before showing a SnackBar
         // as this code runs after an async operation.

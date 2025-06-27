@@ -37,7 +37,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   Future<void> _loadData() async {
-    final items = await _dataManager.loadFromFile();
+    final items = await _dataManager.loadData();
     if (items.isNotEmpty) {
       setState(() {
         _dailyThings = items;
@@ -71,15 +71,25 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     );
   }
 
-  void _editDailyThing(DailyThing item) {
-    showDialog(
+  void _editDailyThing(DailyThing item) async {
+    final updatedItem = await showDialog<DailyThing>(
       context: context,
       builder: (context) => AddDailyItemPopup(
         dataManager: _dataManager,
         dailyThing: item,
-        onSubmitCallback: _refreshDisplay,
+        onSubmitCallback: () {},
       ),
     );
+
+    if (updatedItem != null) {
+      setState(() {
+        final index =
+            _dailyThings.indexWhere((element) => element.id == updatedItem.id);
+        if (index != -1) {
+          _dailyThings[index] = updatedItem;
+        }
+      });
+    }
   }
 
   void _deleteDailyThing(DailyThing item) async {
@@ -143,9 +153,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ExpansionTile(
-          key: _expansionTileKeys.putIfAbsent(item.name, () => GlobalKey()),
+          key: _expansionTileKeys.putIfAbsent(item.id, () => GlobalKey()),
           controller: _expansionTileControllers.putIfAbsent(
-              item.name, () => ExpansionTileController()),
+              item.id, () => ExpansionTileController()),
           trailing:
               const SizedBox.shrink(), // Explicitly remove the trailing icon
           tilePadding: EdgeInsets.zero,
@@ -173,7 +183,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 onTap: () async {
                   if (item.itemType == ItemType.minutes) {
                     if (isCompletedToday) {
-                      final controller = _expansionTileControllers[item.name];
+                      final controller = _expansionTileControllers[item.id];
                       if (controller?.isExpanded ?? false) {
                         controller?.collapse();
                       } else {
@@ -459,7 +469,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               children: [
                 for (var item in _dailyThings)
                   ReorderableDragStartListener(
-                    key: Key(item.name),
+                    key: Key(item.id),
                     index: _dailyThings.indexOf(item),
                     child: _buildItemRow(item),
                   ),

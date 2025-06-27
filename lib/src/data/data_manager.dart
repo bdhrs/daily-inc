@@ -83,13 +83,13 @@ class DataManager {
 
   Future<void> deleteDailyThing(DailyThing itemToDelete) async {
     final items = await loadData();
-    items.removeWhere((item) => item.name == itemToDelete.name);
+    items.removeWhere((item) => item.id == itemToDelete.id);
     await saveData(items);
   }
 
   Future<void> updateDailyThing(DailyThing updatedItem) async {
     final items = await loadData();
-    final index = items.indexWhere((item) => item.name == updatedItem.name);
+    final index = items.indexWhere((item) => item.id == updatedItem.id);
     if (index != -1) {
       items[index] = updatedItem;
       await saveData(items);

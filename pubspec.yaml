@@ -40,6 +40,7 @@ dependencies:
   intl: ^0.18.1
   file_picker: 
   audioplayers: ^5.2.1
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

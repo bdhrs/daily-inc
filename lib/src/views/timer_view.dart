@@ -82,6 +82,7 @@ class _TimerViewState extends State<TimerView> {
       ..add(newEntry);
 
     final updatedItem = DailyThing(
+      id: widget.item.id,
       name: widget.item.name,
       itemType: widget.item.itemType,
       startDate: widget.item.startDate,
