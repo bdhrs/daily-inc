@@ -37,10 +37,24 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   Future<void> _loadData() async {
-    final items = await _dataManager.loadData();
-    setState(() {
-      _dailyThings = items;
-    });
+    final items = await _dataManager.loadFromFile();
+    if (items.isNotEmpty) {
+      setState(() {
+        _dailyThings = items;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Data loaded successfully',
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.grey.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
   }
 
   void _refreshDisplay() {
@@ -414,12 +428,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         title: const Text('Daily Inc. Timer'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {}, // Dummy handler
-          ),
-          IconButton(
             icon: const Icon(Icons.add),
             onPressed: _openAddDailyItemPopup,
+          ),
+          IconButton(
+            icon: const Icon(Icons.folder_open),
+            onPressed: _loadData,
           ),
           IconButton(
             icon: const Icon(Icons.save),
