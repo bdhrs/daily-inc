@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/daily_things_view.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,6 +15,9 @@ class MyApp extends StatelessWidget {
       title: 'Daily Inc',
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.blue,
+        textTheme: GoogleFonts.interTextTheme(
+          ThemeData.dark().textTheme,
+        ),
       ),
       home: const DailyThingsView(),
     );

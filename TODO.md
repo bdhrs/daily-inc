@@ -1,7 +1,6 @@
 # logic
 
 - accept half finished timer, prompt to save and exit
-- initial values
 
 # android
 - android prevent sleep 
@@ -9,6 +8,5 @@
 - add notification time to menu, item
 
 # design
-- theme font used everywhere
-- icon
+
 

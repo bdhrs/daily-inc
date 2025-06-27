@@ -45,8 +45,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           SnackBar(
             content: Text(
               'Data loaded successfully',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.grey.shade800,
@@ -126,8 +124,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           SnackBar(
             content: Text(
               'Item "${item.name}" deleted',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.grey.shade800,
@@ -214,8 +210,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   Text(
                     item.name,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -288,7 +283,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                           )
                         : Text(
                             _formatValue(item.todayValue, item.itemType),
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
                           ),
                   ),
                 ),
@@ -301,11 +297,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               children: [
                 item.itemType == ItemType.check
                     ? Text(item.startValue == 1 ? '✅' : '❌',
-                        style: const TextStyle(fontSize: 20))
+                        style: const TextStyle(fontSize: 16))
                     : Row(
                         children: [
                           Text(_formatValue(item.startValue, item.itemType)),
-                          const Icon(Icons.arrow_forward),
+                          const Icon(Icons.trending_flat),
                           Text(_formatValue(item.endValue, item.itemType)),
                         ],
                       ),
@@ -455,8 +451,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             SnackBar(
               content: Text(
                 'History saved successfully',
-                style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color),
               ),
               duration: const Duration(seconds: 2),
               backgroundColor: Colors.grey.shade800,
