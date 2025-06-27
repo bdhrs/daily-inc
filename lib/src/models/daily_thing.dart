@@ -1,5 +1,5 @@
-import 'package:daily_inc_timer_flutter/src/models/history_entry.dart';
-import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:uuid/uuid.dart';
 
 class DailyThing {

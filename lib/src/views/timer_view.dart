@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:daily_inc_timer_flutter/src/data/data_manager.dart';
-import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
-import 'package:daily_inc_timer_flutter/src/models/history_entry.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;

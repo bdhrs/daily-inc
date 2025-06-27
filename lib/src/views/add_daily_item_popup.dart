@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:daily_inc_timer_flutter/src/data/data_manager.dart';
-import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
-import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 
 class AddDailyItemPopup extends StatefulWidget {
   final DataManager dataManager;

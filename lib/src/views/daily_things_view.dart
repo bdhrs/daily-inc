@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:daily_inc_timer_flutter/src/data/data_manager.dart';
-import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
-import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
-import 'package:daily_inc_timer_flutter/src/models/history_entry.dart';
-import 'package:daily_inc_timer_flutter/src/views/add_daily_item_popup.dart';
-import 'package:daily_inc_timer_flutter/src/views/timer_view.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/views/add_daily_item_popup.dart';
+import 'package:daily_inc/src/views/timer_view.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -440,7 +440,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Inc. Timer'),
+        title: const Text('Daily Inc.'),
         actions: [
           IconButton(
             icon: const Icon(Icons.folder_open),

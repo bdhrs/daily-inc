@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
 
 class DataManager {
   static const String _dataKey = 'inc_timer_data';

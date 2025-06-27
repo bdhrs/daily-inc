@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:daily_inc_timer_flutter/main.dart';
+import 'package:daily_inc/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
