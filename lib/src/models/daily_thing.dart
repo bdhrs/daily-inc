@@ -28,9 +28,10 @@ class DailyThing {
   double get todayValue {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    final historyUpToToday =
-        history.where((entry) => !entry.date.isAfter(todayDate)).toList()
-          ..sort((a, b) => b.date.compareTo(a.date));
+    final historyUpToToday = history
+        .where((entry) => !entry.date.isAfter(todayDate))
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
 
     double currentValueBase = startValue;
     DateTime lastRecordedDate = startDate;
@@ -49,10 +50,9 @@ class DailyThing {
       final yesterdaysActualValue = currentValueBase;
       final yesterdaysTargetValue = _getTargetValueForDate(yesterday);
       final isIncreasing = endValue > startValue;
-      final goalMet =
-          isIncreasing
-              ? yesterdaysActualValue >= yesterdaysTargetValue
-              : yesterdaysActualValue <= yesterdaysTargetValue;
+      final goalMet = isIncreasing
+          ? yesterdaysActualValue >= yesterdaysTargetValue
+          : yesterdaysActualValue <= yesterdaysTargetValue;
       return goalMet
           ? yesterdaysActualValue + increment
           : yesterdaysActualValue;
@@ -105,10 +105,9 @@ class DailyThing {
       startValue: (json['startValue'] as num).toDouble(),
       duration: json['duration'] as int,
       endValue: (json['endValue'] as num).toDouble(),
-      history:
-          (json['history'] as List<dynamic>)
-              .map((e) => HistoryEntry.fromJson(e as Map<String, dynamic>))
-              .toList(),
+      history: (json['history'] as List<dynamic>)
+          .map((e) => HistoryEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

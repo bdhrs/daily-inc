@@ -1,6 +1,6 @@
 # logic
 
-- reps working
+- when timer done, should not be editable
 
 - save working on android bytes
 - load working

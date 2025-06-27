@@ -141,40 +141,40 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 ],
               ),
               GestureDetector(
-                onTap: !(item.itemType == ItemType.reps && hasTodayEntry)
-                    ? () async {
-                        if (item.itemType == ItemType.minutes) {
-                          _showFullscreenTimer(item);
-                        } else if (item.itemType == ItemType.check) {
-                          final today = DateTime(
-                            DateTime.now().year,
-                            DateTime.now().month,
-                            DateTime.now().day,
-                          );
-                          final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
-                          final newEntry = HistoryEntry(
-                            date: today,
-                            value: newValue,
-                            doneToday: newValue == 1.0,
-                          );
-                          final existingEntryIndex = item.history.indexWhere(
-                            (entry) =>
-                                entry.date.year == today.year &&
-                                entry.date.month == today.month &&
-                                entry.date.day == today.day,
-                          );
+                onTap: () async {
+                  if (item.itemType == ItemType.minutes) {
+                    _showFullscreenTimer(item);
+                  } else if (item.itemType == ItemType.check) {
+                    final today = DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    );
+                    final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
+                    final newEntry = HistoryEntry(
+                      date: today,
+                      value: newValue,
+                      doneToday: newValue == 1.0,
+                    );
+                    final existingEntryIndex = item.history.indexWhere(
+                      (entry) =>
+                          entry.date.year == today.year &&
+                          entry.date.month == today.month &&
+                          entry.date.day == today.day,
+                    );
 
-                          setState(() {
-                            if (existingEntryIndex != -1) {
-                              item.history[existingEntryIndex] = newEntry;
-                            } else {
-                              item.history.add(newEntry);
-                            }
-                            _dataManager.updateDailyThing(item);
-                          });
-                        }
+                    setState(() {
+                      if (existingEntryIndex != -1) {
+                        item.history[existingEntryIndex] = newEntry;
+                      } else {
+                        item.history.add(newEntry);
                       }
-                    : null,
+                      _dataManager.updateDailyThing(item);
+                    });
+                  } else if (item.itemType == ItemType.reps) {
+                    _showRepsInputDialog(item);
+                  }
+                },
                 child: SizedBox(
                   width: 70.0, // Fixed width for alignment
                   child: Container(
@@ -232,6 +232,109 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showRepsInputDialog(DailyThing item) {
+    final TextEditingController repsController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            controller: repsController,
+            keyboardType: TextInputType.number,
+            autofocus: true, // Automatically focus the text field
+            onSubmitted: (value) async {
+              final int? reps = int.tryParse(value);
+              if (reps != null && reps > 0) {
+                final today = DateTime(
+                  DateTime.now().year,
+                  DateTime.now().month,
+                  DateTime.now().day,
+                );
+                final newEntry = HistoryEntry(
+                  date: today,
+                  value: reps.toDouble(),
+                  doneToday: true,
+                );
+
+                final existingEntryIndex = item.history.indexWhere(
+                  (entry) =>
+                      entry.date.year == today.year &&
+                      entry.date.month == today.month &&
+                      entry.date.day == today.day,
+                );
+
+                setState(() {
+                  if (existingEntryIndex != -1) {
+                    item.history[existingEntryIndex] = newEntry;
+                  } else {
+                    item.history.add(newEntry);
+                  }
+                  _dataManager.updateDailyThing(item);
+                });
+                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter a valid number of reps.'),
+                  ),
+                );
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final int? reps = int.tryParse(repsController.text);
+                if (reps != null && reps > 0) {
+                  final today = DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                  );
+                  final newEntry = HistoryEntry(
+                    date: today,
+                    value: reps.toDouble(),
+                    doneToday: true,
+                  );
+
+                  final existingEntryIndex = item.history.indexWhere(
+                    (entry) =>
+                        entry.date.year == today.year &&
+                        entry.date.month == today.month &&
+                        entry.date.day == today.day,
+                  );
+
+                  setState(() {
+                    if (existingEntryIndex != -1) {
+                      item.history[existingEntryIndex] = newEntry;
+                    } else {
+                      item.history.add(newEntry);
+                    }
+                    _dataManager.updateDailyThing(item);
+                  });
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid number of reps.'),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
     );
   }
 
