@@ -20,7 +20,7 @@ class DailyThingsView extends StatefulWidget {
 class _DailyThingsViewState extends State<DailyThingsView> {
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
-  final Map<String, ExpansionTileController> _expansionTileControllers = {};
+  final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
 
   @override
@@ -31,7 +31,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
   @override
   void dispose() {
-    _expansionTileControllers.clear();
+    _isExpanded.clear();
     _expansionTileKeys.clear();
     super.dispose();
   }
@@ -43,7 +43,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         _dailyThings = items;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: const Text(
               'Data loaded successfully',
             ),
             duration: const Duration(seconds: 2),
@@ -191,8 +191,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         padding: const EdgeInsets.all(8.0),
         child: ExpansionTile(
           key: _expansionTileKeys.putIfAbsent(item.id, () => GlobalKey()),
-          controller: _expansionTileControllers.putIfAbsent(
-              item.id, () => ExpansionTileController()),
+          initiallyExpanded: _isExpanded[item.id] ?? false,
+          onExpansionChanged: (bool expanded) {
+            setState(() {
+              _isExpanded[item.id] = expanded;
+            });
+          },
           trailing:
               const SizedBox.shrink(), // Explicitly remove the trailing icon
           tilePadding: EdgeInsets.zero,
@@ -219,12 +223,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 onTap: () async {
                   if (item.itemType == ItemType.minutes) {
                     if (isCompletedToday) {
-                      final controller = _expansionTileControllers[item.id];
-                      if (controller?.isExpanded ?? false) {
-                        controller?.collapse();
-                      } else {
-                        controller?.expand();
-                      }
+                      setState(() {
+                        _isExpanded[item.id] = !(_isExpanded[item.id] ?? false);
+                      });
                     } else {
                       _showFullscreenTimer(item);
                     }
@@ -449,7 +450,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: const Text(
                 'History saved successfully',
               ),
               duration: const Duration(seconds: 2),

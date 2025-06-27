@@ -8,5 +8,8 @@
 - add notification time to menu, item
 
 # design
+- app icon
 
+# repo
+- README
 
