@@ -230,10 +230,15 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     ),
                     alignment: Alignment
                         .center, // Center the text vertically and horizontally
-                    child: Text(
-                      _formatValue(item.todayValue, item.itemType),
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                    child: item.itemType == ItemType.check
+                        ? Icon(
+                            item.todayValue == 1.0 ? Icons.check : Icons.close,
+                            color: Colors.white,
+                          )
+                        : Text(
+                            _formatValue(item.todayValue, item.itemType),
+                            style: const TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
               ),
