@@ -93,8 +93,49 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _deleteDailyThing(DailyThing item) async {
-    await _dataManager.deleteDailyThing(item);
-    _refreshDisplay();
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content: Text(
+              'Are you sure you want to delete "${item.name}"? This cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      await _dataManager.deleteDailyThing(item);
+      _refreshDisplay();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Item "${item.name}" deleted',
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.grey.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _showFullscreenTimer(DailyThing item) {

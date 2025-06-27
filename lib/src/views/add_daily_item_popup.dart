@@ -33,21 +33,18 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   void initState() {
     super.initState();
     final existingItem = widget.dailyThing;
-    _nameController = TextEditingController(text: existingItem?.name ?? '');
+    _nameController = TextEditingController(text: existingItem?.name);
     _startDateController = TextEditingController(
-      text: existingItem?.startDate != null
-          ? DateFormat('yyyy-MM-dd').format(existingItem!.startDate)
-          : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      text: existingItem != null
+          ? DateFormat('yyyy-MM-dd').format(existingItem.startDate)
+          : null,
     );
-    _startValueController = TextEditingController(
-      text: existingItem?.startValue.toString() ?? '0.0',
-    );
-    _durationController = TextEditingController(
-      text: existingItem?.duration.toString() ?? '30',
-    );
-    _endValueController = TextEditingController(
-      text: existingItem?.endValue.toString() ?? '0.0',
-    );
+    _startValueController =
+        TextEditingController(text: existingItem?.startValue.toString());
+    _durationController =
+        TextEditingController(text: existingItem?.duration.toString());
+    _endValueController =
+        TextEditingController(text: existingItem?.endValue.toString());
     if (existingItem != null) {
       _selectedItemType = existingItem.itemType;
     }
@@ -106,6 +103,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hintDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -144,6 +142,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: 'Name',
+                    hintText: 'e.g. Daily Reading',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -193,6 +192,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   controller: _startDateController,
                   decoration: InputDecoration(
                     labelText: 'Start Date (YYYY-MM-DD)',
+                    hintText: hintDate,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -219,6 +219,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                         controller: _startValueController,
                         decoration: InputDecoration(
                           labelText: 'Start Value',
+                          hintText: '0.0',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -242,6 +243,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                         controller: _endValueController,
                         decoration: InputDecoration(
                           labelText: 'End Value',
+                          hintText: '0.0',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -266,6 +268,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   controller: _durationController,
                   decoration: InputDecoration(
                     labelText: 'Duration (days)',
+                    hintText: '30',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
