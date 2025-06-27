@@ -126,20 +126,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: !isCompletedToday ? () => _editDailyThing(item) : null,
-                child: Row(
-                  children: [
-                    const Icon(Icons.arrow_drop_down),
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+              Row(
+                children: [
+                  const Icon(Icons.arrow_drop_down),
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               GestureDetector(
                 onTap: (item.itemType == ItemType.minutes && !isCompletedToday)
