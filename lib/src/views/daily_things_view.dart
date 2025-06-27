@@ -428,10 +428,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         title: const Text('Daily Inc. Timer'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _openAddDailyItemPopup,
-          ),
-          IconButton(
             icon: const Icon(Icons.folder_open),
             onPressed: _loadData,
           ),
@@ -441,24 +437,42 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
         ],
       ),
-      body: ReorderableListView(
-        onReorder: (oldIndex, newIndex) async {
-          setState(() {
-            if (newIndex > oldIndex) {
-              newIndex -= 1;
-            }
-            final item = _dailyThings.removeAt(oldIndex);
-            _dailyThings.insert(newIndex, item);
-          });
-          await _dataManager.saveData(_dailyThings);
-        },
+      body: Column(
         children: [
-          for (var item in _dailyThings)
-            ReorderableDragStartListener(
-              key: Key(item.name),
-              index: _dailyThings.indexOf(item),
-              child: _buildItemRow(item),
+          Expanded(
+            child: ReorderableListView(
+              onReorder: (oldIndex, newIndex) async {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = _dailyThings.removeAt(oldIndex);
+                  _dailyThings.insert(newIndex, item);
+                });
+                await _dataManager.saveData(_dailyThings);
+              },
+              children: [
+                for (var item in _dailyThings)
+                  ReorderableDragStartListener(
+                    key: Key(item.name),
+                    index: _dailyThings.indexOf(item),
+                    child: _buildItemRow(item),
+                  ),
+              ],
             ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _openAddDailyItemPopup,
+              style: ElevatedButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+              child: const Icon(Icons.add),
+            ),
+          ),
         ],
       ),
     );
