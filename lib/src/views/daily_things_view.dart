@@ -175,22 +175,27 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                         }
                       }
                     : null,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (item.itemType == ItemType.check &&
-                                item.todayValue == 1) ||
-                            (item.itemType != ItemType.check && hasTodayEntry)
-                        ? Colors.green[900]
-                        : Colors.red[900],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _formatValue(item.todayValue, item.itemType),
-                    style: const TextStyle(color: Colors.white),
+                child: SizedBox(
+                  width: 70.0, // Fixed width for alignment
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (item.itemType == ItemType.check &&
+                                  item.todayValue == 1) ||
+                              (item.itemType != ItemType.check && hasTodayEntry)
+                          ? Colors.green[900]
+                          : Colors.red[900],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    alignment: Alignment
+                        .center, // Center the text vertically and horizontally
+                    child: Text(
+                      _formatValue(item.todayValue, item.itemType),
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),

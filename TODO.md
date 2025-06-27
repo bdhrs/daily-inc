@@ -1,6 +1,5 @@
 # logic
 
-- check working
 - reps working
 
 - save working on android bytes
