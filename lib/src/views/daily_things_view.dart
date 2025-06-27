@@ -129,7 +129,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.arrow_drop_down),
+                  Icon(isCompletedToday ? Icons.check : Icons.close),
+                  const SizedBox(width: 8), // Add some spacing
                   Text(
                     item.name,
                     style: const TextStyle(
@@ -151,8 +152,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                             DateTime.now().day,
                           );
                           final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
-                          print(
-                              'Toggling check item ${item.name} from ${item.todayValue} to $newValue');
                           final newEntry = HistoryEntry(
                             date: today,
                             value: newValue,
