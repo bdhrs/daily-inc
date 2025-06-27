@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:daily_inc_timer_flutter/src/data/data_manager.dart';
 import 'package:daily_inc_timer_flutter/src/models/daily_thing.dart';
 import 'package:daily_inc_timer_flutter/src/models/item_type.dart';
+import 'package:daily_inc_timer_flutter/src/models/history_entry.dart';
 import 'package:daily_inc_timer_flutter/src/views/add_daily_item_popup.dart';
 import 'package:daily_inc_timer_flutter/src/views/timer_view.dart';
 
@@ -139,8 +140,41 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 ],
               ),
               GestureDetector(
-                onTap: (item.itemType == ItemType.minutes && !isCompletedToday)
-                    ? () => _showFullscreenTimer(item)
+                onTap: !(item.itemType == ItemType.reps && hasTodayEntry)
+                    ? () async {
+                        if (item.itemType == ItemType.minutes) {
+                          _showFullscreenTimer(item);
+                        } else if (item.itemType == ItemType.check) {
+                          final today = DateTime(
+                            DateTime.now().year,
+                            DateTime.now().month,
+                            DateTime.now().day,
+                          );
+                          final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
+                          print(
+                              'Toggling check item ${item.name} from ${item.todayValue} to $newValue');
+                          final newEntry = HistoryEntry(
+                            date: today,
+                            value: newValue,
+                            doneToday: newValue == 1.0,
+                          );
+                          final existingEntryIndex = item.history.indexWhere(
+                            (entry) =>
+                                entry.date.year == today.year &&
+                                entry.date.month == today.month &&
+                                entry.date.day == today.day,
+                          );
+
+                          setState(() {
+                            if (existingEntryIndex != -1) {
+                              item.history[existingEntryIndex] = newEntry;
+                            } else {
+                              item.history.add(newEntry);
+                            }
+                            _dataManager.updateDailyThing(item);
+                          });
+                        }
+                      }
                     : null,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -148,7 +182,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: hasTodayEntry ? Colors.green[900] : Colors.red[900],
+                    color: (item.itemType == ItemType.check &&
+                                item.todayValue == 1) ||
+                            (item.itemType != ItemType.check && hasTodayEntry)
+                        ? Colors.green[900]
+                        : Colors.red[900],
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -163,13 +201,16 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Text(_formatValue(item.startValue, item.itemType)),
-                    const Icon(Icons.arrow_forward),
-                    Text(_formatValue(item.endValue, item.itemType)),
-                  ],
-                ),
+                item.itemType == ItemType.check
+                    ? Text(item.startValue == 1 ? '✅' : '❌',
+                        style: const TextStyle(fontSize: 20))
+                    : Row(
+                        children: [
+                          Text(_formatValue(item.startValue, item.itemType)),
+                          const Icon(Icons.arrow_forward),
+                          Text(_formatValue(item.endValue, item.itemType)),
+                        ],
+                      ),
                 Row(
                   children: [
                     IconButton(
