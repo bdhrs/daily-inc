@@ -20,11 +20,20 @@ class DailyThingsView extends StatefulWidget {
 class _DailyThingsViewState extends State<DailyThingsView> {
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
+  final Map<String, ExpansionTileController> _expansionTileControllers = {};
+  final Map<String, GlobalKey> _expansionTileKeys = {};
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _expansionTileControllers.clear();
+    _expansionTileKeys.clear();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -103,8 +112,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       DateTime.now().month,
       DateTime.now().day,
     );
-    final isCompletedToday = item.history
-        .any((entry) => entry.date == todayDate && entry.doneToday == true);
+    final isCompletedToday = item.history.any((entry) =>
+        entry.date.year == todayDate.year &&
+        entry.date.month == todayDate.month &&
+        entry.date.day == todayDate.day &&
+        entry.doneToday == true);
     final hasTodayEntry = item.history.any(
       (entry) =>
           entry.date.year == todayDate.year &&
@@ -117,6 +129,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ExpansionTile(
+          key: _expansionTileKeys.putIfAbsent(item.name, () => GlobalKey()),
+          controller: _expansionTileControllers.putIfAbsent(
+              item.name, () => ExpansionTileController()),
           trailing:
               const SizedBox.shrink(), // Explicitly remove the trailing icon
           tilePadding: EdgeInsets.zero,
@@ -143,7 +158,16 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               GestureDetector(
                 onTap: () async {
                   if (item.itemType == ItemType.minutes) {
-                    _showFullscreenTimer(item);
+                    if (isCompletedToday) {
+                      final controller = _expansionTileControllers[item.name];
+                      if (controller?.isExpanded ?? false) {
+                        controller?.collapse();
+                      } else {
+                        controller?.expand();
+                      }
+                    } else {
+                      _showFullscreenTimer(item);
+                    }
                   } else if (item.itemType == ItemType.check) {
                     final today = DateTime(
                       DateTime.now().year,
