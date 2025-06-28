@@ -86,16 +86,6 @@ class DailyThing {
     return lastEntry.value;
   }
 
-  double _getTargetValueForDate(DateTime specificDate) {
-    if (specificDate.isBefore(startDate)) return startValue;
-    if (duration <= 0) return endValue;
-
-    final daysSinceStart = specificDate.difference(startDate).inDays;
-    if (daysSinceStart >= duration) return endValue;
-
-    return startValue + (increment * daysSinceStart);
-  }
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,

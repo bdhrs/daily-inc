@@ -10,6 +10,7 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
+import 'package:daily_inc/src/views/graph_view.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -332,6 +333,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                       ),
                 Row(
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.show_chart),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GraphView(dailyThing: item),
+                          ),
+                        );
+                      },
+                    ),
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => _editDailyThing(item),
