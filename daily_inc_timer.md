@@ -1,10 +1,10 @@
-# Daily Inc Timer - Python Flet Project Breakdown
+# Daily Inc - Python Flet Project Breakdown
 
 This document outlines the structure, components, data flow, and logic of the "Daily Inc Timer" application, originally built with Python and Flet. It's intended to assist in rebuilding the application as a Progressive Web App (PWA).
 
 ## 1. Project Overview
 
-The "Daily Inc Timer" is a Progressive Web App (PWA) designed to help users track and manage daily incremental goals. It is accessible on both desktop and mobile browsers with offline capabilities. Users can define "Daily Things" they want to work on, specifying start/end values over a duration. The application calculates a daily target, allows users to log progress (especially for timed activities), and visually represents their status.
+The "Daily Inc" is a Progressive Web App (PWA) designed to help users track and manage daily incremental goals. It is accessible on both desktop and mobile browsers with offline capabilities. Users can define "Daily Things" they want to work on, specifying start/end values over a duration. The application calculates a daily target, allows users to log progress (especially for timed activities), and visually represents their status.
 
 ## 2. Core Data Models
 
@@ -91,7 +91,7 @@ The UI is primarily managed by `DailyThingsView` and `AddDailyItemPopup`.
 
 ### Main Application Window (`main.py`)
 *   Sets up the Flet `Page`.
-*   Adds an `AppBar` with the title "Daily Inc Timer".
+*   Adds an `AppBar` with the title "Daily Inc".
 *   The main content is provided by `DailyThingsView.build_display()`.
 
 ### `DailyThingsView` (`src/daily_things_view.py`)

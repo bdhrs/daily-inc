@@ -62,8 +62,8 @@ class NotificationService {
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_inc_timer_channel',
-          'Daily Inc Timer',
-          channelDescription: 'Channel for Daily Inc Timer notifications',
+          'Daily Inc',
+          channelDescription: 'Channel for Daily Inc notifications',
           importance: Importance.max,
           priority: Priority.high,
         ),

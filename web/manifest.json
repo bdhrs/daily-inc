@@ -1,6 +1,6 @@
 {
-    "name": "daily_inc_timer_flutter",
-    "short_name": "daily_inc_timer_flutter",
+    "name": "Daily Inc",
+    "short_name": "Daily Inc",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

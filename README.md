@@ -1,4 +1,4 @@
-# daily_inc_timer_flutter
+# Daily Inc
 
 A new Flutter project.
 
