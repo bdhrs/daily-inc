@@ -120,25 +120,34 @@ class _TimerViewState extends State<TimerView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _formatTime(_remainingSeconds),
-              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _toggleTimer,
-              child: Text(_isPaused ? 'Start' : 'Pause'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _exitTimerDisplay,
-              child: const Text('Exit'),
-            ),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Text(
+                    _formatTime(_remainingSeconds),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _toggleTimer,
+                child: Text(_isPaused ? 'Start' : 'Pause'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _exitTimerDisplay,
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
         ),
       ),
     );
