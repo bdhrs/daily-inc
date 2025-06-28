@@ -222,7 +222,10 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             children: [
               Row(
                 children: [
-                  Icon(isCompletedToday ? Icons.check : Icons.close),
+                  Icon(
+                    isCompletedToday ? Icons.check : Icons.close,
+                    color: isCompletedToday ? Colors.green : Colors.red,
+                  ),
                   const SizedBox(width: 8), // Add some spacing
                   if (item.icon != null)
                     Text(
