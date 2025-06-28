@@ -493,19 +493,96 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     }
   }
 
+  Future<void> _loadHistoryFromFile() async {
+    try {
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Load History Data',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final jsonString = await file.readAsString();
+        final jsonData = jsonDecode(jsonString);
+
+        if (jsonData['dailyThings'] != null) {
+          final List<dynamic> thingsJson = jsonData['dailyThings'];
+          final List<DailyThing> loadedThings =
+              thingsJson.map((json) => DailyThing.fromJson(json)).toList();
+
+          setState(() {
+            _dailyThings = loadedThings;
+          });
+
+          // Save the loaded data to the default storage
+          await _dataManager.saveData(_dailyThings);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'History loaded successfully',
+                ),
+                duration: const Duration(seconds: 2),
+                backgroundColor: Colors.grey.shade800,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } else {
+          throw Exception('Invalid file format');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load history: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Inc.'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            onPressed: _loadData,
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveHistoryToFile,
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.save_outlined),
+            onSelected: (value) {
+              if (value == 'load') {
+                _loadHistoryFromFile();
+              } else if (value == 'save') {
+                _saveHistoryToFile();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'load',
+                child: Row(
+                  children: [
+                    Icon(Icons.folder_open),
+                    SizedBox(width: 8),
+                    Text('Load'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'save',
+                child: Row(
+                  children: [
+                    Icon(Icons.save),
+                    SizedBox(width: 8),
+                    Text('Save'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

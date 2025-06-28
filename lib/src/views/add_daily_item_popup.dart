@@ -49,7 +49,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
     _startValueController =
         TextEditingController(text: existingItem?.startValue.toString());
     _durationController =
-        TextEditingController(text: existingItem?.duration?.toString() ?? '30');
+        TextEditingController(text: existingItem?.duration.toString() ?? '30');
     _endValueController =
         TextEditingController(text: existingItem?.endValue.toString());
     _nagTimeController = TextEditingController();
