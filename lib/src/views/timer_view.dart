@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -43,7 +44,10 @@ class _TimerViewState extends State<TimerView> {
     setState(() {
       _isPaused = !_isPaused;
       if (!_isPaused) {
+        WakelockPlus.enable();
         _runCountdown();
+      } else {
+        WakelockPlus.disable();
       }
     });
   }
@@ -66,6 +70,7 @@ class _TimerViewState extends State<TimerView> {
   void _onTimerComplete() async {
     // Play the bell sound
     await _audioPlayer.play(AssetSource('bell.mp3'));
+    WakelockPlus.disable();
 
     // Update the history
     final today = DateTime.now();
@@ -102,6 +107,7 @@ class _TimerViewState extends State<TimerView> {
 
   void _exitTimerDisplay() {
     widget.onExitCallback();
+    WakelockPlus.disable();
     Navigator.of(context).pop();
   }
 
