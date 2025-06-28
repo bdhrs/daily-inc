@@ -9,6 +9,7 @@ import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/views/add_daily_item_popup.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -19,6 +20,7 @@ class DailyThingsView extends StatefulWidget {
 
 class _DailyThingsViewState extends State<DailyThingsView> {
   final DataManager _dataManager = DataManager();
+  final NotificationService _notificationService = NotificationService();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
@@ -64,9 +66,15 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       context: context,
       builder: (context) => AddDailyItemPopup(
         dataManager: _dataManager,
-        onSubmitCallback: _refreshDisplay,
+        onSubmitCallback: () {
+          _refreshDisplay();
+        },
       ),
-    );
+    ).then((newItem) {
+      if (newItem != null) {
+        _scheduleNotification(newItem);
+      }
+    });
   }
 
   void _editDailyThing(DailyThing item) async {
@@ -85,6 +93,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             _dailyThings.indexWhere((element) => element.id == updatedItem.id);
         if (index != -1) {
           _dailyThings[index] = updatedItem;
+          _scheduleNotification(updatedItem);
         }
       });
     }
@@ -117,6 +126,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     );
 
     if (shouldDelete == true) {
+      await _notificationService.cancelNotification(item.id.hashCode);
       await _dataManager.deleteDailyThing(item);
       _refreshDisplay();
       if (mounted) {
@@ -469,6 +479,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
         );
       }
+    }
+  }
+
+  void _scheduleNotification(DailyThing item) {
+    if (item.nagTime != null) {
+      _notificationService.scheduleNagNotification(
+        item.id.hashCode,
+        'Reminder: ${item.name}',
+        "Don't forget to complete your task!",
+        item.nagTime!,
+      );
     }
   }
 

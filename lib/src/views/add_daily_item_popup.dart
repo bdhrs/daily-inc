@@ -27,7 +27,9 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   late TextEditingController _startValueController;
   late TextEditingController _durationController;
   late TextEditingController _endValueController;
+  late TextEditingController _nagTimeController;
   ItemType _selectedItemType = ItemType.minutes;
+  TimeOfDay? _selectedNagTime;
 
   @override
   void initState() {
@@ -47,6 +49,15 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
         TextEditingController(text: existingItem?.endValue.toString());
     if (existingItem != null) {
       _selectedItemType = existingItem.itemType;
+      if (existingItem.nagTime != null) {
+        _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
+        _nagTimeController =
+            TextEditingController(text: _selectedNagTime!.format(context));
+      } else {
+        _nagTimeController = TextEditingController();
+      }
+    } else {
+      _nagTimeController = TextEditingController();
     }
   }
 
@@ -57,6 +68,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
     _startValueController.dispose();
     _durationController.dispose();
     _endValueController.dispose();
+    _nagTimeController.dispose();
     super.dispose();
   }
 
@@ -69,6 +81,14 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
         final startValue = double.parse(_startValueController.text);
         final duration = int.parse(_durationController.text);
         final endValue = double.parse(_endValueController.text);
+        final DateTime? nagTime;
+        if (_selectedNagTime != null) {
+          final now = DateTime.now();
+          nagTime = DateTime(now.year, now.month, now.day,
+              _selectedNagTime!.hour, _selectedNagTime!.minute);
+        } else {
+          nagTime = null;
+        }
 
         final newItem = DailyThing(
           id: widget.dailyThing?.id,
@@ -79,6 +99,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
           duration: duration,
           endValue: endValue,
           history: widget.dailyThing?.history ?? [],
+          nagTime: nagTime,
         );
 
         if (widget.dailyThing == null) {
@@ -284,6 +305,32 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                       return 'Please enter a valid number';
                     }
                     return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nagTimeController,
+                  decoration: InputDecoration(
+                    labelText: 'Nag Time',
+                    hintText: 'HH:mm',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    prefixIcon: const Icon(Icons.alarm),
+                  ),
+                  readOnly: true,
+                  onTap: () async {
+                    final TimeOfDay? picked = await showTimePicker(
+                      context: context,
+                      initialTime: _selectedNagTime ?? TimeOfDay.now(),
+                    );
+                    if (picked != null && picked != _selectedNagTime) {
+                      setState(() {
+                        _selectedNagTime = picked;
+                        _nagTimeController.text = picked.format(context);
+                      });
+                    }
                   },
                 ),
                 const SizedBox(height: 24),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/daily_things_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
+  await NotificationService().requestPermissions();
   runApp(const MyApp());
 }
 

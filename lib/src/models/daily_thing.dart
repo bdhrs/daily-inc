@@ -11,6 +11,7 @@ class DailyThing {
   final int duration;
   final double endValue;
   final List<HistoryEntry> history;
+  final DateTime? nagTime;
 
   DailyThing({
     String? id,
@@ -21,6 +22,7 @@ class DailyThing {
     required this.duration,
     required this.endValue,
     this.history = const [],
+    this.nagTime,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -96,6 +98,7 @@ class DailyThing {
       'duration': duration,
       'endValue': endValue,
       'history': history.map((entry) => entry.toJson()).toList(),
+      'nagTime': nagTime?.toIso8601String(),
     };
   }
 
@@ -113,6 +116,9 @@ class DailyThing {
       history: (json['history'] as List<dynamic>)
           .map((e) => HistoryEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
+      nagTime: json['nagTime'] == null
+          ? null
+          : DateTime.parse(json['nagTime'] as String),
     );
   }
 }
