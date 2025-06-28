@@ -123,7 +123,15 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     if (shouldDelete == true) {
       await _notificationService.cancelNotification(item.id.hashCode);
       await _dataManager.deleteDailyThing(item);
+
+      // Update the state directly to immediately remove the item from the display
+      setState(() {
+        _dailyThings.removeWhere((thing) => thing.id == item.id);
+      });
+
+      // Also refresh from storage to ensure consistency
       _refreshDisplay();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
