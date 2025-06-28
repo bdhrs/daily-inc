@@ -65,3 +65,5 @@ linux/flutter/ephemeral/
 .flutter-plugins-cache
 *.apk
 *.ipa
+daily_inc_timer.AppImage
+daily_inc_timer.AppDir/*

@@ -1,0 +1,24 @@
+version: 1
+AppDir:
+  path: ./daily_inc_timer.AppDir
+  app_info:
+    id: com.example.daily_inc_timer
+    name: daily_inc_timer
+    icon: daily_inc_timer
+    version: 1.0.0
+    exec: AppRun
+    exec_args: $@
+  apt:
+    arch: amd64
+    allow_unauthenticated: true
+    sources:
+      - sourceline: deb http://deb.debian.org/debian/ stable main
+        key_url: https://deb.debian.org/debian/project/archive-keyring.gpg
+    include:
+      - libgtk-3-0
+      - libappindicator3-1
+      - libayatana-appindicator3-1
+      - libdbusmenu-gtk3-4
+  runtime:
+    env:
+      PATH: /usr/bin:/bin
