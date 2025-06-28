@@ -92,7 +92,6 @@ class NotificationService {
 
       // Skip scheduling on Linux as it's not supported
       if (Platform.isLinux) {
-        print("Linux platform detected - skipping scheduled notification");
         return;
       }
 
@@ -124,7 +123,6 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
     } catch (e) {
-      print('Error scheduling notification: $e');
       // Fallback to immediate notification if scheduling fails
       await flutterLocalNotificationsPlugin.show(
         id,
