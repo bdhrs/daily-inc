@@ -1,16 +1,16 @@
 # Daily Inc
 
-A new Flutter project.
+A simple Flutter app for doing things DAILY and with INCREMENTAL improvement over time. 
 
-## Getting Started
+## Building AppImage
 
-This project is a starting point for a Flutter application.
+1. First build the Linux version
+2. Then create the AppImage
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter build linux
+./android/appimagetool.AppImage daily_inc_timer.AppDir
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+The resulting AppImage will be created in the current directory.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

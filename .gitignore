@@ -67,3 +67,4 @@ linux/flutter/ephemeral/
 *.ipa
 daily_inc_timer.AppImage
 daily_inc_timer.AppDir/*
+Daily_Inc_Timer-x86_64.AppImage
