@@ -174,11 +174,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         return '$minutes:${seconds.toString().padLeft(2, '0')}';
       }
     } else if (itemType == ItemType.reps) {
-      if (value.truncateToDouble() == value) {
-        return '${value.toInt()}x';
-      } else {
-        return '${value.round()}x';
-      }
+      return '${value.round()}x';
     } else {
       return value >= 1 ? '✅' : '❌';
     }
@@ -375,7 +371,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 final newEntry = HistoryEntry(
                   date: today,
                   value: reps.toDouble(),
-                  doneToday: true,
+                  doneToday: reps.toDouble() >= item.todayValue,
                 );
 
                 final existingEntryIndex = item.history.indexWhere(
@@ -422,7 +418,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   final newEntry = HistoryEntry(
                     date: today,
                     value: reps.toDouble(),
-                    doneToday: true,
+                    doneToday: reps.toDouble() >= item.todayValue,
                   );
 
                   final existingEntryIndex = item.history.indexWhere(
