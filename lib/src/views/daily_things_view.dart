@@ -7,7 +7,7 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
-import 'package:daily_inc/src/views/add_daily_item_popup.dart';
+import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 
@@ -62,24 +62,28 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _openAddDailyItemPopup() {
-    showDialog(
-      context: context,
-      builder: (context) => AddDailyItemPopup(
-        dataManager: _dataManager,
-        onSubmitCallback: () {
-          _refreshDisplay();
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEditDailyItemView(
+          dataManager: _dataManager,
+          onSubmitCallback: () {
+            _refreshDisplay();
+          },
+        ),
       ),
     );
   }
 
   void _editDailyThing(DailyThing item) async {
-    final updatedItem = await showDialog<DailyThing>(
-      context: context,
-      builder: (context) => AddDailyItemPopup(
-        dataManager: _dataManager,
-        dailyThing: item,
-        onSubmitCallback: () {},
+    final updatedItem = await Navigator.push<DailyThing>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEditDailyItemView(
+          dataManager: _dataManager,
+          dailyThing: item,
+          onSubmitCallback: () {},
+        ),
       ),
     );
 

@@ -4,12 +4,12 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 
-class AddDailyItemPopup extends StatefulWidget {
+class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
   final DailyThing? dailyThing;
   final VoidCallback onSubmitCallback;
 
-  const AddDailyItemPopup({
+  const AddEditDailyItemView({
     super.key,
     required this.dataManager,
     this.dailyThing,
@@ -17,10 +17,10 @@ class AddDailyItemPopup extends StatefulWidget {
   });
 
   @override
-  State<AddDailyItemPopup> createState() => _AddDailyItemPopupState();
+  State<AddEditDailyItemView> createState() => _AddEditDailyItemViewState();
 }
 
-class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
+class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _iconController;
   late TextEditingController _nameController;
@@ -131,8 +131,6 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
         widget.onSubmitCallback();
         Navigator.of(context).pop(newItem);
       } catch (e) {
-        // Ensure the widget is still mounted before showing a SnackBar
-        // as this code runs after an async operation.
         if (!mounted) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -145,12 +143,17 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
     final theme = Theme.of(context);
     final hintDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.dailyThing == null ? 'New Daily Thing' : 'Edit Daily Thing',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
       ),
-      elevation: 4,
-      child: Padding(
+      body: Padding(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -159,18 +162,6 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  widget.dailyThing == null
-                      ? 'New Daily Thing'
-                      : 'Edit Daily Thing',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-
-                // Basic Info Section
                 Text(
                   'Basic Information',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -231,8 +222,6 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Progress Tracking Section
                 Text(
                   'Progress Tracking',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -377,32 +366,16 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Action Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurface,
-                      ),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: _submitDailyItem,
-                      style: ButtonStyle(
-                        backgroundColor:
-                            WidgetStateProperty.all(theme.colorScheme.primary),
-                        foregroundColor: WidgetStateProperty.all(
-                            theme.colorScheme.onPrimary),
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
                       child: Text(widget.dailyThing == null ? 'Add' : 'Update'),
                     ),
                   ],
