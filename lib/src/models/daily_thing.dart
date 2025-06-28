@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 class DailyThing {
   final String id;
+  final String? icon;
   final String name;
   final ItemType itemType;
   final DateTime startDate;
@@ -16,6 +17,7 @@ class DailyThing {
 
   DailyThing({
     String? id,
+    this.icon,
     required this.name,
     required this.itemType,
     required this.startDate,
@@ -93,6 +95,7 @@ class DailyThing {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'icon': icon,
       'name': name,
       'itemType': itemType.toString().split('.').last,
       'startDate': startDate.toIso8601String(),
@@ -108,6 +111,7 @@ class DailyThing {
   factory DailyThing.fromJson(Map<String, dynamic> json) {
     return DailyThing(
       id: json['id'] as String?,
+      icon: json['icon'] as String?,
       name: json['name'] as String,
       itemType: ItemType.values.firstWhere(
         (e) => e.toString().split('.').last == json['itemType'],

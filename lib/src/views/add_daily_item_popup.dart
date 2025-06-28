@@ -22,6 +22,7 @@ class AddDailyItemPopup extends StatefulWidget {
 
 class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _iconController;
   late TextEditingController _nameController;
   late TextEditingController _startDateController;
   late TextEditingController _startValueController;
@@ -38,6 +39,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   void initState() {
     super.initState();
     final existingItem = widget.dailyThing;
+    _iconController = TextEditingController(text: existingItem?.icon);
     _nameController = TextEditingController(text: existingItem?.name);
     _startDateController = TextEditingController(
       text: existingItem != null
@@ -74,6 +76,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
 
   @override
   void dispose() {
+    _iconController.dispose();
     _nameController.dispose();
     _startDateController.dispose();
     _startValueController.dispose();
@@ -104,6 +107,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
 
         final newItem = DailyThing(
           id: widget.dailyThing?.id,
+          icon: _iconController.text,
           name: _nameController.text,
           itemType: _selectedItemType,
           startDate: startDate,
@@ -171,6 +175,18 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                   'Basic Information',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _iconController,
+                  decoration: InputDecoration(
+                    labelText: 'Icon',
+                    hintText: 'e.g. 🚀',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
                   ),
                 ),
                 const SizedBox(height: 8),
