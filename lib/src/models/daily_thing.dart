@@ -37,49 +37,53 @@ class DailyThing {
   double get todayValue {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    final historyUpToToday = history
-        .where((entry) => !entry.date.isAfter(todayDate))
-        .toList()
+
+    final sortedHistory = List<HistoryEntry>.from(history)
       ..sort((a, b) => b.date.compareTo(a.date));
 
-    double currentValueBase = startValue;
-    DateTime lastRecordedDate = startDate;
-
-    if (historyUpToToday.isNotEmpty) {
-      final latestEntry = historyUpToToday.first;
-      currentValueBase = latestEntry.value;
-      lastRecordedDate = latestEntry.date;
-      if (lastRecordedDate == todayDate) {
-        return latestEntry.value;
+    // Check for today's entry
+    for (final entry in sortedHistory) {
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (entryDate == todayDate) {
+        return entry.value;
       }
     }
 
+    // No entry for today, find the latest entry before today
+    HistoryEntry? lastEntry;
+    for (final entry in sortedHistory) {
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (entryDate.isBefore(todayDate)) {
+        lastEntry = entry;
+        break; // since it's sorted, first one is the latest
+      }
+    }
+
+    if (lastEntry == null) {
+      // No history before today
+      return startValue;
+    }
+
     final yesterday = todayDate.subtract(const Duration(days: 1));
-    if (lastRecordedDate == yesterday) {
-      final yesterdaysActualValue = currentValueBase;
-      final yesterdaysTargetValue = _getTargetValueForDate(yesterday);
-      final isIncreasing = endValue > startValue;
-      final goalMet = isIncreasing
-          ? yesterdaysActualValue >= yesterdaysTargetValue
-          : yesterdaysActualValue <= yesterdaysTargetValue;
-      return goalMet
-          ? yesterdaysActualValue + increment
-          : yesterdaysActualValue;
+    final lastEntryDate =
+        DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
+
+    if (lastEntryDate == yesterday) {
+      if (lastEntry.doneToday) {
+        final newValue = lastEntry.value + increment;
+        // Clamp value within bounds
+        if (endValue >= startValue) {
+          return newValue.clamp(startValue, endValue);
+        } else {
+          return newValue.clamp(endValue, startValue);
+        }
+      }
     }
 
-    final daysSinceLastDoing = todayDate.difference(lastRecordedDate).inDays;
-    double calculatedValue;
-
-    if (daysSinceLastDoing <= 1) {
-      calculatedValue = currentValueBase;
-    } else if (daysSinceLastDoing == 2) {
-      calculatedValue = currentValueBase;
-    } else {
-      calculatedValue =
-          currentValueBase - (increment * (daysSinceLastDoing - 2));
-    }
-
-    return calculatedValue > startValue ? calculatedValue : startValue;
+    // If last entry was not yesterday, or was yesterday but not done, value stays the same.
+    return lastEntry.value;
   }
 
   double _getTargetValueForDate(DateTime specificDate) {
