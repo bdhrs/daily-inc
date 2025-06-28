@@ -70,11 +70,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           _refreshDisplay();
         },
       ),
-    ).then((newItem) {
-      if (newItem != null) {
-        _scheduleNotification(newItem);
-      }
-    });
+    );
   }
 
   void _editDailyThing(DailyThing item) async {
@@ -93,7 +89,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             _dailyThings.indexWhere((element) => element.id == updatedItem.id);
         if (index != -1) {
           _dailyThings[index] = updatedItem;
-          _scheduleNotification(updatedItem);
         }
       });
     }
@@ -170,7 +165,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       if (value.truncateToDouble() == value) {
         return '${value.toInt()}x';
       } else {
-        return '${value}x';
+        return '${value.round()}x';
       }
     } else {
       return value >= 1 ? '✅' : '❌';
@@ -479,17 +474,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
         );
       }
-    }
-  }
-
-  void _scheduleNotification(DailyThing item) {
-    if (item.nagTime != null) {
-      _notificationService.scheduleNagNotification(
-        item.id.hashCode,
-        'Reminder: ${item.name}',
-        "Don't forget to complete your task!",
-        item.nagTime!,
-      );
     }
   }
 

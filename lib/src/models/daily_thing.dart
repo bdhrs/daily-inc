@@ -12,6 +12,7 @@ class DailyThing {
   final double endValue;
   final List<HistoryEntry> history;
   final DateTime? nagTime;
+  final String? nagMessage;
 
   DailyThing({
     String? id,
@@ -23,6 +24,7 @@ class DailyThing {
     required this.endValue,
     this.history = const [],
     this.nagTime,
+    this.nagMessage,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -99,6 +101,7 @@ class DailyThing {
       'endValue': endValue,
       'history': history.map((entry) => entry.toJson()).toList(),
       'nagTime': nagTime?.toIso8601String(),
+      'nagMessage': nagMessage,
     };
   }
 
@@ -119,6 +122,7 @@ class DailyThing {
       nagTime: json['nagTime'] == null
           ? null
           : DateTime.parse(json['nagTime'] as String),
+      nagMessage: json['nagMessage'] as String?,
     );
   }
 }

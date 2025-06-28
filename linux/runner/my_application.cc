@@ -88,6 +88,12 @@ static void my_application_startup(GApplication* application) {
   // Perform any actions required at application startup.
 
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
+
+#if !GLIB_CHECK_VERSION(2, 74, 0)
+  // Stop using g_main_context_push_thread_default() in GLib 2.74+, as it is
+  // deprecated and no longer needed with g_main_context_invoke().
+  g_main_context_push_thread_default(g_main_context_get_thread_default());
+#endif
 }
 
 // Implements GApplication::shutdown.

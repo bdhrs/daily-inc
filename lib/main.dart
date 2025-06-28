@@ -5,8 +5,10 @@ import 'package:daily_inc/src/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().init();
-  await NotificationService().requestPermissions();
+  // LinuxFlutterLocalNotificationsPlugin.registerWith();
+  final notificationService = NotificationService();
+  await notificationService.init();
+  await notificationService.requestPermissions();
   runApp(const MyApp());
 }
 

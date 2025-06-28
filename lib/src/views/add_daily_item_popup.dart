@@ -28,8 +28,11 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
   late TextEditingController _durationController;
   late TextEditingController _endValueController;
   late TextEditingController _nagTimeController;
+  late TextEditingController _nagMessageController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
+
+  bool _didChangeDependencies = false;
 
   @override
   void initState() {
@@ -47,17 +50,25 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
         TextEditingController(text: existingItem?.duration.toString());
     _endValueController =
         TextEditingController(text: existingItem?.endValue.toString());
+    _nagTimeController = TextEditingController();
+    _nagMessageController = TextEditingController();
     if (existingItem != null) {
       _selectedItemType = existingItem.itemType;
       if (existingItem.nagTime != null) {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
-        _nagTimeController =
-            TextEditingController(text: _selectedNagTime!.format(context));
-      } else {
-        _nagTimeController = TextEditingController();
       }
-    } else {
-      _nagTimeController = TextEditingController();
+      _nagMessageController.text = existingItem.nagMessage ?? '';
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didChangeDependencies) {
+      if (_selectedNagTime != null) {
+        _nagTimeController.text = _selectedNagTime!.format(context);
+      }
+      _didChangeDependencies = true;
     }
   }
 
@@ -69,6 +80,7 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
     _durationController.dispose();
     _endValueController.dispose();
     _nagTimeController.dispose();
+    _nagMessageController.dispose();
     super.dispose();
   }
 
@@ -100,6 +112,9 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
           endValue: endValue,
           history: widget.dailyThing?.history ?? [],
           nagTime: nagTime,
+          nagMessage: _nagMessageController.text.isEmpty
+              ? null
+              : _nagMessageController.text,
         );
 
         if (widget.dailyThing == null) {
@@ -332,6 +347,18 @@ class _AddDailyItemPopupState extends State<AddDailyItemPopup> {
                       });
                     }
                   },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nagMessageController,
+                  decoration: InputDecoration(
+                    labelText: 'Nag Message',
+                    hintText: 'e.g. Time to do your daily reading!',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                  ),
                 ),
                 const SizedBox(height: 24),
 

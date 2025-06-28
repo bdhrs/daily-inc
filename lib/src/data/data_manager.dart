@@ -3,9 +3,17 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 
 class DataManager {
   static const String _dataKey = 'inc_timer_data';
+  final NotificationService _notificationService = NotificationService();
+
+  int _getNotificationId(String dailyThingId) {
+    // Generate a consistent integer ID from the DailyThing's UUID string
+    // by summing its code units and taking modulo to ensure it fits in an int.
+    return dailyThingId.codeUnits.reduce((a, b) => a + b) % 2147483647;
+  }
 
   Future<List<DailyThing>> loadFromFile() async {
     try {
@@ -79,20 +87,41 @@ class DataManager {
     final items = await loadData();
     items.add(newItem);
     await saveData(items);
+    if (newItem.nagTime != null && newItem.nagMessage != null) {
+      _notificationService.scheduleNagNotification(
+        _getNotificationId(newItem.id), // Use a unique ID for the notification
+        'Daily Inc Reminder',
+        newItem.nagMessage!,
+        newItem.nagTime!,
+      );
+    }
   }
 
   Future<void> deleteDailyThing(DailyThing itemToDelete) async {
     final items = await loadData();
     items.removeWhere((item) => item.id == itemToDelete.id);
     await saveData(items);
+    _notificationService
+        .cancelNotification(_getNotificationId(itemToDelete.id));
   }
 
   Future<void> updateDailyThing(DailyThing updatedItem) async {
     final items = await loadData();
     final index = items.indexWhere((item) => item.id == updatedItem.id);
     if (index != -1) {
+      // Cancel existing notification before updating
+      _notificationService
+          .cancelNotification(_getNotificationId(updatedItem.id));
       items[index] = updatedItem;
       await saveData(items);
-    } else {}
+      if (updatedItem.nagTime != null && updatedItem.nagMessage != null) {
+        _notificationService.scheduleNagNotification(
+          _getNotificationId(updatedItem.id),
+          'Daily Inc Reminder',
+          updatedItem.nagMessage!,
+          updatedItem.nagTime!,
+        );
+      }
+    }
   }
 }

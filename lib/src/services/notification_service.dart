@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -18,10 +19,16 @@ class NotificationService {
       onDidReceiveLocalNotification: (id, title, body, payload) async {},
     );
 
+    const LinuxInitializationSettings initializationSettingsLinux =
+        LinuxInitializationSettings(
+      defaultActionName: 'Open notification',
+    );
+
     final InitializationSettings initializationSettings =
         InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
+      linux: initializationSettingsLinux,
     );
 
     await flutterLocalNotificationsPlugin.initialize(
@@ -54,26 +61,97 @@ class NotificationService {
 
   Future<void> scheduleNagNotification(
       int id, String title, String body, DateTime scheduledTime) async {
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_inc_timer_channel',
-          'Daily Inc',
-          channelDescription: 'Channel for Daily Inc notifications',
-          importance: Importance.max,
-          priority: Priority.high,
+    try {
+      // For all platforms, first try to show an immediate notification
+      // This ensures the user gets a notification even if scheduling fails
+      await flutterLocalNotificationsPlugin.show(
+        id,
+        "Test: $title",
+        "This is a test notification. The scheduled one will appear at the set time.",
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_inc_timer_channel',
+            'Daily Inc Timer',
+            channelDescription: 'Channel for Daily Inc Timer notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            ongoing: true,
+            autoCancel: false,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+          linux: LinuxNotificationDetails(
+            urgency: LinuxNotificationUrgency.critical,
+            resident: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+      );
+
+      // Skip scheduling on Linux as it's not supported
+      if (Platform.isLinux) {
+        print("Linux platform detected - skipping scheduled notification");
+        return;
+      }
+
+      // For other platforms, use zonedSchedule
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledTime, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_inc_timer_channel',
+            'Daily Inc Timer',
+            channelDescription: 'Channel for Daily Inc Timer notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            ongoing: true,
+            autoCancel: false,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      print('Error scheduling notification: $e');
+      // Fallback to immediate notification if scheduling fails
+      await flutterLocalNotificationsPlugin.show(
+        id,
+        title,
+        body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_inc_timer_channel',
+            'Daily Inc Timer',
+            channelDescription: 'Channel for Daily Inc Timer notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            ongoing: true,
+            autoCancel: false,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+          linux: LinuxNotificationDetails(
+            urgency: LinuxNotificationUrgency.critical,
+            resident: true,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> cancelNotification(int id) async {
