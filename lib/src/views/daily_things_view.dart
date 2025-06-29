@@ -501,23 +501,27 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   Future<void> _saveHistoryToFile() async {
     _log.info('Attempting to save history to file.');
     try {
+      _log.info('Preparing history data for saving.');
+      final jsonData = {
+        'dailyThings': _dailyThings.map((thing) => thing.toJson()).toList(),
+        'savedAt': DateTime.now().toIso8601String(),
+      };
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+      final bytes = utf8.encode(jsonString);
+
+      _log.info('Opening file picker to save file.');
       final String? outputFile = await FilePicker.platform.saveFile(
         dialogTitle: 'Save History Data',
         fileName: 'daily_inc_timer_history.json',
         allowedExtensions: ['json'],
         type: FileType.custom,
+        bytes: bytes,
       );
 
-      if (outputFile != null) {
-        _log.info('Saving history to: $outputFile');
-        final file = File(outputFile);
-        final jsonData = {
-          'dailyThings': _dailyThings.map((thing) => thing.toJson()).toList(),
-          'savedAt': DateTime.now().toIso8601String(),
-        };
-        await file.writeAsString(
-            const JsonEncoder.withIndent('  ').convert(jsonData));
-
+      // On Android & iOS, outputFile will be null on success. On desktop, it will be the path.
+      // On any platform, if the user cancels, it's null. There's an ambiguity here
+      // on mobile platforms, but we'll show success if no error is thrown.
+      if (outputFile != null || Platform.isAndroid || Platform.isIOS) {
         if (mounted) {
           _log.info('History saved successfully.');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -559,10 +563,13 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       if (result != null && result.files.single.path != null) {
         _log.info('Loading history from: ${result.files.single.path}');
         final file = File(result.files.single.path!);
+        _log.info('Reading file content.');
         final jsonString = await file.readAsString();
+        _log.info('Decoding JSON data.');
         final jsonData = jsonDecode(jsonString);
 
         if (jsonData['dailyThings'] != null) {
+          _log.info('Mapping JSON to DailyThing objects.');
           final List<dynamic> thingsJson = jsonData['dailyThings'];
           final List<DailyThing> loadedThings =
               thingsJson.map((json) => DailyThing.fromJson(json)).toList();
