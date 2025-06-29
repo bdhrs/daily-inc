@@ -80,9 +80,9 @@ class NotificationService {
       "This is a test notification. The scheduled one will appear at the set time.",
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'daily_inc_timer_channel',
-          'Daily Inc Timer',
-          channelDescription: 'Channel for Daily Inc Timer notifications',
+          'daily_inc_channel',
+          'Daily Inc',
+          channelDescription: 'Channel for Daily Inc notifications',
           importance: Importance.max,
           priority: Priority.high,
           ongoing: true,
@@ -124,9 +124,9 @@ class NotificationService {
         tz.TZDateTime.from(scheduledTime, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'daily_inc_timer_channel',
-            'Daily Inc Timer',
-            channelDescription: 'Channel for Daily Inc Timer notifications',
+            'daily_inc_channel',
+            'Daily Inc',
+            channelDescription: 'Channel for Daily Inc notifications',
             importance: Importance.max,
             priority: Priority.high,
             ongoing: stickyNotifications,
@@ -157,9 +157,9 @@ class NotificationService {
         body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'daily_inc_timer_channel',
-            'Daily Inc Timer',
-            channelDescription: 'Channel for Daily Inc Timer notifications',
+            'daily_inc_channel',
+            'Daily Inc',
+            channelDescription: 'Channel for Daily Inc notifications',
             importance: Importance.max,
             priority: Priority.high,
             ongoing: stickyNotifications,

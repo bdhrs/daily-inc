@@ -26,6 +26,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
   final _log = Logger('DailyThingsView');
+  bool _hasShownCompletionSnackbar = false;
 
   @override
   void initState() {
@@ -176,7 +177,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           onExitCallback: _refreshDisplay,
         ),
       ),
-    );
+    ).then((_) {
+      _checkAndShowCompletionSnackbar();
+    });
   }
 
   String _formatValue(double value, ItemType itemType) {
@@ -301,6 +304,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                       }
                       _dataManager.updateDailyThing(item);
                     });
+                    _checkAndShowCompletionSnackbar();
                   } else if (item.itemType == ItemType.reps) {
                     _showRepsInputDialog(item);
                   }
@@ -434,6 +438,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                       _dataManager.updateDailyThing(item);
                     });
                     Navigator.of(context).pop();
+                    _checkAndShowCompletionSnackbar();
                   } else {
                     _log.warning('Invalid reps value entered.');
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -486,6 +491,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     _dataManager.updateDailyThing(item);
                   });
                   Navigator.of(context).pop();
+                  _checkAndShowCompletionSnackbar();
                 } else {
                   _log.warning('Invalid reps value entered.');
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -517,7 +523,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       _log.info('Opening file picker to save file.');
       final String? outputFile = await FilePicker.platform.saveFile(
         dialogTitle: 'Save History Data',
-        fileName: 'daily_inc_timer_history.json',
+        fileName: 'daily_inc_history.json',
         allowedExtensions: ['json'],
         type: FileType.custom,
         bytes: bytes,
@@ -553,6 +559,38 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
         );
       }
+    }
+  }
+
+  void _checkAndShowCompletionSnackbar() {
+    final todayDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    bool allCompleted = _dailyThings.every((item) => item.history.any((entry) =>
+        entry.date.year == todayDate.year &&
+        entry.date.month == todayDate.month &&
+        entry.date.day == todayDate.day &&
+        entry.doneToday == true));
+
+    if (allCompleted && !_hasShownCompletionSnackbar) {
+      _log.info('All tasks completed, showing celebration snackbar.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Well done, all tasks done!'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      setState(() {
+        _hasShownCompletionSnackbar = true;
+      });
+    } else if (!allCompleted) {
+      setState(() {
+        _hasShownCompletionSnackbar = false;
+      });
     }
   }
 

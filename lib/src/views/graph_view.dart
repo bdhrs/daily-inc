@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:daily_inc/src/theme/color_palette.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
@@ -16,8 +16,6 @@ class GraphView extends StatefulWidget {
 class _GraphViewState extends State<GraphView> {
   double _minY = 0;
   double _maxY = 0;
-  double _minX = 0;
-  double _maxX = 0;
   final _log = Logger('GraphView');
 
   @override
@@ -29,43 +27,28 @@ class _GraphViewState extends State<GraphView> {
 
   void _calculateRanges() {
     _log.info('Calculating graph ranges...');
-    final targetSpots = _getTargetSpots();
-    final actualBars = _getActualBars();
+    final startValue = widget.dailyThing.startValue;
+    final endValue = widget.dailyThing.endValue;
 
-    final allYValues = [
-      ...targetSpots.map((spot) => spot.y),
-      ...actualBars.map((bar) => bar.barRods.first.toY),
-    ];
+    final minValue = min(startValue, endValue);
+    final maxValue = max(startValue, endValue);
 
-    final allXValues = [
-      ...targetSpots.map((spot) => spot.x),
-      ...actualBars.map((bar) => bar.x.toDouble()),
-    ];
+    final yPadding = (maxValue - minValue) * 0.1;
+    _minY = 0;
+    _maxY = maxValue + yPadding;
 
-    if (allYValues.isNotEmpty) {
-      _minY = allYValues.reduce(min);
-      _maxY = allYValues.reduce(max);
-    } else {
-      _minY = widget.dailyThing.startValue;
-      _maxY = widget.dailyThing.endValue;
+    // If start and end are the same, create a sensible range
+    if (startValue == endValue) {
+      if (startValue == 0) {
+        _minY = 0;
+        _maxY = 10;
+      } else {
+        _minY = max(0, startValue - 5);
+        _maxY = startValue + 5;
+      }
     }
 
-    if (allXValues.isNotEmpty) {
-      _minX = allXValues.reduce(min);
-      _maxX = allXValues.reduce(max);
-    } else {
-      _minX = 0;
-      _maxX = widget.dailyThing.duration.toDouble();
-    }
-
-    final yPadding = (_maxY - _minY) * 0.1;
-    _minY -= yPadding;
-    _maxY += yPadding;
-
-    final xPadding = (_maxX - _minX) * 0.05;
-    _minX -= xPadding;
-    _maxX += xPadding;
-    _log.info('Ranges calculated: X($_minX, $_maxX), Y($_minY, $_maxY)');
+    _log.info('Ranges calculated: Y($_minY, $_maxY)');
   }
 
   @override
@@ -76,78 +59,79 @@ class _GraphViewState extends State<GraphView> {
         title: Text(widget.dailyThing.name),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(right: 18, top: 8, bottom: 12, left: 8),
-        child: Stack(
-          children: [
-            LineChart(
-              LineChartData(
-                minY: _minY,
-                maxY: _maxY,
-                minX: _minX,
-                maxX: _maxX,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: _getTargetSpots(),
-                    isCurved: false,
-                    color: ColorPalette.secondaryText,
-                    barWidth: 2,
-                    isStrokeCapRound: true,
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      interval: _getInterval(),
-                    ),
-                  ),
-                  bottomTitles: const AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border:
-                      Border.all(color: ColorPalette.cardBackground, width: 1),
-                ),
-                gridData: const FlGridData(show: true),
+        padding: const EdgeInsets.all(24),
+        child: LineChart(
+          LineChartData(
+            minY: _minY,
+            maxY: _maxY,
+            minX: -2,
+            maxX: widget.dailyThing.duration.toDouble() + 2,
+            lineBarsData: [
+              // Projected line
+              LineChartBarData(
+                spots: _getTargetSpots(),
+                isCurved: false,
+                color: Colors.grey,
+                barWidth: 2,
+                isStrokeCapRound: true,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
               ),
-            ),
-            BarChart(
-              BarChartData(
-                minY: _minY,
-                maxY: _maxY,
-                barGroups: _getActualBars(),
-                alignment: BarChartAlignment.spaceEvenly,
-                titlesData: const FlTitlesData(
-                  leftTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles:
-                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              // Actual "bars"
+              ..._getActualBarsAsLines(context),
+            ],
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) {
+                    if (value % _getInterval() == 0) {
+                      return Text(
+                        value.toInt().toString(),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      );
+                    }
+                    return const Text('');
+                  },
                 ),
-                borderData: FlBorderData(
-                  show: false,
-                ),
-                gridData: const FlGridData(show: false),
-                barTouchData: BarTouchData(
-                  enabled: false,
+                axisNameWidget: Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    widget.dailyThing.itemType.name,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  getTitlesWidget: (value, meta) {
+                    if (value >= 0 && value <= widget.dailyThing.duration) {
+                      if (value.toInt() % 5 == 0) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        );
+                      }
+                    }
+                    return const Text('');
+                  },
+                ),
+              ),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-          ],
+            borderData: FlBorderData(
+              show: true,
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+            ),
+            gridData: const FlGridData(show: true),
+            lineTouchData: const LineTouchData(enabled: false),
+          ),
         ),
       ),
     );
@@ -155,17 +139,37 @@ class _GraphViewState extends State<GraphView> {
 
   double _getInterval() {
     final double range = (_maxY - _minY).abs();
-    if (range <= 10) {
-      return 1;
-    } else if (range <= 20) {
-      return 2;
-    } else if (range <= 50) {
-      return 5;
-    } else if (range <= 100) {
-      return 10;
-    } else {
-      return 20;
+    if (range <= 0) return 1;
+    if (range <= 10) return 1;
+    if (range <= 20) return 2;
+    if (range <= 50) return 5;
+    if (range <= 100) return 10;
+
+    // Create a dynamic interval
+    final power = pow(10, (log(range) / log(10)).floor() - 1);
+    return ((range / 5 / power).round() * power).toDouble();
+  }
+
+  List<LineChartBarData> _getActualBarsAsLines(BuildContext context) {
+    final List<LineChartBarData> lines = [];
+    final historyByDay = {
+      for (var entry in widget.dailyThing.history)
+        entry.date.difference(widget.dailyThing.startDate).inDays: entry.value
+    };
+
+    for (int i = 0; i <= widget.dailyThing.duration; i++) {
+      final value = historyByDay[i];
+      if (value != null) {
+        lines.add(LineChartBarData(
+          spots: [FlSpot(i.toDouble(), 0), FlSpot(i.toDouble(), value)],
+          barWidth: 8,
+          color: Colors.blue,
+          isStrokeCapRound: false,
+          dotData: const FlDotData(show: false),
+        ));
+      }
     }
+    return lines;
   }
 
   List<FlSpot> _getTargetSpots() {
@@ -176,32 +180,5 @@ class _GraphViewState extends State<GraphView> {
       spots.add(FlSpot(i.toDouble(), value));
     }
     return spots;
-  }
-
-  List<BarChartGroupData> _getActualBars() {
-    final List<BarChartGroupData> bars = [];
-    final historyByDay = {
-      for (var entry in widget.dailyThing.history)
-        entry.date.difference(widget.dailyThing.startDate).inDays: entry.value
-    };
-
-    for (int i = 0; i <= widget.dailyThing.duration; i++) {
-      bars.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: historyByDay[i] ?? 0,
-              color: historyByDay.containsKey(i)
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
-              width: 8,
-              borderRadius: BorderRadius.zero,
-            ),
-          ],
-        ),
-      );
-    }
-    return bars;
   }
 }
