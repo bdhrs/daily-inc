@@ -21,6 +21,12 @@ flutter run -d linux
 adb logcat | grep -i flutter
 ```
 
+## Populate Icons
+
+```bash
+flutter pub run flutter_launcher_icons
+```
+
 ## Build a Linux AppImage
 
 Build the Linux version and create an AppImage from it.
