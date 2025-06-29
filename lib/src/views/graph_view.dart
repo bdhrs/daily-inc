@@ -84,40 +84,67 @@ class _GraphViewState extends State<GraphView> {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 40,
+                  reservedSize: 60, // Further increased reserved size
                   getTitlesWidget: (value, meta) {
-                    if (value % _getInterval() == 0) {
-                      return Text(
-                        value.toInt().toString(),
-                        style: Theme.of(context).textTheme.bodySmall,
+                    // Show labels for all integer values within the range
+                    if (value == value.toInt().toDouble()) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 4.0),
+                        child: Text(
+                          value.toInt().toString(),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       );
                     }
                     return const Text('');
                   },
                 ),
                 axisNameWidget: Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Text(
-                    widget.dailyThing.itemType.name,
-                    style: Theme.of(context).textTheme.bodySmall,
+                  padding:
+                      const EdgeInsets.only(bottom: 16.0), // Increased padding
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.dailyThing.itemType.name,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        'Value (${_getUnitForType(widget.dailyThing.itemType)})',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
                 ),
               ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 30,
+                  reservedSize: 50, // Further increased reserved size
                   getTitlesWidget: (value, meta) {
-                    if (value >= 0 && value <= widget.dailyThing.duration) {
-                      if (value.toInt() % 5 == 0) {
-                        return Text(
+                    // Show labels for all integer values within the range
+                    if (value >= 0 &&
+                        value <= widget.dailyThing.duration &&
+                        value == value.toInt().toDouble()) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
                           value.toInt().toString(),
                           style: Theme.of(context).textTheme.bodySmall,
-                        );
-                      }
+                        ),
+                      );
                     }
                     return const Text('');
                   },
+                ),
+                axisNameWidget: Padding(
+                  padding:
+                      const EdgeInsets.only(top: 16.0), // Increased padding
+                  child: Text(
+                    'Days',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               ),
               rightTitles:
@@ -135,19 +162,6 @@ class _GraphViewState extends State<GraphView> {
         ),
       ),
     );
-  }
-
-  double _getInterval() {
-    final double range = (_maxY - _minY).abs();
-    if (range <= 0) return 1;
-    if (range <= 10) return 1;
-    if (range <= 20) return 2;
-    if (range <= 50) return 5;
-    if (range <= 100) return 10;
-
-    // Create a dynamic interval
-    final power = pow(10, (log(range) / log(10)).floor() - 1);
-    return ((range / 5 / power).round() * power).toDouble();
   }
 
   List<LineChartBarData> _getActualBarsAsLines(BuildContext context) {
@@ -180,5 +194,16 @@ class _GraphViewState extends State<GraphView> {
       spots.add(FlSpot(i.toDouble(), value));
     }
     return spots;
+  }
+}
+
+String _getUnitForType(ItemType type) {
+  switch (type) {
+    case ItemType.minutes:
+      return 'minutes';
+    case ItemType.reps:
+      return 'reps';
+    case ItemType.check:
+      return '';
   }
 }
