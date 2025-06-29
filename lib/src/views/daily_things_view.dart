@@ -695,7 +695,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
           PopupMenuButton<String>(
             tooltip: 'Save and Load History',
-            icon: const Icon(Icons.history),
+            icon: const Icon(Icons.save),
             onSelected: (value) {
               if (value == 'load_history') {
                 _loadHistoryFromFile();
