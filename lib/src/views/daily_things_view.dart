@@ -386,50 +386,56 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          content: TextField(
-            controller: repsController,
-            keyboardType: TextInputType.number,
-            autofocus: true, // Automatically focus the text field
-            onSubmitted: (value) async {
-              _log.info('Reps submitted via keyboard: $value');
-              final int? reps = int.tryParse(value);
-              if (reps != null && reps > 0) {
-                final today = DateTime(
-                  DateTime.now().year,
-                  DateTime.now().month,
-                  DateTime.now().day,
-                );
-                final newEntry = HistoryEntry(
-                  date: today,
-                  value: reps.toDouble(),
-                  doneToday: reps.toDouble() >= item.todayValue,
-                );
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('how many ${item.name.toLowerCase()}?'),
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                autofocus: true, // Automatically focus the text field
+                onSubmitted: (value) async {
+                  _log.info('Reps submitted via keyboard: $value');
+                  final int? reps = int.tryParse(value);
+                  if (reps != null && reps > 0) {
+                    final today = DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    );
+                    final newEntry = HistoryEntry(
+                      date: today,
+                      value: reps.toDouble(),
+                      doneToday: reps.toDouble() >= item.todayValue,
+                    );
 
-                final existingEntryIndex = item.history.indexWhere(
-                  (entry) =>
-                      entry.date.year == today.year &&
-                      entry.date.month == today.month &&
-                      entry.date.day == today.day,
-                );
+                    final existingEntryIndex = item.history.indexWhere(
+                      (entry) =>
+                          entry.date.year == today.year &&
+                          entry.date.month == today.month &&
+                          entry.date.day == today.day,
+                    );
 
-                setState(() {
-                  if (existingEntryIndex != -1) {
-                    item.history[existingEntryIndex] = newEntry;
+                    setState(() {
+                      if (existingEntryIndex != -1) {
+                        item.history[existingEntryIndex] = newEntry;
+                      } else {
+                        item.history.add(newEntry);
+                      }
+                      _dataManager.updateDailyThing(item);
+                    });
+                    Navigator.of(context).pop();
                   } else {
-                    item.history.add(newEntry);
+                    _log.warning('Invalid reps value entered.');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid number of reps.'),
+                      ),
+                    );
                   }
-                  _dataManager.updateDailyThing(item);
-                });
-                Navigator.of(context).pop();
-              } else {
-                _log.warning('Invalid reps value entered.');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter a valid number of reps.'),
-                  ),
-                );
-              }
-            },
+                },
+              ),
+            ],
           ),
           actions: [
             TextButton(

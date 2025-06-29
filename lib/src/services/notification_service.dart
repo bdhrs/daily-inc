@@ -71,41 +71,40 @@ class NotificationService {
     _log.info('Notification permissions requested.');
   }
 
+  Future<void> showTestNotification(int id, String title) async {
+    _log.info('showTestNotification called: id=$id, title=$title');
+    await flutterLocalNotificationsPlugin.show(
+      id,
+      "Test: $title",
+      "This is a test notification. The scheduled one will appear at the set time.",
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_inc_timer_channel',
+          'Daily Inc Timer',
+          channelDescription: 'Channel for Daily Inc Timer notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          ongoing: true,
+          autoCancel: false,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        linux: LinuxNotificationDetails(
+          urgency: LinuxNotificationUrgency.critical,
+          resident: true,
+        ),
+      ),
+    );
+  }
+
   Future<void> scheduleNagNotification(
       int id, String title, String body, DateTime scheduledTime) async {
     _log.info(
         'scheduleNagNotification called: id=$id, title=$title, scheduledTime=$scheduledTime');
     try {
-      // For all platforms, first try to show an immediate notification
-      // This ensures the user gets a notification even if scheduling fails
-      _log.info('Showing immediate test notification.');
-      await flutterLocalNotificationsPlugin.show(
-        id,
-        "Test: $title",
-        "This is a test notification. The scheduled one will appear at the set time.",
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'daily_inc_timer_channel',
-            'Daily Inc Timer',
-            channelDescription: 'Channel for Daily Inc Timer notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-            ongoing: true,
-            autoCancel: false,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          linux: LinuxNotificationDetails(
-            urgency: LinuxNotificationUrgency.critical,
-            resident: true,
-          ),
-        ),
-      );
-
-      // Skip scheduling on Linux as it's not supported
       if (Platform.isLinux) {
         _log.warning('Skipping notification scheduling on Linux.');
         return;
