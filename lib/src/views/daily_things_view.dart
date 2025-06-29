@@ -341,12 +341,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 // For CHECK items, don't show start/end values since they're irrelevant
                 item.itemType == ItemType.check
                     ? const SizedBox.shrink()
-                    : Row(
-                        children: [
-                          Text(_formatValue(item.startValue, item.itemType)),
-                          const Icon(Icons.trending_flat),
-                          Text(_formatValue(item.endValue, item.itemType)),
-                        ],
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                            left:
+                                32.0), // Add left padding to align with text above
+                        child: Row(
+                          children: [
+                            Text(_formatValue(item.startValue, item.itemType)),
+                            const Icon(Icons.trending_flat),
+                            Text(_formatValue(item.endValue, item.itemType)),
+                          ],
+                        ),
                       ),
                 Row(
                   children: [
