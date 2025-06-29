@@ -1,10 +1,10 @@
 version: 1
 AppDir:
-  path: ./daily_inc_timer.AppDir
+  path: ./daily_inc.AppDir
   app_info:
-    id: com.example.daily_inc_timer
-    name: daily_inc_timer
-    icon: daily_inc_timer
+    id: com.example.daily_inc
+    name: daily_inc
+    icon: daily_inc
     version: 1.0.0
     exec: AppRun
     exec_args: $@

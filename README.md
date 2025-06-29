@@ -26,6 +26,7 @@ adb logcat | grep -i flutter
 1. Edit `assets/icon/icon.svg`
 2. Save to `assets/icon/icon.png`
 3. Run flutter_launcher_icons
+
 ```
 flutter pub run flutter_launcher_icons
 ```
@@ -36,7 +37,7 @@ Build the Linux version and create an AppImage from it. The resulting AppImage w
 
 ```bash
 flutter build linux
-./android/appimagetool.AppImage daily_inc_timer.AppDir
+./android/appimagetool.AppImage daily_inc.AppDir
 ```
 
 

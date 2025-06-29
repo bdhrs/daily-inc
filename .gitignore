@@ -46,7 +46,7 @@ app.*.map.json
 
 # Flutter project specific files
 .metadata
-daily_inc_timer_history.json
+daily_inc_history.json
 
 # Additional recommended ignores for Flutter
 android/local.properties
@@ -65,6 +65,6 @@ linux/flutter/ephemeral/
 .flutter-plugins-cache
 *.apk
 *.ipa
-daily_inc_timer.AppImage
-daily_inc_timer.AppDir/*
-Daily_Inc_Timer-x86_64.AppImage
+daily_inc.AppImage
+daily_inc.AppDir/*
+Daily_Inc-x86_64.AppImage
