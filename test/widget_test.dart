@@ -16,12 +16,14 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     // Verify that the AppBar with the correct title is present.
-    expect(find.text('Daily Inc.'), findsOneWidget);
+    expect(find.text('Daily Inc'), findsOneWidget);
 
     // Verify that the "Add" button is present.
-    expect(find.descendant(
-      of: find.byType(AppBar),
-      matching: find.byIcon(Icons.add),
-    ), findsOneWidget);
+    expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.add),
+        ),
+        findsOneWidget);
   });
 }

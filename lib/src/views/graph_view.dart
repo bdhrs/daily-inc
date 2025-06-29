@@ -3,6 +3,7 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
@@ -88,7 +89,7 @@ class _GraphViewState extends State<GraphView> {
                   LineChartBarData(
                     spots: _getTargetSpots(),
                     isCurved: false,
-                    color: Colors.grey,
+                    color: ColorPalette.secondaryText,
                     barWidth: 2,
                     isStrokeCapRound: true,
                     belowBarData: BarAreaData(show: false),
@@ -115,7 +116,8 @@ class _GraphViewState extends State<GraphView> {
                 ),
                 borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: const Color(0xff37434d), width: 1),
+                  border:
+                      Border.all(color: ColorPalette.cardBackground, width: 1),
                 ),
                 gridData: const FlGridData(show: true),
               ),
@@ -191,7 +193,7 @@ class _GraphViewState extends State<GraphView> {
             BarChartRodData(
               toY: historyByDay[i] ?? 0,
               color: historyByDay.containsKey(i)
-                  ? Colors.blue
+                  ? Theme.of(context).colorScheme.primary
                   : Colors.transparent,
               width: 8,
               borderRadius: BorderRadius.zero,

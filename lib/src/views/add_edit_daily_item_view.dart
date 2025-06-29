@@ -205,13 +205,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     Expanded(
                       child: TextFormField(
                         controller: _iconController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Icon',
                           hintText: 'e.g. 🚀',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          filled: true,
                         ),
                       ),
                     ),
@@ -231,13 +227,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Name',
                     hintText: 'e.g. Daily Reading',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -261,12 +253,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       _selectedItemType = value!;
                     });
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Type',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -282,10 +270,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   decoration: InputDecoration(
                     labelText: 'Start Date (YYYY-MM-DD)',
                     hintText: hintDate,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
                     prefixIcon: const Icon(Icons.calendar_today),
                   ),
                   validator: (value) {
@@ -308,13 +292,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       Expanded(
                         child: TextFormField(
                           controller: _startValueController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Start Value',
                             hintText: '0.0',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -332,13 +312,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       Expanded(
                         child: TextFormField(
                           controller: _endValueController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'End Value',
                             hintText: '0.0',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -357,14 +333,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _durationController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Duration (days)',
                       hintText: '30',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      prefixIcon: const Icon(Icons.schedule),
+                      prefixIcon: Icon(Icons.schedule),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -381,14 +353,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nagTimeController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Nag Time',
                     hintText: 'HH:mm',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    prefixIcon: const Icon(Icons.alarm),
+                    prefixIcon: Icon(Icons.alarm),
                   ),
                   readOnly: true,
                   onTap: () async {
@@ -407,13 +375,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nagMessageController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Nag Message',
                     hintText: 'e.g. Time to do your daily reading!',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
                   ),
                 ),
                 const SizedBox(height: 24),

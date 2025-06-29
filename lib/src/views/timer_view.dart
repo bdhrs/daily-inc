@@ -4,6 +4,7 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:flutter/material.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -176,6 +177,8 @@ class _TimerViewState extends State<TimerView> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: fontSize,
+                          color: ColorPalette
+                              .lightText, // Apply white to timer text
                         ),
                         textAlign: TextAlign.center,
                       ),

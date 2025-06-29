@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/daily_things_view.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
+import 'package:daily_inc/src/theme/app_theme.dart';
 import 'package:logging/logging.dart';
 
 void main() async {
@@ -60,12 +60,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Daily Inc',
-      theme: ThemeData.dark().copyWith(
-        primaryColor: Colors.blue,
-        textTheme: GoogleFonts.interTextTheme(
-          ThemeData.dark().textTheme,
-        ),
-      ),
+      theme: AppTheme.darkTheme,
       home: const DailyThingsView(),
     );
   }

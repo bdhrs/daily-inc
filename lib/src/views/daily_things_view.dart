@@ -10,6 +10,7 @@ import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 
 class DailyThingsView extends StatefulWidget {
@@ -156,7 +157,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               'Item "${item.name}" deleted',
             ),
             duration: const Duration(seconds: 2),
-            backgroundColor: Colors.grey.shade800,
+            backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -240,21 +241,25 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 children: [
                   Icon(
                     isCompletedToday ? Icons.check : Icons.close,
-                    color: isCompletedToday ? Colors.green : Colors.red,
+                    color: isCompletedToday
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(width: 8), // Add some spacing
                   if (item.icon != null)
                     Text(
                       item.icon!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   const SizedBox(width: 8), // Add some spacing
                   Text(
                     item.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -311,8 +316,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                       color: (item.itemType == ItemType.check &&
                                   item.todayValue == 1) ||
                               (item.itemType != ItemType.check && hasTodayEntry)
-                          ? Colors.green[900]
-                          : Colors.red[900],
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.error,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment
@@ -320,12 +325,13 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     child: item.itemType == ItemType.check
                         ? Icon(
                             item.todayValue == 1.0 ? Icons.check : Icons.close,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           )
                         : Text(
                             _formatValue(item.todayValue, item.itemType),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 14),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 14),
                           ),
                   ),
                 ),
@@ -529,7 +535,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 'History saved successfully',
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.grey.shade800,
+              backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -589,7 +595,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   'History loaded successfully',
                 ),
                 duration: const Duration(seconds: 2),
-                backgroundColor: Colors.grey.shade800,
+                backgroundColor:
+                    Theme.of(context).snackBarTheme.backgroundColor,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -619,7 +626,10 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     _log.info('build called');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Inc.'),
+        title: Text(
+          'Daily Inc',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -699,6 +709,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             child: ElevatedButton(
               onPressed: _openAddDailyItemPopup,
               style: ElevatedButton.styleFrom(
+                backgroundColor: ColorPalette.cardBackground,
+                foregroundColor: ColorPalette.primaryBlue,
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero,
                 ),
