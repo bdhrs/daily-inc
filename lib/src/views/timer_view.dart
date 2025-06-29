@@ -133,9 +133,9 @@ class _TimerViewState extends State<TimerView> {
 
   String _formatTime(int seconds) {
     // No logging here as it's a pure formatting function called frequently.
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final remainingSeconds = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$remainingSeconds';
   }
 
   @override
@@ -150,12 +150,37 @@ class _TimerViewState extends State<TimerView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Text(
-                    _formatTime(_remainingSeconds),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calculate font size based on the widest possible time "88:88"
+                    // This ensures consistent sizing regardless of actual digits
+                    final maxTimeText = "88:88";
+                    final textPainter = TextPainter(
+                      text: TextSpan(
+                        text: maxTimeText,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      textDirection: TextDirection.ltr,
+                    );
+                    textPainter.layout();
+
+                    // Calculate font size to fit 60% of available width for the widest case
+                    final fontSize = (constraints.maxWidth * 0.6) /
+                        textPainter.width *
+                        12; // 12 is base font size
+
+                    return SizedBox(
+                      width: constraints.maxWidth,
+                      child: Text(
+                        _formatTime(_remainingSeconds),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSize,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 20),
