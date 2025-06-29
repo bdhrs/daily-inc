@@ -338,9 +338,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // For CHECK items, don't show start/end values since they're irrelevant
                 item.itemType == ItemType.check
-                    ? Text(item.startValue == 1 ? '✅' : '❌',
-                        style: const TextStyle(fontSize: 16))
+                    ? const SizedBox.shrink()
                     : Row(
                         children: [
                           Text(_formatValue(item.startValue, item.itemType)),

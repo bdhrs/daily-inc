@@ -52,6 +52,11 @@ class DailyThing {
       }
     }
 
+    // For CHECK items, always reset to 0 (unchecked/red) each day
+    if (itemType == ItemType.check) {
+      return 0.0;
+    }
+
     // No entry for today, find the latest entry before today
     HistoryEntry? lastEntry;
     for (final entry in sortedHistory) {
@@ -93,6 +98,11 @@ class DailyThing {
   }
 
   Status determineStatus(double currentValue) {
+    // For CHECK items, simple logic: green if checked (1.0), red if unchecked (0.0)
+    if (itemType == ItemType.check) {
+      return currentValue >= 1.0 ? Status.green : Status.red;
+    }
+
     if (increment > 0) {
       // Incrementing case - green if currentValue meets or exceeds today's target
       return currentValue >= todayValue ? Status.green : Status.red;

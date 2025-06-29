@@ -103,9 +103,22 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         final startDate = DateFormat(
           'yyyy-MM-dd',
         ).parse(_startDateController.text);
-        final startValue = double.parse(_startValueController.text);
-        final duration = int.parse(_durationController.text);
-        final endValue = double.parse(_endValueController.text);
+
+        // For CHECK items, use default values since the fields are hidden
+        final double startValue;
+        final int duration;
+        final double endValue;
+
+        if (_selectedItemType == ItemType.check) {
+          startValue = 0.0; // Always start unchecked
+          duration = 1; // Duration is irrelevant for check items
+          endValue = 1.0; // End value is checked state
+        } else {
+          startValue = double.parse(_startValueController.text);
+          duration = int.parse(_durationController.text);
+          endValue = double.parse(_endValueController.text);
+        }
+
         final DateTime? nagTime;
         if (_selectedNagTime != null) {
           final now = DateTime.now();
@@ -270,81 +283,84 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     }
                   },
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _startValueController,
-                        decoration: InputDecoration(
-                          labelText: 'Start Value',
-                          hintText: '0.0',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                // Hide start/end values and duration for CHECK items
+                if (_selectedItemType != ItemType.check) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _startValueController,
+                          decoration: InputDecoration(
+                            labelText: 'Start Value',
+                            hintText: '0.0',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
                           ),
-                          filled: true,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a start value';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
                         ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a start value';
-                          }
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          return null;
-                        },
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _endValueController,
-                        decoration: InputDecoration(
-                          labelText: 'End Value',
-                          hintText: '0.0',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _endValueController,
+                          decoration: InputDecoration(
+                            labelText: 'End Value',
+                            hintText: '0.0',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
                           ),
-                          filled: true,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter an end value';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
                         ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter an end value';
-                          }
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          return null;
-                        },
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _durationController,
-                  decoration: InputDecoration(
-                    labelText: 'Duration (days)',
-                    hintText: '30',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    prefixIcon: const Icon(Icons.schedule),
+                    ],
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a duration';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'Please enter a valid number';
-                    }
-                    return null;
-                  },
-                ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _durationController,
+                    decoration: InputDecoration(
+                      labelText: 'Duration (days)',
+                      hintText: '30',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      prefixIcon: const Icon(Icons.schedule),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a duration';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nagTimeController,
