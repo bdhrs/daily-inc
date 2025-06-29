@@ -4,9 +4,9 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
-import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
+import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +21,6 @@ class DailyThingsView extends StatefulWidget {
 
 class _DailyThingsViewState extends State<DailyThingsView> {
   final DataManager _dataManager = DataManager();
-  final NotificationService _notificationService = NotificationService();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
@@ -625,6 +624,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _openAddDailyItemPopup,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsView(),
+                ),
+              );
+            },
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.save_outlined),

@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -105,6 +106,10 @@ class NotificationService {
     _log.info(
         'scheduleNagNotification called: id=$id, title=$title, scheduledTime=$scheduledTime');
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final bool stickyNotifications =
+          prefs.getBool('stickyNotifications') ?? false;
+
       if (Platform.isLinux) {
         _log.warning('Skipping notification scheduling on Linux.');
         return;
@@ -117,17 +122,17 @@ class NotificationService {
         title,
         body,
         tz.TZDateTime.from(scheduledTime, tz.local),
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_inc_timer_channel',
             'Daily Inc Timer',
             channelDescription: 'Channel for Daily Inc Timer notifications',
             importance: Importance.max,
             priority: Priority.high,
-            ongoing: true,
-            autoCancel: false,
+            ongoing: stickyNotifications,
+            autoCancel: !stickyNotifications,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -142,27 +147,30 @@ class NotificationService {
     } catch (e, s) {
       _log.severe(
           'Error scheduling notification, falling back to immediate.', e, s);
+      final prefs = await SharedPreferences.getInstance();
+      final bool stickyNotifications =
+          prefs.getBool('stickyNotifications') ?? false;
       // Fallback to immediate notification if scheduling fails
       await flutterLocalNotificationsPlugin.show(
         id,
         title,
         body,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_inc_timer_channel',
             'Daily Inc Timer',
             channelDescription: 'Channel for Daily Inc Timer notifications',
             importance: Importance.max,
             priority: Priority.high,
-            ongoing: true,
-            autoCancel: false,
+            ongoing: stickyNotifications,
+            autoCancel: !stickyNotifications,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
           ),
-          linux: LinuxNotificationDetails(
+          linux: const LinuxNotificationDetails(
             urgency: LinuxNotificationUrgency.critical,
             resident: true,
           ),
