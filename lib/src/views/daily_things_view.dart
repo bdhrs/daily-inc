@@ -44,16 +44,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     if (items.isNotEmpty) {
       setState(() {
         _dailyThings = items;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Data loaded successfully',
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.grey.shade800,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
       });
     }
   }
