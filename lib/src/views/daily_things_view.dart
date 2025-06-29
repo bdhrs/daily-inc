@@ -731,25 +731,28 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       body: Column(
         children: [
           Expanded(
-            child: ReorderableListView(
-              onReorder: (oldIndex, newIndex) async {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = _dailyThings.removeAt(oldIndex);
-                  _dailyThings.insert(newIndex, item);
-                });
-                await _dataManager.saveData(_dailyThings);
-              },
-              children: [
-                for (var item in _dailyThings)
-                  ReorderableDragStartListener(
-                    key: Key(item.id),
-                    index: _dailyThings.indexOf(item),
-                    child: _buildItemRow(item),
-                  ),
-              ],
+            child: Scrollbar(
+              thumbVisibility: true, // Always show the scrollbar
+              child: ReorderableListView(
+                onReorder: (oldIndex, newIndex) async {
+                  setState(() {
+                    if (newIndex > oldIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = _dailyThings.removeAt(oldIndex);
+                    _dailyThings.insert(newIndex, item);
+                  });
+                  await _dataManager.saveData(_dailyThings);
+                },
+                children: [
+                  for (var item in _dailyThings)
+                    ReorderableDragStartListener(
+                      key: Key(item.id),
+                      index: _dailyThings.indexOf(item),
+                      child: _buildItemRow(item),
+                    ),
+                ],
+              ),
             ),
           ),
           SizedBox(
