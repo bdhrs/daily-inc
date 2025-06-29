@@ -406,7 +406,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     final newEntry = HistoryEntry(
                       date: today,
                       value: reps.toDouble(),
-                      doneToday: reps.toDouble() >= item.todayValue,
+                      doneToday: item.increment >= 0
+                          ? reps.toDouble() >=
+                              item
+                                  .todayValue // Increasing: need to meet or exceed target
+                          : reps.toDouble() <=
+                              item.todayValue, // Decreasing: need to meet or be below target
                     );
 
                     final existingEntryIndex = item.history.indexWhere(
@@ -458,7 +463,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   final newEntry = HistoryEntry(
                     date: today,
                     value: reps.toDouble(),
-                    doneToday: reps.toDouble() >= item.todayValue,
+                    doneToday: item.increment >= 0
+                        ? reps.toDouble() >=
+                            item
+                                .todayValue // Increasing: need to meet or exceed target
+                        : reps.toDouble() <=
+                            item.todayValue, // Decreasing: need to meet or be below target
                   );
 
                   final existingEntryIndex = item.history.indexWhere(

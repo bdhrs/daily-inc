@@ -2,6 +2,8 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:uuid/uuid.dart';
 
+enum Status { green, red }
+
 class DailyThing {
   final String id;
   final String? icon;
@@ -73,17 +75,35 @@ class DailyThing {
     if (lastEntryDate == yesterday) {
       if (lastEntry.doneToday) {
         final newValue = lastEntry.value + increment;
-        // Clamp value within bounds
-        if (endValue >= startValue) {
-          return newValue.clamp(startValue, endValue);
-        } else {
+        // For decreasing items, today's target is the minimum of:
+        // 1. Previous value + increment (decreasing)
+        // 2. But not less than endValue
+        if (increment < 0) {
           return newValue.clamp(endValue, startValue);
         }
+        // For increasing items, today's target is the maximum of:
+        // 1. Previous value + increment (increasing)
+        // 2. But not more than endValue
+        return newValue.clamp(startValue, endValue);
       }
     }
 
     // If last entry was not yesterday, or was yesterday but not done, value stays the same.
     return lastEntry.value;
+  }
+
+  Status determineStatus(double currentValue) {
+    if (increment > 0) {
+      // Incrementing case - green if currentValue meets or exceeds today's target
+      return currentValue >= todayValue ? Status.green : Status.red;
+    } else if (increment < 0) {
+      // Decrementing case - green if currentValue meets or is below today's target
+      // For decreasing items, being above the target is bad (red)
+      return currentValue <= todayValue ? Status.green : Status.red;
+    } else {
+      // No change case (increment == 0) - green if currentValue equals today's value
+      return currentValue == todayValue ? Status.green : Status.red;
+    }
   }
 
   Map<String, dynamic> toJson() {
