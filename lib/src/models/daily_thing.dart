@@ -106,6 +106,10 @@ class DailyThing {
     }
   }
 
+  bool isDone(double currentValue) {
+    return determineStatus(currentValue) == Status.green;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
