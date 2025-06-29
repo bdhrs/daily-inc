@@ -16,6 +16,7 @@ jobs:
           path: |
             ~/.pub-cache
             ~/.gradle/caches
+            ~/.gradle/wrapper
           key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
 
       - uses: subosito/flutter-action@v2
@@ -46,14 +47,14 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
+      - name: Rename APK
+        run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: build/app/outputs/apk/release/app-release.apk
-      - name: Rename APK
-        run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
-
+          path: build/app/outputs/apk/release/daily-inc.apk
 
       - name: Create test release
         uses: softprops/action-gh-release@v2
@@ -62,5 +63,4 @@ jobs:
           tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}+${{ github.run_number }}
           draft: true
           prerelease: true
-          files: |
-            artifacts/apk/daily-inc.apk
+          files: build/app/outputs/apk/release/daily-inc.apk
