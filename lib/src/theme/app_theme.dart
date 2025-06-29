@@ -61,7 +61,7 @@ class AppTheme {
         ),
       ),
       // Card theme
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: ColorPalette.cardBackground,
         margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
         elevation: 2,
@@ -113,7 +113,7 @@ class AppTheme {
         contentTextStyle: TextStyle(color: ColorPalette.lightText),
       ),
       // Dialog theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: ColorPalette.cardBackground,
         titleTextStyle: baseTheme.textTheme.titleLarge
             ?.copyWith(color: ColorPalette.lightText),
@@ -130,9 +130,9 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return ColorPalette.primaryBlue.withValues(alpha: 0.5);
+            return ColorPalette.primaryBlue.withAlpha(128);
           }
-          return ColorPalette.secondaryText.withValues(alpha: 0.5);
+          return ColorPalette.secondaryText.withAlpha(128);
         }),
       ),
       // ExpansionTile theme

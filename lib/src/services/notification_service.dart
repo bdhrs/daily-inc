@@ -15,15 +15,11 @@ class NotificationService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
+    const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      onDidReceiveLocalNotification: (id, title, body, payload) async {
-        _log.info(
-            'onDidReceiveLocalNotification: id=$id, title=$title, body=$body, payload=$payload');
-      },
     );
 
     const LinuxInitializationSettings initializationSettingsLinux =
@@ -139,8 +135,6 @@ class NotificationService {
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
       _log.info('Notification scheduled successfully.');
