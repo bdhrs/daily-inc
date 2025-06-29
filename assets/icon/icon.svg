@@ -25,16 +25,20 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="0.32593203"
-     inkscape:cx="-230.10933"
-     inkscape:cy="978.73166"
+     showgrid="true"
+     inkscape:zoom="0.65186406"
+     inkscape:cx="113.5206"
+     inkscape:cy="691.86204"
      inkscape:window-width="2048"
      inkscape:window-height="1252"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg8" />
+     inkscape:current-layer="svg8">
+    <inkscape:grid
+       type="xygrid"
+       id="grid292" />
+  </sodipodi:namedview>
   <rect
      width="1024"
      height="1024"
@@ -42,20 +46,20 @@
      id="rect2"
      style="fill:#37a5ff;fill-opacity:1;font-variation-settings:'opsz' 32.0, 'wght' 900" />
   <text
-     x="623.75415"
-     y="342.88229"
+     x="592.26862"
+     y="368.3158"
      dominant-baseline="middle"
      text-anchor="middle"
      font-family="Arial, sans-serif"
      font-size="429.247px"
      fill="#333333"
      id="text4"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:315.317px;font-family:Inter;-inkscape-font-specification:'Inter, @opsz=32.0,wght=900';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variation-settings:'opsz' 32, 'wght' 900;dominant-baseline:middle;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.916928;stroke-opacity:1">daily</text>
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:296.805px;font-family:Inter;-inkscape-font-specification:'Inter, @opsz=32.0,wght=900';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variation-settings:'opsz' 32, 'wght' 900;dominant-baseline:middle;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.863097;stroke-opacity:1">daily</text>
   <g
      aria-label="inc"
      id="text6"
      style="font-size:719.188px;font-family:Inter;-inkscape-font-specification:'Inter, @opsz=32.0,wght=900';font-variation-settings:'opsz' 32, 'wght' 900;dominant-baseline:middle;text-anchor:middle;fill:#ffffff;stroke-width:11.444"
-     transform="translate(0,30)">
+     transform="matrix(0.84382783,0,0,0.84382783,75.920306,105.64352)">
     <path
        d="M 4.916285,871.79095 V 500.95965 H 145.38269 v 370.8313 z M 74.798321,476.37803 q -33.009605,0 -54.079566,-18.96297 Q -3.9100647e-5,438.4521 -3.9100647e-5,408.60299 q 0,-29.49795 20.718794100647,-48.10975 21.069961,-18.96296 54.079566,-18.96296 33.009609,0 53.728399,18.96296 21.06996,18.6118 21.06996,48.46091 0,29.49795 -21.06996,48.46091 -20.71879,18.96297 -53.728399,18.96297 z"
        id="path1073" />
