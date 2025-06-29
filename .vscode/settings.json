@@ -6,6 +6,7 @@
         "logcat",
         "prefs",
         "Schyler",
-        "wakelock"
+        "wakelock",
+        "xcworkspace"
     ]
 }
