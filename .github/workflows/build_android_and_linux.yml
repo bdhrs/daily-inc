@@ -1,0 +1,178 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get commit count
+        id: commit_count
+        run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+ 
+      - name: Set version
+        run: |
+          # Set version based on commit count, which seems to be the intent
+          NEW_VERSION_NAME="0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}"
+          
+          # Update version in pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION_NAME+${{ github.run_number }}/" pubspec.yaml
+          
+          # Update version in Android build.gradle.kts
+          sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
+          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION_NAME\"/" android/app/build.gradle.kts
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --build-number=${{ github.run_number }}
+        env:
+          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: build/app/outputs/apk/release/app-release.apk
+      - name: Rename APK
+        run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
+
+  build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get commit count
+        id: commit_count
+        run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+ 
+      - name: Set version
+        run: |
+          # Set version based on commit count
+          NEW_VERSION_NAME="0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}"
+          
+          # Update version in pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION_NAME+${{ github.run_number }}/" pubspec.yaml
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build linux --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: build/linux/x64/release/bundle
+
+  build-appimage:
+    runs-on: ubuntu-latest
+    needs: build-linux
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: build/linux/x64/release/bundle
+
+      - name: Download appimagetool
+        run: |
+          wget -O appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+
+      - name: Create AppDir structure
+        run: |
+          mkdir -p daily_inc_timer.AppDir/usr/bin
+          mkdir -p daily_inc_timer.AppDir/usr/lib
+          cp -r build/linux/x64/release/bundle/* daily_inc_timer.AppDir/usr/bin/
+          cp assets/icon/icon.png daily_inc_timer.AppDir/
+          echo "[Desktop Entry]
+          Name=Daily Inc Timer
+          Exec=app
+          Type=Application
+          Icon=icon
+          Terminal=false" > daily_inc_timer.AppDir/daily_inc_timer.desktop
+
+      - name: Build AppImage
+        run: ./appimagetool.AppImage daily_inc_timer.AppDir
+
+      - name: Rename AppImage
+        run: mv Daily_Inc_Timer-x86_64.AppImage daily-inc.AppImage
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: daily-inc.AppImage
+
+  create-release:
+    needs: [build-android, build-linux, build-appimage]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: artifacts/apk
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: artifacts/linux
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: appimage
+          path: artifacts/appimage
+
+      - name: Get commit count
+        id: commit_count
+        run: |
+          git fetch origin
+          git checkout main
+          echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Create test release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Test Build v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
+          tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}+${{ github.run_number }}
+          draft: true
+          prerelease: true
+          files: |
+            artifacts/apk/daily-inc.apk
+            artifacts/appimage/daily-inc.AppImage
