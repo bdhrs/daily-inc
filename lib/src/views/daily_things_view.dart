@@ -632,10 +632,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Add an item',
             icon: const Icon(Icons.add),
             onPressed: _openAddDailyItemPopup,
           ),
           IconButton(
+            tooltip: 'Settings',
             icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.push(
@@ -647,32 +649,33 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             },
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.save_outlined),
+            tooltip: 'Save and Load History',
+            icon: const Icon(Icons.history),
             onSelected: (value) {
-              if (value == 'load') {
+              if (value == 'load_history') {
                 _loadHistoryFromFile();
-              } else if (value == 'save') {
+              } else if (value == 'save_history') {
                 _saveHistoryToFile();
               }
             },
             itemBuilder: (context) => [
               const PopupMenuItem<String>(
-                value: 'load',
+                value: 'load_history',
                 child: Row(
                   children: [
                     Icon(Icons.folder_open),
                     SizedBox(width: 8),
-                    Text('Load'),
+                    Text('Load History'),
                   ],
                 ),
               ),
               const PopupMenuItem<String>(
-                value: 'save',
+                value: 'save_history',
                 child: Row(
                   children: [
                     Icon(Icons.save),
                     SizedBox(width: 8),
-                    Text('Save'),
+                    Text('Save History'),
                   ],
                 ),
               ),
@@ -706,16 +709,19 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _openAddDailyItemPopup,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorPalette.cardBackground,
-                foregroundColor: ColorPalette.primaryBlue,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
+            child: Tooltip(
+              message: 'Add an item',
+              child: ElevatedButton(
+                onPressed: _openAddDailyItemPopup,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorPalette.cardBackground,
+                  foregroundColor: ColorPalette.primaryBlue,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
                 ),
+                child: const Icon(Icons.add),
               ),
-              child: const Icon(Icons.add),
             ),
           ),
         ],
