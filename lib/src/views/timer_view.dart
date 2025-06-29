@@ -154,11 +154,11 @@ class _TimerViewState extends State<TimerView> {
                   builder: (context, constraints) {
                     // Calculate font size based on the widest possible time "88:88"
                     // This ensures consistent sizing regardless of actual digits
-                    final maxTimeText = "88:88";
+                    const maxTimeText = "88:88";
                     final textPainter = TextPainter(
-                      text: TextSpan(
+                      text: const TextSpan(
                         text: maxTimeText,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       textDirection: TextDirection.ltr,
                     );
