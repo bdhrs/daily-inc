@@ -371,6 +371,13 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       });
                     }
                   },
+                  validator: (value) {
+                    if (_nagMessageController.text.isNotEmpty &&
+                        (value == null || value.isEmpty)) {
+                      return 'Please select a nag time when a nag message is provided.';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
