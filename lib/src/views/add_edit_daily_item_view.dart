@@ -42,7 +42,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     super.initState();
     _log.info('initState called');
     final existingItem = widget.dailyThing;
-    _iconController = TextEditingController(text: existingItem?.icon);
+    _iconController = TextEditingController(text: existingItem?.icon ?? '🚀');
     _nameController = TextEditingController(text: existingItem?.name);
     _startDateController = TextEditingController(
       text: existingItem != null
@@ -200,16 +200,33 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _iconController,
-                  decoration: InputDecoration(
-                    labelText: 'Icon',
-                    hintText: 'e.g. 🚀',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _iconController,
+                        decoration: InputDecoration(
+                          labelText: 'Icon',
+                          hintText: 'e.g. 🚀',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                        ),
+                      ),
                     ),
-                    filled: true,
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.emoji_emotions),
+                      onPressed: () {
+                        // Insert a default emoji if the field is empty
+                        if (_iconController.text.isEmpty) {
+                          _iconController.text = '🚀';
+                        }
+                        // Future enhancement: Open an emoji picker dialog here
+                      },
+                      tooltip: 'Pick an emoji',
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
