@@ -27,6 +27,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   final Map<String, GlobalKey> _expansionTileKeys = {};
   final _log = Logger('DailyThingsView');
   bool _hasShownCompletionSnackbar = false;
+  bool _allTasksCompleted = false;
 
   @override
   void initState() {
@@ -586,10 +587,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       );
       setState(() {
         _hasShownCompletionSnackbar = true;
+        _allTasksCompleted = true;
       });
     } else if (!allCompleted) {
       setState(() {
         _hasShownCompletionSnackbar = false;
+        _allTasksCompleted = false;
       });
     }
   }
@@ -666,7 +669,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       appBar: AppBar(
         title: Text(
           'Daily Inc',
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: _allTasksCompleted
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).textTheme.headlineSmall?.color,
+              ),
         ),
         actions: [
           IconButton(

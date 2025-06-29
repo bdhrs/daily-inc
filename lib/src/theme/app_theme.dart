@@ -39,7 +39,7 @@ class AppTheme {
           headlineMedium: baseTheme.textTheme.headlineMedium
               ?.copyWith(color: ColorPalette.lightText),
           headlineSmall: baseTheme.textTheme.headlineSmall
-              ?.copyWith(color: ColorPalette.primaryBlue), // App title
+              ?.copyWith(color: ColorPalette.lightText), // App title
           titleLarge: baseTheme.textTheme.titleLarge
               ?.copyWith(color: ColorPalette.lightText),
           titleMedium: baseTheme.textTheme.titleMedium?.copyWith(
