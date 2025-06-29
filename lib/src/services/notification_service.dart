@@ -1,13 +1,16 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:logging/logging.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final _log = Logger('NotificationService');
 
   Future<void> init() async {
+    _log.info('Initializing NotificationService...');
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -16,7 +19,10 @@ class NotificationService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      onDidReceiveLocalNotification: (id, title, body, payload) async {},
+      onDidReceiveLocalNotification: (id, title, body, payload) async {
+        _log.info(
+            'onDidReceiveLocalNotification: id=$id, title=$title, body=$body, payload=$payload');
+      },
     );
 
     const LinuxInitializationSettings initializationSettingsLinux =
@@ -34,21 +40,26 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (details) async {
-        // Handle notification tapped logic here
+        _log.info(
+            'onDidReceiveNotificationResponse: payload=${details.payload}');
       },
     );
 
     tz.initializeTimeZones();
+    _log.info('NotificationService initialized.');
   }
 
   Future<void> requestPermissions() async {
+    _log.info('Requesting notification permissions...');
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation != null) {
+      _log.info('Requesting Android permissions.');
       await androidImplementation.requestNotificationsPermission();
     }
 
+    _log.info('Requesting iOS permissions.');
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
@@ -57,13 +68,17 @@ class NotificationService {
           badge: true,
           sound: true,
         );
+    _log.info('Notification permissions requested.');
   }
 
   Future<void> scheduleNagNotification(
       int id, String title, String body, DateTime scheduledTime) async {
+    _log.info(
+        'scheduleNagNotification called: id=$id, title=$title, scheduledTime=$scheduledTime');
     try {
       // For all platforms, first try to show an immediate notification
       // This ensures the user gets a notification even if scheduling fails
+      _log.info('Showing immediate test notification.');
       await flutterLocalNotificationsPlugin.show(
         id,
         "Test: $title",
@@ -92,10 +107,12 @@ class NotificationService {
 
       // Skip scheduling on Linux as it's not supported
       if (Platform.isLinux) {
+        _log.warning('Skipping notification scheduling on Linux.');
         return;
       }
 
       // For other platforms, use zonedSchedule
+      _log.info('Scheduling zoned notification.');
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
         title,
@@ -122,7 +139,10 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-    } catch (e) {
+      _log.info('Notification scheduled successfully.');
+    } catch (e, s) {
+      _log.severe(
+          'Error scheduling notification, falling back to immediate.', e, s);
       // Fallback to immediate notification if scheduling fails
       await flutterLocalNotificationsPlugin.show(
         id,
@@ -153,6 +173,8 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
+    _log.info('cancelNotification called for id: $id');
     await flutterLocalNotificationsPlugin.cancel(id);
+    _log.info('Notification with id: $id cancelled.');
   }
 }

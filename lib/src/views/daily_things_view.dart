@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
-import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
-import 'package:daily_inc/src/views/timer_view.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
+import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
+import 'package:daily_inc/src/views/timer_view.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -25,40 +25,50 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
+  final _log = Logger('DailyThingsView');
 
   @override
   void initState() {
     super.initState();
+    _log.info('initState called');
     _loadData();
   }
 
   @override
   void dispose() {
+    _log.info('dispose called');
     _isExpanded.clear();
     _expansionTileKeys.clear();
     super.dispose();
   }
 
   Future<void> _loadData() async {
+    _log.info('Loading data...');
     final items = await _dataManager.loadData();
     if (items.isNotEmpty) {
+      _log.info('Loaded ${items.length} items.');
       setState(() {
         _dailyThings = items;
       });
+    } else {
+      _log.warning('No items to load.');
     }
   }
 
   void _refreshDisplay() {
+    _log.info('Refreshing display.');
     _loadData();
   }
 
   void _openAddDailyItemPopup() {
+    _log.info('Opening add daily item popup.');
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddEditDailyItemView(
           dataManager: _dataManager,
           onSubmitCallback: () {
+            _log.info('Add item callback triggered.');
             _refreshDisplay();
           },
         ),
@@ -67,29 +77,39 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _editDailyThing(DailyThing item) async {
+    _log.info('Editing daily thing: ${item.name}');
     final updatedItem = await Navigator.push<DailyThing>(
       context,
       MaterialPageRoute(
         builder: (context) => AddEditDailyItemView(
           dataManager: _dataManager,
           dailyThing: item,
-          onSubmitCallback: () {},
+          onSubmitCallback: () {
+            _log.info('Edit item callback triggered.');
+          },
         ),
       ),
     );
 
     if (updatedItem != null) {
+      _log.info('Item updated: ${updatedItem.name}');
       setState(() {
         final index =
             _dailyThings.indexWhere((element) => element.id == updatedItem.id);
         if (index != -1) {
+          _log.info('Updating item in list.');
           _dailyThings[index] = updatedItem;
+        } else {
+          _log.warning('Could not find item to update in list.');
         }
       });
+    } else {
+      _log.info('Edit cancelled.');
     }
   }
 
   void _deleteDailyThing(DailyThing item) async {
+    _log.info('Attempting to delete daily thing: ${item.name}');
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -101,12 +121,14 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
+                _log.info('Delete cancelled.');
                 Navigator.of(context).pop(false);
               },
             ),
             TextButton(
               child: const Text('Delete'),
               onPressed: () {
+                _log.info('Delete confirmed.');
                 Navigator.of(context).pop(true);
               },
             ),
@@ -116,6 +138,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     );
 
     if (shouldDelete == true) {
+      _log.info('Deleting item.');
       await _notificationService.cancelNotification(item.id.hashCode);
       await _dataManager.deleteDailyThing(item);
 
@@ -128,6 +151,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       _refreshDisplay();
 
       if (mounted) {
+        _log.info('Showing delete confirmation snackbar.');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -143,6 +167,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _showFullscreenTimer(DailyThing item) {
+    _log.info('Showing fullscreen timer for: ${item.name}');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -156,6 +181,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   String _formatValue(double value, ItemType itemType) {
+    // No logging here as it's a pure formatting function called frequently.
     if (itemType == ItemType.minutes) {
       if (value.truncateToDouble() == value) {
         return '${value.toInt()}m';
@@ -172,6 +198,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   Widget _buildItemRow(DailyThing item) {
+    // No logging here as it's part of the build method and called frequently.
     final todayDate = DateTime(
       DateTime.now().year,
       DateTime.now().month,
@@ -353,6 +380,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _showRepsInputDialog(DailyThing item) {
+    _log.info('Showing reps input dialog for: ${item.name}');
     final TextEditingController repsController = TextEditingController();
     showDialog(
       context: context,
@@ -363,6 +391,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             keyboardType: TextInputType.number,
             autofocus: true, // Automatically focus the text field
             onSubmitted: (value) async {
+              _log.info('Reps submitted via keyboard: $value');
               final int? reps = int.tryParse(value);
               if (reps != null && reps > 0) {
                 final today = DateTime(
@@ -393,6 +422,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 });
                 Navigator.of(context).pop();
               } else {
+                _log.warning('Invalid reps value entered.');
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please enter a valid number of reps.'),
@@ -404,12 +434,14 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           actions: [
             TextButton(
               onPressed: () {
+                _log.info('Reps input dialog cancelled.');
                 Navigator.of(context).pop(); // Dismiss the dialog
               },
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
+                _log.info('Reps submitted via button: ${repsController.text}');
                 final int? reps = int.tryParse(repsController.text);
                 if (reps != null && reps > 0) {
                   final today = DateTime(
@@ -440,6 +472,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   });
                   Navigator.of(context).pop();
                 } else {
+                  _log.warning('Invalid reps value entered.');
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Please enter a valid number of reps.'),
@@ -456,6 +489,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   Future<void> _saveHistoryToFile() async {
+    _log.info('Attempting to save history to file.');
     try {
       final String? outputFile = await FilePicker.platform.saveFile(
         dialogTitle: 'Save History Data',
@@ -465,6 +499,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       );
 
       if (outputFile != null) {
+        _log.info('Saving history to: $outputFile');
         final file = File(outputFile);
         final jsonData = {
           'dailyThings': _dailyThings.map((thing) => thing.toJson()).toList(),
@@ -474,6 +509,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             const JsonEncoder.withIndent('  ').convert(jsonData));
 
         if (mounted) {
+          _log.info('History saved successfully.');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
@@ -485,8 +521,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             ),
           );
         }
+      } else {
+        _log.info('Save file operation cancelled.');
       }
-    } catch (e) {
+    } catch (e, s) {
+      _log.severe('Failed to save history', e, s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -499,6 +538,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   Future<void> _loadHistoryFromFile() async {
+    _log.info('Attempting to load history from file.');
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         dialogTitle: 'Load History Data',
@@ -507,6 +547,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       );
 
       if (result != null && result.files.single.path != null) {
+        _log.info('Loading history from: ${result.files.single.path}');
         final file = File(result.files.single.path!);
         final jsonString = await file.readAsString();
         final jsonData = jsonDecode(jsonString);
@@ -522,6 +563,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
           // Save the loaded data to the default storage
           await _dataManager.saveData(_dailyThings);
+          _log.info(
+              'History loaded and saved to default storage successfully.');
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -536,10 +579,14 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             );
           }
         } else {
+          _log.severe('Invalid file format for loading history.');
           throw Exception('Invalid file format');
         }
+      } else {
+        _log.info('Load file operation cancelled.');
       }
-    } catch (e) {
+    } catch (e, s) {
+      _log.severe('Failed to load history', e, s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -553,6 +600,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
   @override
   Widget build(BuildContext context) {
+    _log.info('build called');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Inc.'),

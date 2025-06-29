@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 
 class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
@@ -32,12 +33,14 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _nagMessageController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
+  final _log = Logger('AddEditDailyItemView');
 
   bool _didChangeDependencies = false;
 
   @override
   void initState() {
     super.initState();
+    _log.info('initState called');
     final existingItem = widget.dailyThing;
     _iconController = TextEditingController(text: existingItem?.icon);
     _nameController = TextEditingController(text: existingItem?.name);
@@ -55,17 +58,21 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
     if (existingItem != null) {
+      _log.info('Editing existing item: ${existingItem.name}');
       _selectedItemType = existingItem.itemType;
       if (existingItem.nagTime != null) {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
       }
       _nagMessageController.text = existingItem.nagMessage ?? '';
+    } else {
+      _log.info('Creating new item');
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _log.info('didChangeDependencies called');
     if (!_didChangeDependencies) {
       if (_selectedNagTime != null) {
         _nagTimeController.text = _selectedNagTime!.format(context);
@@ -76,6 +83,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   @override
   void dispose() {
+    _log.info('dispose called');
     _iconController.dispose();
     _nameController.dispose();
     _startDateController.dispose();
@@ -88,7 +96,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   }
 
   void _submitDailyItem() async {
+    _log.info('Attempting to submit daily item');
     if (_formKey.currentState!.validate()) {
+      _log.info('Form is valid');
       try {
         final startDate = DateFormat(
           'yyyy-MM-dd',
@@ -120,26 +130,34 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               ? null
               : _nagMessageController.text,
         );
+        _log.info('Created new DailyThing: ${newItem.name}');
 
         if (widget.dailyThing == null) {
+          _log.info('Adding new item');
           await widget.dataManager.addDailyThing(newItem);
         } else {
+          _log.info('Updating existing item');
           await widget.dataManager.updateDailyThing(newItem);
         }
 
         if (!mounted) return;
+        _log.info('Item submitted successfully, calling callback and popping');
         widget.onSubmitCallback();
         Navigator.of(context).pop(newItem);
-      } catch (e) {
+      } catch (e, s) {
+        _log.severe('Error submitting daily item', e, s);
         if (!mounted) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
+    } else {
+      _log.warning('Form is invalid');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _log.info('build called');
     final theme = Theme.of(context);
     final hintDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 

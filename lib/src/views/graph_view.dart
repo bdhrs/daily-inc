@@ -1,8 +1,8 @@
 import 'dart:math';
-
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
@@ -17,14 +17,17 @@ class _GraphViewState extends State<GraphView> {
   double _maxY = 0;
   double _minX = 0;
   double _maxX = 0;
+  final _log = Logger('GraphView');
 
   @override
   void initState() {
     super.initState();
+    _log.info('initState called for item: ${widget.dailyThing.name}');
     _calculateRanges();
   }
 
   void _calculateRanges() {
+    _log.info('Calculating graph ranges...');
     final targetSpots = _getTargetSpots();
     final actualBars = _getActualBars();
 
@@ -61,10 +64,12 @@ class _GraphViewState extends State<GraphView> {
     final xPadding = (_maxX - _minX) * 0.05;
     _minX -= xPadding;
     _maxX += xPadding;
+    _log.info('Ranges calculated: X($_minX, $_maxX), Y($_minY, $_maxY)');
   }
 
   @override
   Widget build(BuildContext context) {
+    _log.info('build called');
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.dailyThing.name),
