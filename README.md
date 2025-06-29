@@ -2,10 +2,9 @@
 
 A simple Flutter app for doing things DAILY and with INCREMENTAL improvement over time. 
 
-## Building AppImage
+## Build AppImage
 
-1. First build the Linux version
-2. Then create the AppImage
+Build the Linux version and create an AppImage from it.
 
 ```bash
 flutter build linux
@@ -14,3 +13,8 @@ flutter build linux
 
 The resulting AppImage will be created in the current directory.
 
+## Debug Android
+
+```bash
+adb logcat | grep -i flutter
+```

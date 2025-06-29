@@ -139,7 +139,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
     if (shouldDelete == true) {
       _log.info('Deleting item.');
-      await _notificationService.cancelNotification(item.id.hashCode);
       await _dataManager.deleteDailyThing(item);
 
       // Update the state directly to immediately remove the item from the display
