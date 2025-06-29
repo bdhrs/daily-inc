@@ -21,34 +21,41 @@ flutter run -d linux
 adb logcat | grep -i flutter
 ```
 
-## Populate Icons
+## Update Icons
 
-```bash
+1. Edit `assets/icon/icon.svg`
+2. Save to `assets/icon/icon.png`
+3. Run flutter_launcher_icons
+```
 flutter pub run flutter_launcher_icons
 ```
 
 ## Build a Linux AppImage
 
-Build the Linux version and create an AppImage from it.
+Build the Linux version and create an AppImage from it. The resulting AppImage will be found in the root directory.
 
 ```bash
 flutter build linux
 ./android/appimagetool.AppImage daily_inc_timer.AppDir
 ```
 
-The resulting AppImage will be created in the current directory.
+
+## Build for Android
+```bash
+flutter build apk --release
+```
 
 
 ## Build for iOS
 
-Building the iOS version of the app requires a macOS environment with Xcode installed. Follow these steps to build locally:
+Building the iOS version of the app requires a macOS environment with Xcode installed.
 
 1. **Ensure Prerequisites**: Make sure you have macOS with Xcode installed. You will also need to be enrolled in the Apple Developer Program for code signing certificates and provisioning profiles if you intend to deploy to a physical device or the App Store.
 
 2. **Build IPA**: Run the following command to build the iOS app in release mode:
-   ```bash
-   flutter build ios --release
-   ```
+```bash
+flutter build ios --release
+```
 
 3. **Open in Xcode**: Navigate to the iOS project folder and open it in Xcode for further configuration or to archive the app:
    ```bash
@@ -58,3 +65,4 @@ Building the iOS version of the app requires a macOS environment with Xcode inst
 4. **Archive and Export**: In Xcode, select "Product" > "Archive" to create an IPA file. Follow the prompts to export the IPA for distribution or testing purposes.
 
 Note: Ensure that your code signing and provisioning profiles are correctly set up in Xcode to avoid build errors when targeting physical devices or App Store distribution.
+
