@@ -557,6 +557,10 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       appBar: AppBar(
         title: const Text('Daily Inc.'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _openAddDailyItemPopup,
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.save_outlined),
             onSelected: (value) {
