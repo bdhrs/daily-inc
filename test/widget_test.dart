@@ -19,6 +19,9 @@ void main() {
     expect(find.text('Daily Inc.'), findsOneWidget);
 
     // Verify that the "Add" button is present.
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byIcon(Icons.add),
+    ), findsOneWidget);
   });
 }
