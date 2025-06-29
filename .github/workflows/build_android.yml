@@ -1,4 +1,4 @@
-name: Build Android
+name: Build Android and Release
 
 on:
   workflow_dispatch:
@@ -54,23 +54,6 @@ jobs:
       - name: Rename APK
         run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
 
-  create-release:
-    needs: build-android
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: apk
-          path: artifacts/apk
-
-      - name: Get commit count
-        id: commit_count
-        run: |
-          git fetch origin
-          git checkout main
-          echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
       - name: Create test release
         uses: softprops/action-gh-release@v2
