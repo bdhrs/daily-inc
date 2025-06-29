@@ -166,21 +166,25 @@ class _TimerViewState extends State<TimerView> {
                     textPainter.layout();
 
                     // Calculate font size to fit 60% of available width for the widest case
-                    final fontSize = (constraints.maxWidth * 0.6) /
+                    final fontSize = (constraints.maxWidth * 0.9) /
                         textPainter.width *
                         12; // 12 is base font size
 
                     return SizedBox(
                       width: constraints.maxWidth,
-                      child: Text(
-                        _formatTime(_remainingSeconds),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: fontSize,
-                          color: ColorPalette
-                              .lightText, // Apply white to timer text
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _formatTime(_remainingSeconds),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSize,
+                            color: ColorPalette
+                                .lightText, // Apply white to timer text
+                          ),
+                          textAlign: TextAlign.center,
+                          softWrap: false,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     );
                   },
