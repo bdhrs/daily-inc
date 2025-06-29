@@ -1,59 +1,9 @@
-name: Build
+name: Build Linux
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ~/.gradle/caches
-          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Get commit count
-        id: commit_count
-        run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
- 
-      - name: Set version
-        run: |
-          # Set version based on commit count, which seems to be the intent
-          NEW_VERSION_NAME="0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}"
-          
-          # Update version in pubspec.yaml
-          sed -i "s/^version: .*/version: $NEW_VERSION_NAME+${{ github.run_number }}/" pubspec.yaml
-          
-          # Update version in Android build.gradle.kts
-          sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
-          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION_NAME\"/" android/app/build.gradle.kts
-
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-      - run: flutter build apk --build-number=${{ github.run_number }}
-        env:
-          JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: build/app/outputs/apk/release/app-release.apk
-      - name: Rename APK
-        run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
-
   build-linux:
     runs-on: ubuntu-latest
     permissions:
@@ -89,7 +39,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
       - run: flutter build linux --release
 
       - name: Upload artifact
@@ -141,16 +91,11 @@ jobs:
           path: daily-inc.AppImage
 
   create-release:
-    needs: [build-android, build-linux, build-appimage]
+    needs: [build-linux, build-appimage]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: apk
-          path: artifacts/apk
-
       - uses: actions/download-artifact@v4
         with:
           name: linux-build
@@ -171,10 +116,9 @@ jobs:
       - name: Create test release
         uses: softprops/action-gh-release@v2
         with:
-          name: Test Build v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
-          tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}+${{ github.run_number }}
+          name: Test Build Linux v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
+          tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}-linux+${{ github.run_number }}
           draft: true
           prerelease: true
           files: |
-            artifacts/apk/daily-inc.apk
             artifacts/appimage/daily-inc.AppImage
