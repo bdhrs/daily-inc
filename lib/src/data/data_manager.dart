@@ -113,18 +113,6 @@ class DataManager {
     items.add(newItem);
     await saveData(items);
     _log.info('Item added and data saved.');
-    if (newItem.nagTime != null && newItem.nagMessage != null) {
-      _log.info('Scheduling nag notification for ${newItem.name}');
-      final notificationId = _getNotificationId(newItem.id);
-      _notificationService.showTestNotification(
-          notificationId, 'Test Notification');
-      _notificationService.scheduleNagNotification(
-        notificationId, // Use a unique ID for the notification
-        'Daily Inc Reminder',
-        newItem.nagMessage!,
-        newItem.nagTime!,
-      );
-    }
   }
 
   Future<void> deleteDailyThing(DailyThing itemToDelete) async {
@@ -155,19 +143,6 @@ class DataManager {
         _notificationService
             .cancelNotification(_getNotificationId(updatedItem.id));
         _log.info('Cancelled existing notification for ${updatedItem.name}');
-
-        if (updatedItem.nagTime != null && updatedItem.nagMessage != null) {
-          _log.info('Scheduling new nag notification for ${updatedItem.name}');
-          final notificationId = _getNotificationId(updatedItem.id);
-          _notificationService.showTestNotification(
-              notificationId, 'Test Notification');
-          _notificationService.scheduleNagNotification(
-            notificationId,
-            'Daily Inc Reminder',
-            updatedItem.nagMessage!,
-            updatedItem.nagTime!,
-          );
-        }
       }
     } else {
       _log.warning('Item with id ${updatedItem.id} not found for update.');
