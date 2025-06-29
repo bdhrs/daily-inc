@@ -365,7 +365,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.show_chart),
+                      icon: const Icon(Icons.auto_graph),
                       onPressed: () {
                         Navigator.push(
                           context,
