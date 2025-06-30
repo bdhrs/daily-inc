@@ -737,6 +737,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           Expanded(
             child: Scrollbar(
               thumbVisibility: true, // Always show the scrollbar
+              thickness: 12.0, // Increase thumb width for better grabability
               child: ReorderableListView(
                 primary: true, // Use the primary scroll controller
                 onReorder: (oldIndex, newIndex) async {
