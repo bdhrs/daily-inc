@@ -121,14 +121,16 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               'Are you sure you want to delete "${item.name}"? This cannot be undone.'),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: const Text('Cancel',
+                  style: TextStyle(color: ColorPalette.errorRed)),
               onPressed: () {
                 _log.info('Delete cancelled.');
                 Navigator.of(context).pop(false);
               },
             ),
             TextButton(
-              child: const Text('Delete'),
+              child: const Text('Delete',
+                  style: TextStyle(color: ColorPalette.errorRed)),
               onPressed: () {
                 _log.info('Delete confirmed.');
                 Navigator.of(context).pop(true);
