@@ -142,6 +142,28 @@ class AppTheme {
         textColor: ColorPalette.lightText,
         collapsedTextColor: ColorPalette.lightText,
       ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: ColorPalette.cardBackground,
+        hourMinuteTextStyle:
+            const TextStyle(color: ColorPalette.lightText, fontSize: 36),
+        hourMinuteColor: ColorPalette.inputBackground,
+        hourMinuteTextColor: ColorPalette.lightText,
+        dialHandColor: ColorPalette.primaryBlue,
+        dialBackgroundColor: ColorPalette.inputBackground,
+        dialTextColor: ColorPalette.lightText,
+        entryModeIconColor: ColorPalette.primaryBlue,
+        dayPeriodTextStyle: const TextStyle(color: ColorPalette.lightText),
+        dayPeriodColor: ColorPalette.inputBackground,
+        dayPeriodTextColor: ColorPalette.lightText,
+        dayPeriodBorderSide: const BorderSide(color: ColorPalette.primaryBlue),
+        helpTextStyle: const TextStyle(color: ColorPalette.lightText),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: ColorPalette.lightText,
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: ColorPalette.primaryBlue,
+        ),
+      ),
     );
   }
 }
