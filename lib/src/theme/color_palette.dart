@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ColorPalette {
-  static const Color primaryBlue = Color(0xFF37A5FF);
+  static const Color primaryBlue = Color.fromARGB(255, 29, 153, 255);
   static const Color darkBackground =
       Color(0xFF121212); // A very dark gray for main background
   static const Color cardBackground =
@@ -13,5 +13,5 @@ class ColorPalette {
       Colors.black; // New: Black text for light backgrounds
   static const Color secondaryText =
       Color(0xFFAAAAAA); // A lighter gray for secondary text
-  static const Color errorRed = Colors.red; // Darker red for errors
+  static const Color errorRed = Color.fromARGB(255, 196, 118, 0); // orange[200]
 }
