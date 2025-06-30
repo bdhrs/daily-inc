@@ -148,4 +148,43 @@ class DataManager {
       _log.warning('Item with id ${updatedItem.id} not found for update.');
     }
   }
+
+  Future<void> resetData() async {
+    _log.info('resetData called to clear all data.');
+    await saveData([]);
+    _log.info('All data cleared successfully.');
+  }
+
+  Future<bool> saveHistoryToFile() async {
+    _log.info('saveHistoryToFile called to save history data to a file.');
+    try {
+      final items = await loadData();
+      final jsonData = {
+        'dailyThings': items.map((thing) => thing.toJson()).toList(),
+        'savedAt': DateTime.now().toIso8601String(),
+      };
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+      final bytes = utf8.encode(jsonString);
+
+      _log.info('Opening file picker to save file.');
+      final String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save History Data',
+        fileName: 'daily_inc_history.json',
+        allowedExtensions: ['json'],
+        type: FileType.custom,
+        bytes: bytes,
+      );
+
+      if (outputFile != null) {
+        _log.info('History saved successfully to $outputFile.');
+        return true;
+      } else {
+        _log.info('Save file operation cancelled.');
+        return false;
+      }
+    } catch (e, s) {
+      _log.severe('Failed to save history', e, s);
+      return false;
+    }
+  }
 }
