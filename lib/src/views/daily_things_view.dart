@@ -736,6 +736,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             child: Scrollbar(
               thumbVisibility: true, // Always show the scrollbar
               child: ReorderableListView(
+                primary: true, // Use the primary scroll controller
                 onReorder: (oldIndex, newIndex) async {
                   setState(() {
                     if (newIndex > oldIndex) {
