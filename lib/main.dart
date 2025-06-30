@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:io' show Platform, exit;
 import 'package:daily_inc/src/views/daily_things_view.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/theme/app_theme.dart';
@@ -58,10 +60,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Daily Inc',
-      theme: AppTheme.darkTheme,
-      home: const DailyThingsView(),
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      onKeyEvent: (KeyEvent event) {
+        if (HardwareKeyboard.instance.isControlPressed &&
+            event.logicalKey == LogicalKeyboardKey.keyQ) {
+          if (event is KeyDownEvent) {
+            // Handle quit action based on platform
+            if (Platform.isAndroid || Platform.isIOS) {
+              SystemNavigator.pop();
+            } else if (Platform.isWindows ||
+                Platform.isLinux ||
+                Platform.isMacOS) {
+              exit(0);
+            }
+          }
+        }
+      },
+      child: MaterialApp(
+        title: 'Daily Inc',
+        theme: AppTheme.darkTheme,
+        home: const DailyThingsView(),
+      ),
     );
   }
 }
