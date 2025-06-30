@@ -211,14 +211,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.emoji_emotions),
-                      onPressed: () {
-                        // Insert a default emoji if the field is empty
-                        // Future enhancement: Open an emoji picker dialog here
-                      },
-                      tooltip: 'Pick an emoji',
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),

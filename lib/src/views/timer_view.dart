@@ -104,6 +104,7 @@ class _TimerViewState extends State<TimerView> {
 
     final updatedItem = DailyThing(
       id: widget.item.id,
+      icon: widget.item.icon,
       name: widget.item.name,
       itemType: widget.item.itemType,
       startDate: widget.item.startDate,
@@ -111,6 +112,8 @@ class _TimerViewState extends State<TimerView> {
       duration: widget.item.duration,
       endValue: widget.item.endValue,
       history: updatedHistory,
+      nagTime: widget.item.nagTime,
+      nagMessage: widget.item.nagMessage,
     );
     _log.info('Created updated DailyThing.');
 
