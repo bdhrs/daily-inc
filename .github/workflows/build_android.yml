@@ -2,6 +2,15 @@ name: Build Android and Release
 
 on:
   workflow_dispatch:
+    inputs:
+      is_release:
+        description: 'Is this a release build? (will increment minor version)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   build-android:
@@ -24,21 +33,43 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Get commit count
-        id: commit_count
-        run: echo "COMMIT_COUNT=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
- 
+      - name: Read current version
+        id: current_version
+        run: echo "CURRENT_VERSION=$(cat version.txt)" >> $GITHUB_OUTPUT
+
       - name: Set version
+        id: set_version
         run: |
-          # Set version based on commit count, which seems to be the intent
-          NEW_VERSION_NAME="0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}"
+          # Read current version
+          CURRENT_VERSION="${{ steps.current_version.outputs.CURRENT_VERSION }}"
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Split into major and minor
+          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f2)
+          
+          # If this is a release build, increment the minor version
+          if [[ "${{ github.event.inputs.is_release }}" == "true" ]]; then
+            MINOR_VERSION=$((MINOR_VERSION + 1))
+            NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION"
+            echo "Incrementing minor version for release: $NEW_VERSION"
+            
+            # Update version.txt for future builds
+            echo "$NEW_VERSION" > version.txt
+          else
+            NEW_VERSION="$CURRENT_VERSION"
+            echo "Using current version for build: $NEW_VERSION"
+          fi
+          
+          # Set output for later steps
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           
           # Update version in pubspec.yaml
-          sed -i "s/^version: .*/version: $NEW_VERSION_NAME+${{ github.run_number }}/" pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION+${{ github.run_number }}/" pubspec.yaml
           
           # Update version in Android build.gradle.kts
           sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
-          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION_NAME\"/" android/app/build.gradle.kts
+          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION\"/" android/app/build.gradle.kts
 
       - run: flutter pub get
       - run: flutter analyze
@@ -56,11 +87,11 @@ jobs:
           name: apk
           path: build/app/outputs/apk/release/daily-inc.apk
 
-      - name: Create test release
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          name: Test Build v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}
-          tag_name: v0.0.${{ steps.commit_count.outputs.COMMIT_COUNT }}+${{ github.run_number }}
-          draft: true
-          prerelease: true
+          name: ${{ github.event.inputs.is_release == 'true' && 'Release' || 'Test Build' }} v${{ steps.set_version.outputs.VERSION }}
+          tag_name: v${{ steps.set_version.outputs.VERSION }}+${{ github.run_number }}
+          draft: ${{ github.event.inputs.is_release != 'true' }}
+          prerelease: ${{ github.event.inputs.is_release != 'true' }}
           files: build/app/outputs/apk/release/daily-inc.apk

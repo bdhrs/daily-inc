@@ -6,7 +6,11 @@
         "grabability",
         "logcat",
         "prefs",
+        "pubspec",
         "Schyler",
+        "softprops",
+        "subosito",
+        "temurin",
         "wakelock",
         "xcworkspace"
     ]
