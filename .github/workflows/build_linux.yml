@@ -73,7 +73,7 @@ jobs:
           cp -r build/linux/x64/release/bundle/* daily_inc.AppDir/usr/bin/
           cp assets/icon/icon.png daily_inc.AppDir/
           echo "[Desktop Entry]
-          Name=Daily Inc Timer
+          Name=Daily Inc
           Exec=app
           Type=Application
           Icon=icon

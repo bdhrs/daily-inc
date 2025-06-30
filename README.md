@@ -37,6 +37,7 @@ Build the Linux version and create an AppImage from it. The resulting AppImage w
 
 ```bash
 flutter build linux
+cp -r build/linux/x64/release/bundle/* daily_inc.AppDir/
 ./android/appimagetool.AppImage daily_inc.AppDir
 ```
 
@@ -66,4 +67,3 @@ flutter build ios --release
 4. **Archive and Export**: In Xcode, select "Product" > "Archive" to create an IPA file. Follow the prompts to export the IPA for distribution or testing purposes.
 
 Note: Ensure that your code signing and provisioning profiles are correctly set up in Xcode to avoid build errors when targeting physical devices or App Store distribution.
-
