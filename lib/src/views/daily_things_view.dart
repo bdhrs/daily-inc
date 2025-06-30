@@ -223,8 +223,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     );
 
     return Card(
+      margin: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(4.0),
         child: ExpansionTile(
           key: _expansionTileKeys.putIfAbsent(item.id, () => GlobalKey()),
           initiallyExpanded: _isExpanded[item.id] ?? false,
@@ -313,11 +314,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   }
                 },
                 child: SizedBox(
-                  width: 70.0, // Fixed width for alignment
+                  width: 80.0, // Fixed width for alignment
+                  height: 34.0,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: (item.itemType == ItemType.check &&
@@ -333,6 +334,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                         ? Icon(
                             item.todayValue == 1.0 ? Icons.check : Icons.close,
                             color: Theme.of(context).colorScheme.onPrimary,
+                            size: 16.0,
                           )
                         : Text(
                             _formatValue(item.todayValue, item.itemType),
