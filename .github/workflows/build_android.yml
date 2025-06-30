@@ -44,14 +44,17 @@ jobs:
           CURRENT_VERSION="${{ steps.current_version.outputs.CURRENT_VERSION }}"
           echo "Current version: $CURRENT_VERSION"
           
-          # Split into major and minor
+          # Split into major, minor, and patch
           MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
           MINOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d. -f3)
           
           # If this is a release build, increment the minor version
           if [[ "${{ github.event.inputs.is_release }}" == "true" ]]; then
             MINOR_VERSION=$((MINOR_VERSION + 1))
-            NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION"
+            # Reset patch version to 0 when incrementing minor version
+            PATCH_VERSION=0
+            NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION"
             echo "Incrementing minor version for release: $NEW_VERSION"
             
             # Update version.txt for future builds
