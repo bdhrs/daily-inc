@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/models/history_entry.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
-import 'package:daily_inc/src/views/graph_view.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
+import 'package:daily_inc/src/views/daily_thing_item.dart';
+import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -185,336 +184,33 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     });
   }
 
-  String _formatValue(double value, ItemType itemType) {
-    // No logging here as it's a pure formatting function called frequently.
-    if (itemType == ItemType.minutes) {
-      if (value.truncateToDouble() == value) {
-        return '${value.toInt()}m';
-      } else {
-        final minutes = value.truncate();
-        final seconds = ((value - minutes) * 60).round();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}';
-      }
-    } else if (itemType == ItemType.reps) {
-      return '${value.round()}x';
-    } else {
-      return value >= 1 ? '✅' : '❌';
-    }
-  }
-
   Widget _buildItemRow(DailyThing item) {
-    // No logging here as it's part of the build method and called frequently.
-    final todayDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
-    final isCompletedToday = item.history.any((entry) =>
-        entry.date.year == todayDate.year &&
-        entry.date.month == todayDate.month &&
-        entry.date.day == todayDate.day &&
-        entry.doneToday == true);
-    final hasTodayEntry = item.history.any(
-      (entry) =>
-          entry.date.year == todayDate.year &&
-          entry.date.month == todayDate.month &&
-          entry.date.day == todayDate.day &&
-          entry.doneToday,
-    );
-
-    return Card(
-      margin: const EdgeInsets.fromLTRB(10, 2, 20, 2),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
-        child: ExpansionTile(
-          key: _expansionTileKeys.putIfAbsent(item.id, () => GlobalKey()),
-          initiallyExpanded: _isExpanded[item.id] ?? false,
-          onExpansionChanged: (bool expanded) {
-            setState(() {
-              _isExpanded[item.id] = expanded;
-            });
-          },
-          trailing:
-              const SizedBox.shrink(), // Explicitly remove the trailing icon
-          tilePadding: EdgeInsets.zero,
-          childrenPadding: EdgeInsets.zero,
-          collapsedShape:
-              const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isCompletedToday ? Icons.check : Icons.close,
-                    color: isCompletedToday
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(width: 8), // Add some spacing
-                  if (item.icon != null)
-                    Text(
-                      item.icon!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  const SizedBox(width: 8), // Add some spacing
-                  Text(
-                    item.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () async {
-                  if (item.itemType == ItemType.minutes) {
-                    if (isCompletedToday) {
-                      setState(() {
-                        _isExpanded[item.id] = !(_isExpanded[item.id] ?? false);
-                      });
-                    } else {
-                      _showFullscreenTimer(item);
-                    }
-                  } else if (item.itemType == ItemType.check) {
-                    final today = DateTime(
-                      DateTime.now().year,
-                      DateTime.now().month,
-                      DateTime.now().day,
-                    );
-                    final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
-                    final newEntry = HistoryEntry(
-                      date: today,
-                      targetValue: newValue,
-                      doneToday: newValue == 1.0,
-                    );
-                    final existingEntryIndex = item.history.indexWhere(
-                      (entry) =>
-                          entry.date.year == today.year &&
-                          entry.date.month == today.month &&
-                          entry.date.day == today.day,
-                    );
-
-                    setState(() {
-                      if (existingEntryIndex != -1) {
-                        item.history[existingEntryIndex] = newEntry;
-                      } else {
-                        item.history.add(newEntry);
-                      }
-                      _dataManager.updateDailyThing(item);
-                    });
-                    _checkAndShowCompletionSnackbar();
-                  } else if (item.itemType == ItemType.reps) {
-                    _showRepsInputDialog(item);
-                  }
-                },
-                child: SizedBox(
-                  width: 80.0, // Fixed width for alignment
-                  height: 34.0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (item.itemType == ItemType.check &&
-                                  item.todayValue == 1) ||
-                              (item.itemType != ItemType.check && hasTodayEntry)
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.error,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    alignment: Alignment
-                        .center, // Center the text vertically and horizontally
-                    child: item.itemType == ItemType.check
-                        ? Icon(
-                            item.todayValue == 1.0 ? Icons.check : Icons.close,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 16.0,
-                          )
-                        : Text(
-                            _formatValue(item.todayValue, item.itemType),
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 14),
-                          ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // For CHECK items, don't show start/end values since they're irrelevant
-                item.itemType == ItemType.check
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(
-                            left:
-                                32.0), // Add left padding to align with text above
-                        child: Row(
-                          children: [
-                            Text(_formatValue(item.startValue, item.itemType)),
-                            const Icon(Icons.trending_flat),
-                            Text(_formatValue(item.endValue, item.itemType)),
-                          ],
-                        ),
-                      ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.auto_graph),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GraphView(dailyThing: item),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _editDailyThing(item),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteDailyThing(item),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return DailyThingItem(
+      item: item,
+      dataManager: _dataManager,
+      onEdit: _editDailyThing,
+      onDelete: _deleteDailyThing,
+      showFullscreenTimer: _showFullscreenTimer,
+      showRepsInputDialog: _showRepsInputDialog,
+      checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,
+      isExpanded: _isExpanded[item.id] ?? false,
+      onExpansionChanged: (expanded) {
+        setState(() {
+          _isExpanded[item.id] = expanded;
+        });
+      },
     );
   }
 
   void _showRepsInputDialog(DailyThing item) {
     _log.info('Showing reps input dialog for: ${item.name}');
-    final TextEditingController repsController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('how many ${item.name.toLowerCase()}?'),
-              TextField(
-                controller: repsController,
-                keyboardType: TextInputType.number,
-                autofocus: true, // Automatically focus the text field
-                onSubmitted: (value) async {
-                  _log.info('Reps submitted via keyboard: $value');
-                  final int? reps = int.tryParse(value);
-                  if (reps != null && reps > 0) {
-                    final today = DateTime(
-                      DateTime.now().year,
-                      DateTime.now().month,
-                      DateTime.now().day,
-                    );
-                    final actualValue = reps.toDouble();
-                    final newEntry = HistoryEntry(
-                      date: today,
-                      targetValue: item.todayValue, // Save target value
-                      doneToday: item.isDone(actualValue),
-                      actualValue: actualValue, // Save actual for reference
-                    );
-
-                    final existingEntryIndex = item.history.indexWhere(
-                      (entry) =>
-                          entry.date.year == today.year &&
-                          entry.date.month == today.month &&
-                          entry.date.day == today.day,
-                    );
-
-                    setState(() {
-                      if (existingEntryIndex != -1) {
-                        item.history[existingEntryIndex] = newEntry;
-                      } else {
-                        item.history.add(newEntry);
-                      }
-                      _dataManager.updateDailyThing(item);
-                    });
-                    Navigator.of(context).pop();
-                    _checkAndShowCompletionSnackbar();
-                  } else {
-                    _log.warning('Invalid reps value entered.');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter a valid number of reps.'),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _log.info('Reps input dialog cancelled.');
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                _log.info('Reps submitted via button: ${repsController.text}');
-                final int? reps = int.tryParse(repsController.text);
-                if (reps != null && reps > 0) {
-                  final today = DateTime(
-                    DateTime.now().year,
-                    DateTime.now().month,
-                    DateTime.now().day,
-                  );
-                  final actualValue = reps.toDouble();
-                  final newEntry = HistoryEntry(
-                    date: today,
-                    targetValue: item.todayValue, // Save target value
-                    doneToday: item.isDone(actualValue),
-                    actualValue: actualValue, // Save actual for reference
-                  );
-
-                  final existingEntryIndex = item.history.indexWhere(
-                    (entry) =>
-                        entry.date.year == today.year &&
-                        entry.date.month == today.month &&
-                        entry.date.day == today.day,
-                  );
-
-                  setState(() {
-                    if (existingEntryIndex != -1) {
-                      item.history[existingEntryIndex] = newEntry;
-                    } else {
-                      item.history.add(newEntry);
-                    }
-                    _dataManager.updateDailyThing(item);
-                  });
-                  Navigator.of(context).pop();
-                  _checkAndShowCompletionSnackbar();
-                } else {
-                  _log.warning('Invalid reps value entered.');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid number of reps.'),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Submit'),
-            ),
-          ],
-        );
-      },
+      builder: (context) => RepsInputDialog(
+        item: item,
+        dataManager: _dataManager,
+        onSuccess: _checkAndShowCompletionSnackbar,
+      ),
     );
   }
 

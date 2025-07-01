@@ -1,0 +1,226 @@
+import 'package:flutter/material.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/views/graph_view.dart';
+
+class DailyThingItem extends StatelessWidget {
+  final DailyThing item;
+  final DataManager dataManager;
+  final Function(DailyThing) onEdit;
+  final Function(DailyThing) onDelete;
+  final Function(DailyThing) showFullscreenTimer;
+  final Function(DailyThing) showRepsInputDialog;
+  final Function checkAndShowCompletionSnackbar;
+  final bool isExpanded;
+  final Function(bool) onExpansionChanged;
+
+  const DailyThingItem({
+    super.key,
+    required this.item,
+    required this.dataManager,
+    required this.onEdit,
+    required this.onDelete,
+    required this.showFullscreenTimer,
+    required this.showRepsInputDialog,
+    required this.checkAndShowCompletionSnackbar,
+    required this.isExpanded,
+    required this.onExpansionChanged,
+  });
+
+  String _formatValue(double value, ItemType itemType) {
+    if (itemType == ItemType.minutes) {
+      if (value.truncateToDouble() == value) {
+        return '${value.toInt()}m';
+      } else {
+        final minutes = value.truncate();
+        final seconds = ((value - minutes) * 60).round();
+        return '$minutes:${seconds.toString().padLeft(2, '0')}';
+      }
+    } else if (itemType == ItemType.reps) {
+      return '${value.round()}x';
+    } else {
+      return value >= 1 ? '✅' : '❌';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final todayDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    final isCompletedToday = item.history.any((entry) =>
+        entry.date.year == todayDate.year &&
+        entry.date.month == todayDate.month &&
+        entry.date.day == todayDate.day &&
+        entry.doneToday == true);
+    final hasTodayEntry = item.history.any(
+      (entry) =>
+          entry.date.year == todayDate.year &&
+          entry.date.month == todayDate.month &&
+          entry.date.day == todayDate.day &&
+          entry.doneToday,
+    );
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(10, 2, 20, 2),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
+        child: ExpansionTile(
+          initiallyExpanded: isExpanded,
+          onExpansionChanged: onExpansionChanged,
+          trailing: const SizedBox.shrink(),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          collapsedShape:
+              const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isCompletedToday ? Icons.check : Icons.close,
+                    color: isCompletedToday
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  if (item.icon != null)
+                    Text(
+                      item.icon!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (item.itemType == ItemType.minutes) {
+                    if (isCompletedToday) {
+                      onExpansionChanged(!isExpanded);
+                    } else {
+                      showFullscreenTimer(item);
+                    }
+                  } else if (item.itemType == ItemType.check) {
+                    final today = DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    );
+                    final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
+                    final newEntry = HistoryEntry(
+                      date: today,
+                      targetValue: newValue,
+                      doneToday: newValue == 1.0,
+                    );
+                    final existingEntryIndex = item.history.indexWhere(
+                      (entry) =>
+                          entry.date.year == today.year &&
+                          entry.date.month == today.month &&
+                          entry.date.day == today.day,
+                    );
+
+                    if (existingEntryIndex != -1) {
+                      item.history[existingEntryIndex] = newEntry;
+                    } else {
+                      item.history.add(newEntry);
+                    }
+                    await dataManager.updateDailyThing(item);
+                    checkAndShowCompletionSnackbar();
+                  } else if (item.itemType == ItemType.reps) {
+                    showRepsInputDialog(item);
+                  }
+                },
+                child: SizedBox(
+                  width: 80.0,
+                  height: 34.0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: (item.itemType == ItemType.check &&
+                                  item.todayValue == 1) ||
+                              (item.itemType != ItemType.check && hasTodayEntry)
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.error,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    alignment: Alignment.center,
+                    child: item.itemType == ItemType.check
+                        ? Icon(
+                            item.todayValue == 1.0 ? Icons.check : Icons.close,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 16.0,
+                          )
+                        : Text(
+                            _formatValue(item.todayValue, item.itemType),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 14),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                item.itemType == ItemType.check
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(left: 32.0),
+                        child: Row(
+                          children: [
+                            Text(_formatValue(item.startValue, item.itemType)),
+                            const Icon(Icons.trending_flat),
+                            Text(_formatValue(item.endValue, item.itemType)),
+                          ],
+                        ),
+                      ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.auto_graph),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GraphView(dailyThing: item),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => onEdit(item),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => onDelete(item),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
