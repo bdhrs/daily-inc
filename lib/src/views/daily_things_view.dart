@@ -223,9 +223,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     );
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+      margin: const EdgeInsets.fromLTRB(10, 2, 20, 2),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
         child: ExpansionTile(
           key: _expansionTileKeys.putIfAbsent(item.id, () => GlobalKey()),
           initiallyExpanded: _isExpanded[item.id] ?? false,
