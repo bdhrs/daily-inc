@@ -168,7 +168,8 @@ class _GraphViewState extends State<GraphView> {
     final List<LineChartBarData> lines = [];
     final historyByDay = {
       for (var entry in widget.dailyThing.history)
-        entry.date.difference(widget.dailyThing.startDate).inDays: entry.value
+        entry.date.difference(widget.dailyThing.startDate).inDays:
+            entry.targetValue
     };
 
     for (int i = 0; i <= widget.dailyThing.duration; i++) {

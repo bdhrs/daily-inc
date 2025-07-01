@@ -1,6 +1,9 @@
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+
+final _logger = Logger('DailyThing');
 
 enum Status { green, red }
 
@@ -48,7 +51,12 @@ class DailyThing {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
-        return entry.value;
+        try {
+          return entry.targetValue;
+        } catch (e) {
+          _logger.severe('Error getting targetValue from entry: $e');
+          return 0.0;
+        }
       }
     }
 
@@ -70,7 +78,12 @@ class DailyThing {
 
     if (lastEntry == null) {
       // No history before today
-      return startValue;
+      try {
+        return startValue;
+      } catch (e) {
+        _logger.warning('Error with startValue: $e');
+        return 0.0;
+      }
     }
 
     final yesterday = todayDate.subtract(const Duration(days: 1));
@@ -79,7 +92,7 @@ class DailyThing {
 
     if (lastEntryDate == yesterday) {
       if (lastEntry.doneToday) {
-        final newValue = lastEntry.value + increment;
+        final newValue = lastEntry.targetValue + increment;
         // For decreasing items, today's target is the minimum of:
         // 1. Previous value + increment (decreasing)
         // 2. But not less than endValue
@@ -94,7 +107,7 @@ class DailyThing {
     }
 
     // If last entry was not yesterday, or was yesterday but not done, value stays the same.
-    return lastEntry.value;
+    return lastEntry.targetValue;
   }
 
   Status determineStatus(double currentValue) {
@@ -148,9 +161,27 @@ class DailyThing {
       startValue: (json['startValue'] as num).toDouble(),
       duration: json['duration'] as int,
       endValue: (json['endValue'] as num).toDouble(),
-      history: (json['history'] as List<dynamic>)
-          .map((e) => HistoryEntry.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      history: () {
+        try {
+          final historyList = json['history'] as List<dynamic>? ?? [];
+          return historyList.map((e) {
+            try {
+              return HistoryEntry.fromJson(e as Map<String, dynamic>);
+            } catch (e) {
+              _logger.warning('Error parsing history entry: $e');
+              return HistoryEntry(
+                date: DateTime.now(),
+                targetValue: 0.0,
+                doneToday: false,
+                actualValue: null,
+              );
+            }
+          }).toList();
+        } catch (e) {
+          _logger.warning('Error parsing history list: $e');
+          return <HistoryEntry>[];
+        }
+      }(),
       nagTime: json['nagTime'] == null
           ? null
           : DateTime.parse(json['nagTime'] as String),

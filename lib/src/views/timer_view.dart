@@ -90,10 +90,14 @@ class _TimerViewState extends State<TimerView> {
     // Update the history
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
+    // For timer-based items, we consider the target value as completed
+    // since they completed the full timer duration
     final newEntry = HistoryEntry(
       date: todayDate,
-      value: widget.item.todayValue,
-      doneToday: true,
+      targetValue: widget.item.todayValue, // Save target value
+      doneToday: true, // Timer completion implies meeting the target
+      // No actual value needed for timer-based items
+      // since completion implies meeting the target
     );
     _log.info('Created new history entry for today.');
 
@@ -168,7 +172,7 @@ class _TimerViewState extends State<TimerView> {
                     );
                     textPainter.layout();
 
-                    // Calculate font size to fit 60% of available width for the widest case
+                    // Calculate font size to fit 90% of available width for the widest case
                     final fontSize = (constraints.maxWidth * 0.9) /
                         textPainter.width *
                         12; // 12 is base font size

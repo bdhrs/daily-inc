@@ -290,7 +290,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
                     final newEntry = HistoryEntry(
                       date: today,
-                      value: newValue,
+                      targetValue: newValue,
                       doneToday: newValue == 1.0,
                     );
                     final existingEntryIndex = item.history.indexWhere(
@@ -421,10 +421,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                       DateTime.now().month,
                       DateTime.now().day,
                     );
+                    final actualValue = reps.toDouble();
                     final newEntry = HistoryEntry(
                       date: today,
-                      value: reps.toDouble(),
-                      doneToday: item.isDone(reps.toDouble()),
+                      targetValue: item.todayValue, // Save target value
+                      doneToday: item.isDone(actualValue),
+                      actualValue: actualValue, // Save actual for reference
                     );
 
                     final existingEntryIndex = item.history.indexWhere(
@@ -474,10 +476,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                     DateTime.now().month,
                     DateTime.now().day,
                   );
+                  final actualValue = reps.toDouble();
                   final newEntry = HistoryEntry(
                     date: today,
-                    value: reps.toDouble(),
-                    doneToday: item.isDone(reps.toDouble()),
+                    targetValue: item.todayValue, // Save target value
+                    doneToday: item.isDone(actualValue),
+                    actualValue: actualValue, // Save actual for reference
                   );
 
                   final existingEntryIndex = item.history.indexWhere(
