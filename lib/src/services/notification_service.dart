@@ -178,4 +178,10 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.cancel(id);
     _log.info('Notification with id: $id cancelled.');
   }
+
+  Future<void> cancelAllNotifications() async {
+    _log.info('cancelAllNotifications called');
+    await flutterLocalNotificationsPlugin.cancelAll();
+    _log.info('All notifications cancelled');
+  }
 }

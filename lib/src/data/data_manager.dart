@@ -38,6 +38,22 @@ class DataManager {
             .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
             .toList();
         _log.info('Loaded ${loadedThings.length} items from file.');
+
+        // Cancel all existing notifications before importing new ones
+        await _notificationService.cancelAllNotifications();
+
+        // Schedule notifications for imported items with nagTime
+        for (final thing in loadedThings) {
+          if (thing.nagTime != null && thing.nagMessage != null) {
+            await _notificationService.scheduleNagNotification(
+              _getNotificationId(thing.id),
+              thing.name,
+              thing.nagMessage!,
+              thing.nagTime!,
+            );
+          }
+        }
+
         return loadedThings;
       }
       _log.warning('No file picked.');
