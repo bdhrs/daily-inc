@@ -66,9 +66,9 @@ class DailyThingItem extends StatelessWidget {
     );
 
     return Card(
-      margin: const EdgeInsets.fromLTRB(10, 2, 20, 2),
+      margin: const EdgeInsets.fromLTRB(10, 0.5, 20, 0.5),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         child: ExpansionTile(
           initiallyExpanded: isExpanded,
           onExpansionChanged: onExpansionChanged,

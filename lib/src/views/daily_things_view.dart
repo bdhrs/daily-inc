@@ -441,6 +441,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               radius: const Radius.circular(20.0), // Rounded corners
               interactive: true,
               child: ReorderableListView(
+                padding: EdgeInsets.zero,
                 primary: true, // Use primary scroll controller
                 onReorder: (oldIndex, newIndex) async {
                   setState(() {
