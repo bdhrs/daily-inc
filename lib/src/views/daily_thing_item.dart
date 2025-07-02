@@ -167,7 +167,9 @@ class DailyThingItem extends StatelessWidget {
                             size: 16.0,
                           )
                         : Text(
-                            _formatValue(item.todayValue, item.itemType),
+                            _formatValue(
+                                item.actualTodayValue ?? item.todayValue,
+                                item.itemType),
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 fontSize: 14),

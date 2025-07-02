@@ -19,6 +19,7 @@ class DailyThing {
   final List<HistoryEntry> history;
   final DateTime? nagTime;
   final String? nagMessage;
+  double? actualTodayValue; // New property to store actual value entered today
 
   DailyThing({
     String? id,

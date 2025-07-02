@@ -73,6 +73,8 @@ class RepsInputDialog extends StatelessWidget {
         DateTime.now().day,
       );
       final actualValue = reps.toDouble();
+      item.actualTodayValue =
+          actualValue; // Update actualTodayValue with actual value
       final newEntry = HistoryEntry(
         date: today,
         targetValue: item.todayValue,
