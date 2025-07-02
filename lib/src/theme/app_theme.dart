@@ -164,6 +164,9 @@ class AppTheme {
           foregroundColor: ColorPalette.primaryBlue,
         ),
       ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.all(ColorPalette.scrollbarThumb),
+      ),
     );
   }
 }
