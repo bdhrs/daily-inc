@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class DataManager {
   static const String _dataKey = 'inc_timer_data';
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService =
+      NotificationService(); // Use the singleton instance
   final _log = Logger('DataManager');
 
   int _getNotificationId(String dailyThingId) {

@@ -6,12 +6,24 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+
+  NotificationService._internal();
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   final _log = Logger('NotificationService');
+  bool _isInitialized = false;
 
   Future<void> init() async {
     _log.info('Initializing NotificationService...');
+    // Ensure initialization is only done once
+    if (_isInitialized) {
+      _log.info('NotificationService already initialized.');
+      return;
+    }
+    _isInitialized = true;
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
 
