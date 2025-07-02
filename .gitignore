@@ -69,3 +69,6 @@ ios/ServiceDefinitions.json
 linux/flutter/ephemeral/
 macos/Flutter/ephemeral/
 windows/flutter/ephemeral/
+
+# Keystore file
+keystore.properties

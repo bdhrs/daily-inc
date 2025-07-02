@@ -31,10 +31,14 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+        }
+    }
+    
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // See https://flutter.dev/docs/deployment/android#signing-the-app
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             proguardFiles(
