@@ -1,0 +1,17 @@
+# roorules
+
+This file contains instructions for Roo.
+
+# Project Description
+This is a Flutter application for tracking daily activities and habits, incrementing over time. 
+
+# Three Item Types
+There are three types of items
+- MINUTES tracks time in minutes with a countdown timer
+- REPS tracks repetitions
+- CHECK tracks done or not
+
+# Instructions
+- Always read project_map.md as part of the prompt.
+- Update project_map.md when it changes.
+- Start all tool use with "Hopa!"
