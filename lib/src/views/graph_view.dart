@@ -4,6 +4,7 @@ import 'package:daily_inc/src/models/item_type.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:intl/intl.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
@@ -16,6 +17,8 @@ class GraphView extends StatefulWidget {
 class _GraphViewState extends State<GraphView> {
   double _minY = 0;
   double _maxY = 0;
+  double _minX = 0;
+  double _maxX = 0;
   final _log = Logger('GraphView');
 
   @override
@@ -48,7 +51,32 @@ class _GraphViewState extends State<GraphView> {
       }
     }
 
-    _log.info('Ranges calculated: Y($_minY, $_maxY)');
+    // Calculate X-axis range based on startDate, duration, and history
+    DateTime earliestDate = widget.dailyThing.startDate;
+    DateTime latestDate = widget.dailyThing.startDate
+        .add(Duration(days: widget.dailyThing.duration));
+
+    if (widget.dailyThing.history.isNotEmpty) {
+      var sortedHistory = List.from(widget.dailyThing.history);
+      sortedHistory.sort((a, b) => a.date.compareTo(b.date));
+      final firstHistoryDate = sortedHistory.first.date;
+      final lastHistoryDate = sortedHistory.last.date;
+
+      if (firstHistoryDate.isBefore(earliestDate)) {
+        earliestDate = firstHistoryDate;
+      }
+      if (lastHistoryDate.isAfter(latestDate)) {
+        latestDate = lastHistoryDate;
+      }
+    }
+
+    _minX = earliestDate.millisecondsSinceEpoch.toDouble();
+    _maxX = latestDate
+        .add(const Duration(days: 1))
+        .millisecondsSinceEpoch
+        .toDouble();
+
+    _log.info('Ranges calculated: Y($_minY, $_maxY), X($_minX, $_maxX)');
   }
 
   @override
@@ -64,8 +92,8 @@ class _GraphViewState extends State<GraphView> {
           LineChartData(
             minY: _minY,
             maxY: _maxY,
-            minX: -2,
-            maxX: widget.dailyThing.duration.toDouble() + 2,
+            minX: _minX,
+            maxX: _maxX,
             lineBarsData: [
               // Projected line
               LineChartBarData(
@@ -85,9 +113,9 @@ class _GraphViewState extends State<GraphView> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 60, // Further increased reserved size
+                  interval: (_maxY - _minY) / 5, // Aim for 5 labels
                   getTitlesWidget: (value, meta) {
-                    // Show labels for all integer values within the range
-                    if (value == value.toInt().toDouble()) {
+                    if (value % meta.appliedInterval == 0) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 4.0),
                         child: Text(
@@ -122,27 +150,30 @@ class _GraphViewState extends State<GraphView> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 50, // Further increased reserved size
+                  interval: 1000 * 60 * 60 * 24 * 2, // Minimum 2-day interval
                   getTitlesWidget: (value, meta) {
-                    // Show labels for all integer values within the range
-                    if (value >= 0 &&
-                        value <= widget.dailyThing.duration &&
-                        value == value.toInt().toDouble()) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          value.toInt().toString(),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      );
+                    // Don't show labels at the very edge of the graph
+                    if (value == meta.min || value == meta.max) {
+                      return const Text('');
                     }
-                    return const Text('');
+                    final date =
+                        DateTime.fromMillisecondsSinceEpoch(value.toInt());
+
+                    // Let the library handle the interval, just format the visible ones.
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        DateFormat('M/d').format(date),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    );
                   },
                 ),
                 axisNameWidget: Padding(
                   padding:
                       const EdgeInsets.only(top: 16.0), // Increased padding
                   child: Text(
-                    'Days',
+                    'Date',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -166,17 +197,17 @@ class _GraphViewState extends State<GraphView> {
 
   List<LineChartBarData> _getActualBarsAsLines(BuildContext context) {
     final List<LineChartBarData> lines = [];
-    final historyByDay = {
+    final historyByDate = {
       for (var entry in widget.dailyThing.history)
-        entry.date.difference(widget.dailyThing.startDate).inDays:
-            entry.targetValue
+        entry.date.millisecondsSinceEpoch.toDouble(): entry.targetValue
     };
 
-    for (int i = 0; i <= widget.dailyThing.duration; i++) {
-      final value = historyByDay[i];
+    for (var entry in widget.dailyThing.history) {
+      final xValue = entry.date.millisecondsSinceEpoch.toDouble();
+      final value = historyByDate[xValue];
       if (value != null) {
         lines.add(LineChartBarData(
-          spots: [FlSpot(i.toDouble(), 0), FlSpot(i.toDouble(), value)],
+          spots: [FlSpot(xValue, 0), FlSpot(xValue, value)],
           barWidth: 8,
           color: Colors.blue,
           isStrokeCapRound: false,
@@ -190,9 +221,10 @@ class _GraphViewState extends State<GraphView> {
   List<FlSpot> _getTargetSpots() {
     final List<FlSpot> spots = [];
     for (int i = 0; i <= widget.dailyThing.duration; i++) {
+      final date = widget.dailyThing.startDate.add(Duration(days: i));
       final value =
           widget.dailyThing.startValue + (widget.dailyThing.increment * i);
-      spots.add(FlSpot(i.toDouble(), value));
+      spots.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), value));
     }
     return spots;
   }
