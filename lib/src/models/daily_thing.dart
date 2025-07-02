@@ -52,6 +52,9 @@ class DailyThing {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
+        if (itemType == ItemType.check) {
+          return entry.doneToday ? 1.0 : 0.0;
+        }
         try {
           return entry.targetValue;
         } catch (e) {
@@ -61,7 +64,7 @@ class DailyThing {
       }
     }
 
-    // For CHECK items, always reset to 0 (unchecked/red) each day
+    // For CHECK items, if no entry for today, it's unchecked.
     if (itemType == ItemType.check) {
       return 0.0;
     }

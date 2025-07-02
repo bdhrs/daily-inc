@@ -30,52 +30,79 @@ class _GraphViewState extends State<GraphView> {
 
   void _calculateRanges() {
     _log.info('Calculating graph ranges...');
-    final startValue = widget.dailyThing.startValue;
-    final endValue = widget.dailyThing.endValue;
+    if (widget.dailyThing.itemType == ItemType.check) {
+      _minY = 0;
+      _maxY = 1.2; // A little padding above the "check" mark
 
-    final minValue = min(startValue, endValue);
-    final maxValue = max(startValue, endValue);
-
-    final yPadding = (maxValue - minValue) * 0.1;
-    _minY = 0;
-    _maxY = maxValue + yPadding;
-
-    // If start and end are the same, create a sensible range
-    if (startValue == endValue) {
-      if (startValue == 0) {
-        _minY = 0;
-        _maxY = 10;
+      if (widget.dailyThing.history.isNotEmpty) {
+        var sortedHistory = List.from(widget.dailyThing.history)
+          ..sort((a, b) => a.date.compareTo(b.date));
+        _minX = sortedHistory.first.date
+            .subtract(const Duration(days: 1))
+            .millisecondsSinceEpoch
+            .toDouble();
+        _maxX = sortedHistory.last.date
+            .add(const Duration(days: 1))
+            .millisecondsSinceEpoch
+            .toDouble();
       } else {
-        _minY = max(0, startValue - 5);
-        _maxY = startValue + 5;
+        // Default range if no history
+        _minX = DateTime.now()
+            .subtract(const Duration(days: 7))
+            .millisecondsSinceEpoch
+            .toDouble();
+        _maxX = DateTime.now()
+            .add(const Duration(days: 1))
+            .millisecondsSinceEpoch
+            .toDouble();
       }
+    } else {
+      final startValue = widget.dailyThing.startValue;
+      final endValue = widget.dailyThing.endValue;
+
+      final minValue = min(startValue, endValue);
+      final maxValue = max(startValue, endValue);
+
+      final yPadding = (maxValue - minValue) * 0.1;
+      _minY = 0;
+      _maxY = maxValue + yPadding;
+
+      // If start and end are the same, create a sensible range
+      if (startValue == endValue) {
+        if (startValue == 0) {
+          _minY = 0;
+          _maxY = 10;
+        } else {
+          _minY = max(0, startValue - 5);
+          _maxY = startValue + 5;
+        }
+      }
+
+      // Calculate X-axis range based on startDate, duration, and history
+      DateTime earliestDate = widget.dailyThing.startDate;
+      DateTime latestDate = widget.dailyThing.startDate
+          .add(Duration(days: widget.dailyThing.duration));
+
+      if (widget.dailyThing.history.isNotEmpty) {
+        var sortedHistory = List.from(widget.dailyThing.history);
+        sortedHistory.sort((a, b) => a.date.compareTo(b.date));
+        final firstHistoryDate = sortedHistory.first.date;
+        final lastHistoryDate = sortedHistory.last.date;
+
+        if (firstHistoryDate.isBefore(earliestDate)) {
+          earliestDate = firstHistoryDate;
+        }
+        if (lastHistoryDate.isAfter(latestDate)) {
+          latestDate = lastHistoryDate;
+        }
+      }
+
+      _minX = earliestDate.millisecondsSinceEpoch.toDouble();
+      _maxX = latestDate
+          .add(const Duration(days: 1))
+          .millisecondsSinceEpoch
+          .toDouble();
     }
-
-    // Calculate X-axis range based on startDate, duration, and history
-    DateTime earliestDate = widget.dailyThing.startDate;
-    DateTime latestDate = widget.dailyThing.startDate
-        .add(Duration(days: widget.dailyThing.duration));
-
-    if (widget.dailyThing.history.isNotEmpty) {
-      var sortedHistory = List.from(widget.dailyThing.history);
-      sortedHistory.sort((a, b) => a.date.compareTo(b.date));
-      final firstHistoryDate = sortedHistory.first.date;
-      final lastHistoryDate = sortedHistory.last.date;
-
-      if (firstHistoryDate.isBefore(earliestDate)) {
-        earliestDate = firstHistoryDate;
-      }
-      if (lastHistoryDate.isAfter(latestDate)) {
-        latestDate = lastHistoryDate;
-      }
-    }
-
-    _minX = earliestDate.millisecondsSinceEpoch.toDouble();
-    _maxX = latestDate
-        .add(const Duration(days: 1))
-        .millisecondsSinceEpoch
-        .toDouble();
-
     _log.info('Ranges calculated: Y($_minY, $_maxY), X($_minX, $_maxX)');
   }
 
@@ -95,16 +122,17 @@ class _GraphViewState extends State<GraphView> {
             minX: _minX,
             maxX: _maxX,
             lineBarsData: [
-              // Projected line
-              LineChartBarData(
-                spots: _getTargetSpots(),
-                isCurved: false,
-                color: Colors.grey,
-                barWidth: 2,
-                isStrokeCapRound: true,
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(show: false),
-              ),
+              // Projected line (only if not a 'check' item)
+              if (widget.dailyThing.itemType != ItemType.check)
+                LineChartBarData(
+                  spots: _getTargetSpots(),
+                  isCurved: false,
+                  color: Colors.grey,
+                  barWidth: 2,
+                  isStrokeCapRound: true,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                ),
               // Actual "bars"
               ..._getActualBarsAsLines(context),
             ],
@@ -197,28 +225,46 @@ class _GraphViewState extends State<GraphView> {
 
   List<LineChartBarData> _getActualBarsAsLines(BuildContext context) {
     final List<LineChartBarData> lines = [];
-    final historyByDate = {
-      for (var entry in widget.dailyThing.history)
-        entry.date.millisecondsSinceEpoch.toDouble(): entry.targetValue
-    };
+    if (widget.dailyThing.itemType == ItemType.check) {
+      for (var entry in widget.dailyThing.history) {
+        if (entry.doneToday) {
+          final xValue = entry.date.millisecondsSinceEpoch.toDouble();
+          lines.add(LineChartBarData(
+            spots: [FlSpot(xValue, 0), FlSpot(xValue, 1)],
+            barWidth: 8,
+            color: Colors.green,
+            isStrokeCapRound: false,
+            dotData: const FlDotData(show: false),
+          ));
+        }
+      }
+    } else {
+      final historyByDate = {
+        for (var entry in widget.dailyThing.history)
+          entry.date.millisecondsSinceEpoch.toDouble(): entry.targetValue
+      };
 
-    for (var entry in widget.dailyThing.history) {
-      final xValue = entry.date.millisecondsSinceEpoch.toDouble();
-      final value = historyByDate[xValue];
-      if (value != null) {
-        lines.add(LineChartBarData(
-          spots: [FlSpot(xValue, 0), FlSpot(xValue, value)],
-          barWidth: 8,
-          color: Colors.blue,
-          isStrokeCapRound: false,
-          dotData: const FlDotData(show: false),
-        ));
+      for (var entry in widget.dailyThing.history) {
+        final xValue = entry.date.millisecondsSinceEpoch.toDouble();
+        final value = historyByDate[xValue];
+        if (value != null) {
+          lines.add(LineChartBarData(
+            spots: [FlSpot(xValue, 0), FlSpot(xValue, value)],
+            barWidth: 8,
+            color: Colors.blue,
+            isStrokeCapRound: false,
+            dotData: const FlDotData(show: false),
+          ));
+        }
       }
     }
     return lines;
   }
 
   List<FlSpot> _getTargetSpots() {
+    if (widget.dailyThing.itemType == ItemType.check) {
+      return [];
+    }
     final List<FlSpot> spots = [];
     for (int i = 0; i <= widget.dailyThing.duration; i++) {
       final date = widget.dailyThing.startDate.add(Duration(days: i));

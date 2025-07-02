@@ -183,18 +183,19 @@ class DailyThingItem extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                item.itemType == ItemType.check
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(left: 32.0),
-                        child: Row(
-                          children: [
-                            Text(_formatValue(item.startValue, item.itemType)),
-                            const Icon(Icons.trending_flat),
-                            Text(_formatValue(item.endValue, item.itemType)),
-                          ],
-                        ),
-                      ),
+                if (item.itemType != ItemType.check)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32.0),
+                    child: Row(
+                      children: [
+                        Text(_formatValue(item.startValue, item.itemType)),
+                        const Icon(Icons.trending_flat),
+                        Text(_formatValue(item.endValue, item.itemType)),
+                      ],
+                    ),
+                  )
+                else
+                  const SizedBox(height: 48.0), // Match height of other rows
                 Row(
                   children: [
                     IconButton(
