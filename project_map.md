@@ -42,7 +42,8 @@ This document provides a map of the project, listing the location of all functio
   - `todayValue` getter: [`lib/src/models/daily_thing.dart:43`](lib/src/models/daily_thing.dart:43)
   - `determineStatus(double currentValue)` method: [`lib/src/models/daily_thing.dart:117`](lib/src/models/daily_thing.dart:117)
   - `isDone(double currentValue)` method: [`lib/src/models/daily_thing.dart:136`](lib/src/models/daily_thing.dart:136)
-  - `toJson()` method: [`lib/src/models/daily_thing.dart:140`](lib/src/models/daily_thing.dart:140)
+  - `isDoneToday` getter: [`lib/src/models/daily_thing.dart:140`](lib/src/models/daily_thing.dart:140)
+  - `toJson()` method: [`lib/src/models/daily_thing.dart:144`](lib/src/models/daily_thing.dart:144)
   - `fromJson(Map<String, dynamic> json)` factory: [`lib/src/models/daily_thing.dart:156`](lib/src/models/daily_thing.dart:156)
 
 ## lib/src/models/history_entry.dart

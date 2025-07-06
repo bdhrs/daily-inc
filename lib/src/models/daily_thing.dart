@@ -134,7 +134,45 @@ class DailyThing {
   }
 
   bool isDone(double currentValue) {
+    if (itemType == ItemType.reps) {
+      if (increment > 0) {
+        // For incrementing reps, done if current rounded is >= target rounded
+        return currentValue.round() >= todayValue.round();
+      } else if (increment < 0) {
+        // For decrementing reps, done if current rounded is <= target rounded
+        return currentValue.round() <= todayValue.round();
+      } else {
+        // No change case (increment == 0) - green if currentValue equals today's value
+        return currentValue.round() == todayValue.round();
+      }
+    }
     return determineStatus(currentValue) == Status.green;
+  }
+
+  bool get isDoneToday {
+    final todayDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    // Find the most recent entry for today
+    HistoryEntry? todayEntry;
+    for (final entry in history) {
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (entryDate == todayDate) {
+        todayEntry = entry;
+        break; // Found today's entry
+      }
+    }
+
+    if (todayEntry != null) {
+      // Use the isDone method with the actual or target value from today's entry
+      // This will correctly apply the specific logic for REPS, MINUTES, and CHECK
+      return isDone(todayEntry.actualValue ?? todayEntry.targetValue);
+    }
+    return false; // No entry for today, so not done today
   }
 
   Map<String, dynamic> toJson() {

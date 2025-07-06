@@ -47,23 +47,7 @@ class DailyThingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todayDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
-    final isCompletedToday = item.history.any((entry) =>
-        entry.date.year == todayDate.year &&
-        entry.date.month == todayDate.month &&
-        entry.date.day == todayDate.day &&
-        entry.doneToday == true);
-    final hasTodayEntry = item.history.any(
-      (entry) =>
-          entry.date.year == todayDate.year &&
-          entry.date.month == todayDate.month &&
-          entry.date.day == todayDate.day &&
-          entry.doneToday,
-    );
+    final isCompletedToday = item.isDoneToday;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(10, 0.5, 20, 0.5),
@@ -126,17 +110,20 @@ class DailyThingItem extends StatelessWidget {
                     final newEntry = HistoryEntry(
                       date: today,
                       targetValue: newValue,
-                      doneToday: newValue == 1.0,
+                      doneToday: item.isDone(newValue),
                     );
-                    final existingEntryIndex = item.history.indexWhere(
+                    HistoryEntry? existingEntry = item.history.firstWhere(
                       (entry) =>
                           entry.date.year == today.year &&
                           entry.date.month == today.month &&
                           entry.date.day == today.day,
+                      orElse: () => HistoryEntry(
+                          date: DateTime(0), targetValue: 0, doneToday: false),
                     );
 
-                    if (existingEntryIndex != -1) {
-                      item.history[existingEntryIndex] = newEntry;
+                    if (existingEntry.date.year != 0) {
+                      final index = item.history.indexOf(existingEntry);
+                      item.history[index] = newEntry;
                     } else {
                       item.history.add(newEntry);
                     }
@@ -152,9 +139,7 @@ class DailyThingItem extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: (item.itemType == ItemType.check &&
-                                  item.todayValue == 1) ||
-                              (item.itemType != ItemType.check && hasTodayEntry)
+                      color: item.isDoneToday
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.error,
                       borderRadius: BorderRadius.circular(4),
