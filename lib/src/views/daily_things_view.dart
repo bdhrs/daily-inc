@@ -188,6 +188,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     return DailyThingItem(
       item: item,
       dataManager: _dataManager,
+      allTasksCompleted: _allTasksCompleted,
       onEdit: _editDailyThing,
       onDelete: _deleteDailyThing,
       showFullscreenTimer: _showFullscreenTimer,
@@ -472,7 +473,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 onPressed: _openAddDailyItemPopup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorPalette.cardBackground,
-                  foregroundColor: ColorPalette.primaryBlue,
+                  foregroundColor: _allTasksCompleted
+                      ? Theme.of(context).colorScheme.primary
+                      : ColorPalette.lightText,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
                   ),

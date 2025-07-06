@@ -15,6 +15,7 @@ class DailyThingItem extends StatelessWidget {
   final Function checkAndShowCompletionSnackbar;
   final bool isExpanded;
   final Function(bool) onExpansionChanged;
+  final bool allTasksCompleted;
 
   const DailyThingItem({
     super.key,
@@ -27,6 +28,7 @@ class DailyThingItem extends StatelessWidget {
     required this.checkAndShowCompletionSnackbar,
     required this.isExpanded,
     required this.onExpansionChanged,
+    required this.allTasksCompleted,
   });
 
   String _formatValue(double value, ItemType itemType) {
@@ -87,7 +89,9 @@ class DailyThingItem extends StatelessWidget {
                     item.name,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: allTasksCompleted
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
