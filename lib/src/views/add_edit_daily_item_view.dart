@@ -216,6 +216,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'Name',
                     hintText: 'e.g. Daily Reading',
@@ -371,6 +372,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nagMessageController,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Nag Message',
                     hintText: 'e.g. Time to do your daily reading!',
