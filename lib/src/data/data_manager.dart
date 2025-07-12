@@ -4,10 +4,10 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:logging/logging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DataManager {
-  static const String _dataKey = 'inc_timer_data';
+  static const String _dataFileName = 'daily_inc_data.json';
   final NotificationService _notificationService =
       NotificationService(); // Use the singleton instance
   final _log = Logger('DataManager');
@@ -65,62 +65,44 @@ class DataManager {
     }
   }
 
+  Future<String> _getFilePath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return '${directory.path}/$_dataFileName';
+  }
+
   Future<List<DailyThing>> loadData() async {
     _log.info('loadData called');
-    final prefs = await SharedPreferences.getInstance();
     try {
-      // First try to read as single string
-      final dataString = prefs.getString(_dataKey);
-      if (dataString != null) {
-        _log.info('Found data as a single string.');
-        final List<dynamic> dataList = jsonDecode(dataString);
-        final loadedThings = dataList
-            .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
-            .toList();
-        _log.info('Loaded ${loadedThings.length} items from single string.');
-        return loadedThings;
-      }
-
-      // Fall back to string list for backward compatibility
-      _log.info('No single string data found, trying string list.');
-      final dataChunks = prefs.getStringList(_dataKey);
-      if (dataChunks == null || dataChunks.isEmpty) {
-        _log.warning('No data found in shared preferences.');
+      final filePath = await _getFilePath();
+      final file = File(filePath);
+      if (!file.existsSync()) {
+        _log.warning('Data file not found at $filePath');
         return [];
       }
-      final combinedString = dataChunks.join();
-      final List<dynamic> dataList = jsonDecode(combinedString);
+      final contents = await file.readAsString();
+      final List<dynamic> dataList = jsonDecode(contents);
       final loadedThings = dataList
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
-      _log.info('Loaded ${loadedThings.length} items from string list.');
+      _log.info('Loaded ${loadedThings.length} items from file-based storage.');
       return loadedThings;
     } catch (e, s) {
-      _log.severe('Error loading data', e, s);
+      _log.severe('Error loading data from file', e, s);
       return [];
     }
   }
 
   Future<void> saveData(List<DailyThing> items) async {
     _log.info('saveData called with ${items.length} items.');
-    final prefs = await SharedPreferences.getInstance();
-    final dataList = items.map((item) => item.toJson()).toList();
-    final dataString = jsonEncode(dataList);
-
-    // Handle Android's byte requirements by splitting large data
-    if (dataString.length > 10000) {
-      _log.info('Data string is large, splitting into chunks.');
-      final chunks = <String>[];
-      for (var i = 0; i < dataString.length; i += 10000) {
-        final end =
-            (i + 10000 < dataString.length) ? i + 10000 : dataString.length;
-        chunks.add(dataString.substring(i, end));
-      }
-      await prefs.setStringList(_dataKey, chunks);
-      _log.info('Saved data as ${chunks.length} chunks.');
-    } else {
-      await prefs.setString(_dataKey, dataString);
-      _log.info('Saved data as a single string.');
+    try {
+      final filePath = await _getFilePath();
+      final file = File(filePath);
+      final dataList = items.map((item) => item.toJson()).toList();
+      final dataString = jsonEncode(dataList);
+      await file.writeAsString(dataString);
+      _log.info('Saved data to file-based storage at $filePath.');
+    } catch (e, s) {
+      _log.severe('Error saving data to file', e, s);
     }
   }
 
@@ -168,8 +150,18 @@ class DataManager {
 
   Future<void> resetData() async {
     _log.info('resetData called to clear all data.');
-    await saveData([]);
-    _log.info('All data cleared successfully.');
+    try {
+      final filePath = await _getFilePath();
+      final file = File(filePath);
+      if (file.existsSync()) {
+        await file.delete();
+        _log.info('Data file deleted successfully from $filePath');
+      } else {
+        _log.info('Data file did not exist, nothing to delete.');
+      }
+    } catch (e, s) {
+      _log.severe('Error deleting data file', e, s);
+    }
   }
 
   Future<bool> saveHistoryToFile() async {
