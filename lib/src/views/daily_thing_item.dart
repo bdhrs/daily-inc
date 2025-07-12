@@ -52,7 +52,7 @@ class DailyThingItem extends StatelessWidget {
     final isCompletedToday = item.isDoneToday;
 
     return Card(
-      margin: const EdgeInsets.fromLTRB(10, 0.5, 20, 0.5),
+      margin: const EdgeInsets.fromLTRB(10, 0.5, 10, 0.5),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         child: ExpansionTile(
@@ -75,7 +75,7 @@ class DailyThingItem extends StatelessWidget {
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).colorScheme.error,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   if (item.icon != null)
                     Text(
                       item.icon!,

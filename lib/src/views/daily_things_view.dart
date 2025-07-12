@@ -436,33 +436,52 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       body: Column(
         children: [
           Expanded(
-            child: Scrollbar(
-              thumbVisibility: true, // Always show the scrollbar
-              thickness: 20.0, // Increase thumb width for better grabability
-              radius: const Radius.circular(20.0), // Rounded corners
-              interactive: true,
-              child: ReorderableListView(
-                padding: EdgeInsets.zero,
-                primary: true, // Use primary scroll controller
-                onReorder: (oldIndex, newIndex) async {
-                  setState(() {
-                    if (newIndex > oldIndex) {
-                      newIndex -= 1;
-                    }
-                    final item = _dailyThings.removeAt(oldIndex);
-                    _dailyThings.insert(newIndex, item);
-                  });
-                  await _dataManager.saveData(_dailyThings);
-                },
-                children: [
-                  for (var item in _dailyThings)
-                    ReorderableDragStartListener(
-                      key: Key(item.id),
-                      index: _dailyThings.indexOf(item),
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              itemCount: _dailyThings.length,
+              itemBuilder: (context, index) {
+                final item = _dailyThings[index];
+                return LongPressDraggable<DailyThing>(
+                  data: item,
+                  feedback: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: Material(
+                      elevation: 4.0,
                       child: _buildItemRow(item),
                     ),
-                ],
-              ),
+                  ),
+                  childWhenDragging: Container(
+                    height: 80, // Adjust height to match item height
+                    color: Colors.grey[200],
+                  ),
+                  onDragStarted: () {
+                    // Optional: Add feedback when dragging starts
+                  },
+                  child: DragTarget<DailyThing>(
+                    onWillAcceptWithDetails: (details) {
+                      return details.data != item;
+                    },
+                    onAcceptWithDetails: (details) {
+                      final droppedItem = details.data;
+                      setState(() {
+                        final oldIndex = _dailyThings.indexOf(droppedItem);
+                        final newIndex = index;
+                        if (newIndex > oldIndex) {
+                          _dailyThings.insert(newIndex, droppedItem);
+                          _dailyThings.removeAt(oldIndex);
+                        } else {
+                          _dailyThings.removeAt(oldIndex);
+                          _dailyThings.insert(newIndex, droppedItem);
+                        }
+                      });
+                      _dataManager.saveData(_dailyThings);
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      return _buildItemRow(item);
+                    },
+                  ),
+                );
+              },
             ),
           ),
           SizedBox(
