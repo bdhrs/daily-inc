@@ -168,6 +168,46 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     }
   }
 
+  void _duplicateItem(DailyThing item) async {
+    _log.info('Duplicating daily thing: ${item.name}');
+    try {
+      final duplicatedItem = DailyThing(
+        name: item.name,
+        itemType: item.itemType,
+        startDate: item.startDate,
+        startValue: item.startValue,
+        duration: item.duration,
+        endValue: item.endValue,
+        icon: item.icon,
+        nagTime: item.nagTime,
+        nagMessage: item.nagMessage,
+        history: [],
+      );
+      await _dataManager.addDailyThing(duplicatedItem);
+      _refreshDisplay();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Duplicated "${item.name}"'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e, s) {
+      _log.severe('Error duplicating item', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error duplicating item: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   void _showFullscreenTimer(DailyThing item) {
     _log.info('Showing fullscreen timer for: ${item.name}');
     Navigator.push(
@@ -191,6 +231,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       allTasksCompleted: _allTasksCompleted,
       onEdit: _editDailyThing,
       onDelete: _deleteDailyThing,
+      onDuplicate: _duplicateItem,
       showFullscreenTimer: _showFullscreenTimer,
       showRepsInputDialog: _showRepsInputDialog,
       checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,

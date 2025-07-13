@@ -10,6 +10,7 @@ class DailyThingItem extends StatelessWidget {
   final DataManager dataManager;
   final Function(DailyThing) onEdit;
   final Function(DailyThing) onDelete;
+  final Function(DailyThing) onDuplicate;
   final Function(DailyThing) showFullscreenTimer;
   final Function(DailyThing) showRepsInputDialog;
   final Function checkAndShowCompletionSnackbar;
@@ -23,6 +24,7 @@ class DailyThingItem extends StatelessWidget {
     required this.dataManager,
     required this.onEdit,
     required this.onDelete,
+    required this.onDuplicate,
     required this.showFullscreenTimer,
     required this.showRepsInputDialog,
     required this.checkAndShowCompletionSnackbar,
@@ -201,6 +203,10 @@ class DailyThingItem extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => onEdit(item),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.content_copy),
+                      onPressed: () => onDuplicate(item),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
