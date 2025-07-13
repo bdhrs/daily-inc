@@ -190,6 +190,7 @@ class DailyThingItem extends StatelessWidget {
                 Row(
                   children: [
                     IconButton(
+                      tooltip: 'see daily stats',
                       icon: const Icon(Icons.auto_graph),
                       onPressed: () {
                         Navigator.push(
@@ -201,14 +202,17 @@ class DailyThingItem extends StatelessWidget {
                       },
                     ),
                     IconButton(
+                      tooltip: 'edit the item',
                       icon: const Icon(Icons.edit),
                       onPressed: () => onEdit(item),
                     ),
                     IconButton(
+                      tooltip: 'duplicate the item',
                       icon: const Icon(Icons.content_copy),
                       onPressed: () => onDuplicate(item),
                     ),
                     IconButton(
+                      tooltip: 'delete the item',
                       icon: const Icon(Icons.delete),
                       onPressed: () => onDelete(item),
                     ),
