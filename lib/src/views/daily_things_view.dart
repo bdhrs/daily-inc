@@ -525,25 +525,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               },
             ),
           ),
-          SizedBox(
-            width: double.infinity,
-            child: Tooltip(
-              message: 'Add an item',
-              child: ElevatedButton(
-                onPressed: _openAddDailyItemPopup,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorPalette.cardBackground,
-                  foregroundColor: _allTasksCompleted
-                      ? Theme.of(context).colorScheme.primary
-                      : ColorPalette.lightText,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                ),
-                child: const Icon(Icons.add),
-              ),
-            ),
-          ),
         ],
       ),
     );
