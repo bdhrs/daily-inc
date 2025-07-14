@@ -7,6 +7,7 @@ import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
+import 'package:daily_inc/src/views/help_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -325,7 +326,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       _log.info('All tasks completed, showing celebration snackbar.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Well done, all tasks done!'),
+          content: Text(
+            'Well done, all tasks done!',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
           duration: const Duration(seconds: 3),
           backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
           behavior: SnackBarBehavior.floating,
@@ -447,6 +453,22 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   builder: (context) => const SettingsView(),
                 ),
               );
+            },
+          ),
+          IconButton(
+            tooltip: 'Help',
+            icon: Icon(
+              Icons.help,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const HelpDialog();
+                  });
             },
           ),
           PopupMenuButton<String>(
