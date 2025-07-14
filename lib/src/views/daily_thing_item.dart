@@ -83,7 +83,9 @@ class DailyThingItem extends StatelessWidget {
                       item.icon!,
                       style: TextStyle(
                         fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: allTasksCompleted
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   const SizedBox(width: 8),

@@ -424,12 +424,22 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         actions: [
           IconButton(
             tooltip: 'Add an item',
-            icon: const Icon(Icons.add),
+            icon: Icon(
+              Icons.add,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
             onPressed: _openAddDailyItemPopup,
           ),
           IconButton(
             tooltip: 'Settings',
-            icon: const Icon(Icons.settings),
+            icon: Icon(
+              Icons.settings,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -441,7 +451,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
           PopupMenuButton<String>(
             tooltip: 'Save and Load History',
-            icon: const Icon(Icons.save),
+            icon: Icon(
+              Icons.save,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
             onSelected: (value) {
               if (value == 'load_history') {
                 _loadHistoryFromFile();
