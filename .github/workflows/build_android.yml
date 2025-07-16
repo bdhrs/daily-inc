@@ -75,7 +75,7 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add pubspec.yaml
-          git commit -m "chore(release): bump version to v${{ steps.set_version.outputs.VERSION }} [skip ci]"
+          git commit -m "bump version to v${{ steps.set_version.outputs.VERSION }}"
           git push
 
       - run: flutter pub get
