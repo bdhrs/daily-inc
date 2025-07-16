@@ -427,7 +427,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _showOnlyDueItems ? 'Due Today' : 'All Items',
+          'Daily Inc',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: _allTasksCompleted
                     ? Theme.of(context).colorScheme.primary
