@@ -7,7 +7,7 @@ import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
-import 'package:daily_inc/src/views/help_dialog.dart';
+import 'package:daily_inc/src/views/help_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -483,11 +483,12 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   : null,
             ),
             onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return const HelpDialog();
-                  });
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HelpView(),
+                ),
+              );
             },
           ),
           PopupMenuButton<String>(
