@@ -92,7 +92,6 @@ class DailyThing {
       }
     }
 
-    final yesterday = todayDate.subtract(const Duration(days: 1));
     final lastEntryDate =
         DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
 
