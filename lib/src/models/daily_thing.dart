@@ -19,6 +19,7 @@ class DailyThing {
   final List<HistoryEntry> history;
   final DateTime? nagTime;
   final String? nagMessage;
+  final int frequencyInDays;
   double? actualTodayValue; // New property to store actual value entered today
 
   DailyThing({
@@ -33,6 +34,7 @@ class DailyThing {
     this.history = const [],
     this.nagTime,
     this.nagMessage,
+    this.frequencyInDays = 1,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -94,18 +96,24 @@ class DailyThing {
     final lastEntryDate =
         DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
 
-    if (lastEntryDate == yesterday) {
-      if (lastEntry.doneToday) {
-        final newValue = lastEntry.targetValue + increment;
-        // For decreasing items, today's target is the minimum of:
-        // 1. Previous value + increment (decreasing)
-        // 2. But not less than endValue
+    final lastCompleted = lastCompletedDate;
+    if (lastCompleted != null) {
+      final difference = todayDate.difference(lastCompleted).inDays;
+      if (difference > 0 && difference < frequencyInDays) {
+        // Not due yet, value stays the same as the last entry.
+        return lastEntry.targetValue;
+      }
+    }
+
+    if (lastEntry.doneToday) {
+      final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
+      final incrementsMissed = (daysSinceLastEntry / frequencyInDays).floor();
+
+      if (incrementsMissed > 0) {
+        final newValue = lastEntry.targetValue + (increment * incrementsMissed);
         if (increment < 0) {
           return newValue.clamp(endValue, startValue);
         }
-        // For increasing items, today's target is the maximum of:
-        // 1. Previous value + increment (increasing)
-        // 2. But not more than endValue
         return newValue.clamp(startValue, endValue);
       }
     }
@@ -149,7 +157,40 @@ class DailyThing {
     return determineStatus(currentValue) == Status.green;
   }
 
-  bool get isDoneToday {
+  DateTime? get lastCompletedDate {
+    final sortedHistory = List<HistoryEntry>.from(history)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    for (final entry in sortedHistory) {
+      if (entry.doneToday) {
+        return DateTime(entry.date.year, entry.date.month, entry.date.day);
+      }
+    }
+    return null;
+  }
+
+  bool get isDueToday {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final lastDone = lastCompletedDate;
+
+    if (lastDone == null) {
+      // If it's never been done, it's due if the start date is today or in the past.
+      return !todayDate.isBefore(startDate);
+    }
+
+    final difference = todayDate.difference(lastDone).inDays;
+    return difference >= frequencyInDays;
+  }
+
+  bool get completedForToday {
+    if (!isDueToday) {
+      return true;
+    }
+    return hasBeenDoneLiterallyToday;
+  }
+
+  bool get hasBeenDoneLiterallyToday {
     final todayDate = DateTime(
       DateTime.now().year,
       DateTime.now().month,
@@ -168,9 +209,7 @@ class DailyThing {
     }
 
     if (todayEntry != null) {
-      // Use the isDone method with the actual or target value from today's entry
-      // This will correctly apply the specific logic for REPS, MINUTES, and CHECK
-      return isDone(todayEntry.actualValue ?? todayEntry.targetValue);
+      return todayEntry.doneToday;
     }
     return false; // No entry for today, so not done today
   }
@@ -188,6 +227,7 @@ class DailyThing {
       'history': history.map((entry) => entry.toJson()).toList(),
       'nagTime': nagTime?.toIso8601String(),
       'nagMessage': nagMessage,
+      'frequencyInDays': frequencyInDays,
     };
   }
 
@@ -228,6 +268,7 @@ class DailyThing {
           ? null
           : DateTime.parse(json['nagTime'] as String),
       nagMessage: json['nagMessage'] as String?,
+      frequencyInDays: json['frequencyInDays'] as int? ?? 1,
     );
   }
 }

@@ -51,7 +51,7 @@ class DailyThingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompletedToday = item.isDoneToday;
+    final isCompletedToday = item.completedForToday;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(10, 0.5, 10, 0.5),
@@ -147,7 +147,7 @@ class DailyThingItem extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: item.isDoneToday
+                      color: item.completedForToday
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.error,
                       borderRadius: BorderRadius.circular(4),

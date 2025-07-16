@@ -29,6 +29,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _startValueController;
   late TextEditingController _durationController;
   late TextEditingController _endValueController;
+  late TextEditingController _frequencyController;
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
   ItemType _selectedItemType = ItemType.minutes;
@@ -55,6 +56,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         TextEditingController(text: existingItem?.duration.toString() ?? '30');
     _endValueController =
         TextEditingController(text: existingItem?.endValue.toString());
+    _frequencyController = TextEditingController(
+        text: existingItem?.frequencyInDays.toString() ?? '1');
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
     if (existingItem != null) {
@@ -90,6 +93,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _startValueController.dispose();
     _durationController.dispose();
     _endValueController.dispose();
+    _frequencyController.dispose();
     _nagTimeController.dispose();
     _nagMessageController.dispose();
     super.dispose();
@@ -142,6 +146,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           nagMessage: _nagMessageController.text.isEmpty
               ? null
               : _nagMessageController.text,
+          frequencyInDays: int.parse(_frequencyController.text),
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -224,6 +229,25 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _frequencyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Frequency (days)',
+                    hintText: '1',
+                    prefixIcon: Icon(Icons.repeat),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a frequency';
+                    }
+                    if (int.tryParse(value) == null || int.parse(value) < 1) {
+                      return 'Please enter a valid number greater than 0';
                     }
                     return null;
                   },

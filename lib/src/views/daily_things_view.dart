@@ -28,6 +28,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   final _log = Logger('DailyThingsView');
   bool _hasShownCompletionSnackbar = false;
   bool _allTasksCompleted = false;
+  bool _showOnlyDueItems = true;
 
   @override
   void initState() {
@@ -417,10 +418,16 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
+    final List<DailyThing> displayedItems = _showOnlyDueItems
+        ? _dailyThings
+            .where((item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
+            .toList()
+        : _dailyThings;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Daily Inc',
+          _showOnlyDueItems ? 'Due Today' : 'All Items',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: _allTasksCompleted
                     ? Theme.of(context).colorScheme.primary
@@ -428,6 +435,18 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               ),
         ),
         actions: [
+          IconButton(
+            tooltip:
+                _showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only',
+            icon: Icon(
+              _showOnlyDueItems ? Icons.visibility_off : Icons.visibility,
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyDueItems = !_showOnlyDueItems;
+              });
+            },
+          ),
           IconButton(
             tooltip: 'Add an item',
             icon: Icon(
@@ -501,7 +520,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 value: 'save_history',
                 child: Row(
                   children: [
-                    Icon(Icons.save),
+                    Icon(Icons.save_alt),
                     SizedBox(width: 8),
                     Text('Save History'),
                   ],
@@ -511,58 +530,32 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: _dailyThings.length,
-              itemBuilder: (context, index) {
-                final item = _dailyThings[index];
-                return LongPressDraggable<DailyThing>(
-                  data: item,
-                  feedback: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    child: Material(
-                      elevation: 4.0,
-                      child: _buildItemRow(item),
-                    ),
-                  ),
-                  childWhenDragging: Container(
-                    height: 80, // Adjust height to match item height
-                    color: Colors.grey[200],
-                  ),
-                  onDragStarted: () {
-                    // Optional: Add feedback when dragging starts
-                  },
-                  child: DragTarget<DailyThing>(
-                    onWillAcceptWithDetails: (details) {
-                      return details.data != item;
-                    },
-                    onAcceptWithDetails: (details) {
-                      final droppedItem = details.data;
-                      setState(() {
-                        final oldIndex = _dailyThings.indexOf(droppedItem);
-                        final newIndex = index;
-                        if (newIndex > oldIndex) {
-                          _dailyThings.insert(newIndex, droppedItem);
-                          _dailyThings.removeAt(oldIndex);
-                        } else {
-                          _dailyThings.removeAt(oldIndex);
-                          _dailyThings.insert(newIndex, droppedItem);
-                        }
-                      });
-                      _dataManager.saveData(_dailyThings);
-                    },
-                    builder: (context, candidateData, rejectedData) {
-                      return _buildItemRow(item);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      body: ReorderableListView(
+        onReorder: (oldIndex, newIndex) {
+          setState(() {
+            if (newIndex > oldIndex) {
+              newIndex -= 1;
+            }
+            final item = displayedItems.removeAt(oldIndex);
+            final originalIndex = _dailyThings.indexOf(item);
+            _dailyThings.removeAt(originalIndex);
+
+            if (newIndex < displayedItems.length) {
+              final itemAtNewIndex = displayedItems[newIndex];
+              final originalNewIndex = _dailyThings.indexOf(itemAtNewIndex);
+              _dailyThings.insert(originalNewIndex, item);
+            } else {
+              _dailyThings.add(item);
+            }
+          });
+          _dataManager.saveData(_dailyThings);
+        },
+        children: displayedItems.map((item) {
+          return Container(
+            key: ValueKey(item.id),
+            child: _buildItemRow(item),
+          );
+        }).toList(),
       ),
     );
   }
