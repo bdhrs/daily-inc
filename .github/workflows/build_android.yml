@@ -1,4 +1,4 @@
-name: Build Android and Release
+name: Build Android
 
 on:
   workflow_dispatch:
@@ -6,8 +6,8 @@ on:
       is_release:
         description: 'Is this a release build? (will increment minor version)'
         required: true
-        default: 'false'
         type: choice
+        default: 'false'
         options:
           - 'true'
           - 'false'
@@ -19,82 +19,89 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
 
       - uses: actions/cache@v4
         with:
           path: |
             ~/.pub-cache
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
           key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+              ${{ runner.os }}-deps-
 
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Read current version
-        id: current_version
-        run: echo "CURRENT_VERSION=$(cat version.txt)" >> $GITHUB_OUTPUT
+      - name: Get version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          echo "Current version from pubspec: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Set version
+      - name: Set and bump version
         id: set_version
         run: |
-          # Read current version
-          CURRENT_VERSION="${{ steps.current_version.outputs.CURRENT_VERSION }}"
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Split into major, minor, and patch
+          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
           MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
           MINOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH_VERSION=$(echo $CURRENT_VERSION | cut -d. -f3)
           
-          # If this is a release build, increment the minor version
           if [[ "${{ github.event.inputs.is_release }}" == "true" ]]; then
             MINOR_VERSION=$((MINOR_VERSION + 1))
-            # Reset patch version to 0 when incrementing minor version
             PATCH_VERSION=0
             NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION"
-            echo "Incrementing minor version for release: $NEW_VERSION"
-            
-            # Update version.txt for future builds
-            echo "$NEW_VERSION" > version.txt
+            echo "Release build. New version: $NEW_VERSION"
           else
             NEW_VERSION="$CURRENT_VERSION"
-            echo "Using current version for build: $NEW_VERSION"
+            echo "Development build. Using current version: $NEW_VERSION"
           fi
-          
-          # Set output for later steps
           echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          
-          # Update version in pubspec.yaml
+
+      - name: Update pubspec.yaml for release and commit
+        if: github.event.inputs.is_release == 'true'
+        run: |
+          NEW_VERSION="${{ steps.set_version.outputs.VERSION }}"
+          # Update pubspec.yaml. The +build_number will be github.run_number
           sed -i "s/^version: .*/version: $NEW_VERSION+${{ github.run_number }}/" pubspec.yaml
+          echo "Updated pubspec.yaml with version $NEW_VERSION+${{ github.run_number }}"
           
-          # Update version in Android build.gradle.kts
-          sed -i "s/versionCode = .*/versionCode = ${{ github.run_number }}/" android/app/build.gradle.kts
-          sed -i "s/versionName = .*/versionName = \"$NEW_VERSION\"/" android/app/build.gradle.kts
+          # Commit and push
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "chore(release): bump version to v${{ steps.set_version.outputs.VERSION }} [skip ci]"
+          git push
 
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
-      - run: flutter build apk --build-number=${{ github.run_number }}
+      
+      - name: Build APK
+        run: flutter build apk --release --build-name=${{ steps.set_version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
-
+      
       - name: Rename APK
-        run: mv build/app/outputs/apk/release/app-release.apk build/app/outputs/apk/release/daily-inc.apk
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: build/app/outputs/apk/release/daily-inc.apk
-
+        id: rename_apk
+        run: |
+          VERSION_NAME="${{ steps.set_version.outputs.VERSION }}"
+          BUILD_NUMBER="${{ github.run_number }}"
+          APK_NAME="daily-inc-v$VERSION_NAME+$BUILD_NUMBER.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$APK_NAME
+          echo "APK_PATH=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_OUTPUT
+          echo "APK_NAME=$APK_NAME" >> $GITHUB_OUTPUT
+          
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.event.inputs.is_release == 'true' && 'Release' || 'Test Build' }} v${{ steps.set_version.outputs.VERSION }}
+          name: ${{ github.event.inputs.is_release == 'true' && 'Release' || 'Development Build' }} v${{ steps.set_version.outputs.VERSION }}+${{ github.run_number }}
           tag_name: v${{ steps.set_version.outputs.VERSION }}+${{ github.run_number }}
           draft: ${{ github.event.inputs.is_release != 'true' }}
           prerelease: ${{ github.event.inputs.is_release != 'true' }}
-          files: build/app/outputs/apk/release/daily-inc.apk
+          files: ${{ steps.rename_apk.outputs.APK_PATH }}
