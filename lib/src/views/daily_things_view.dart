@@ -53,8 +53,14 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       setState(() {
         _dailyThings = items;
       });
+      // Check if all tasks are already completed when app loads
+      _checkAndShowCompletionSnackbar();
     } else {
       _log.warning('No items to load.');
+      setState(() {
+        _allTasksCompleted = false;
+        _hasShownCompletionSnackbar = false;
+      });
     }
   }
 
@@ -106,6 +112,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           _log.warning('Could not find item to update in list.');
         }
       });
+      _checkAndShowCompletionSnackbar();
     } else {
       _log.info('Edit cancelled.');
     }
@@ -312,16 +319,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _checkAndShowCompletionSnackbar() {
-    final todayDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
-    bool allCompleted = _dailyThings.every((item) => item.history.any((entry) =>
-        entry.date.year == todayDate.year &&
-        entry.date.month == todayDate.month &&
-        entry.date.day == todayDate.day &&
-        entry.doneToday == true));
+    bool allCompleted = _dailyThings.every((item) => item.completedForToday);
 
     if (allCompleted && !_hasShownCompletionSnackbar) {
       _log.info('All tasks completed, showing celebration snackbar.');
@@ -440,6 +438,9 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 _showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only',
             icon: Icon(
               _showOnlyDueItems ? Icons.visibility_off : Icons.visibility,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
             ),
             onPressed: () {
               setState(() {
