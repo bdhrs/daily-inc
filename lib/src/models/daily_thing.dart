@@ -57,12 +57,10 @@ class DailyThing {
         if (itemType == ItemType.check) {
           return entry.doneToday ? 1.0 : 0.0;
         }
-        try {
-          return entry.targetValue;
-        } catch (e) {
-          _logger.severe('Error getting targetValue from entry: $e');
-          return 0.0;
-        }
+
+        // This was the bug. It should always return the target for today,
+        // not the partial progress.
+        return entry.targetValue;
       }
     }
 
@@ -119,6 +117,23 @@ class DailyThing {
 
     // If last entry was not yesterday, or was yesterday but not done, value stays the same.
     return lastEntry.targetValue;
+  }
+
+  double get displayValue {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    final todaysEntry = history.where((entry) {
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      return entryDate == todayDate && entry.actualValue != null;
+    }).toList();
+
+    if (todaysEntry.isNotEmpty) {
+      return todaysEntry.first.actualValue!;
+    }
+
+    return todayValue;
   }
 
   Status determineStatus(double currentValue) {
