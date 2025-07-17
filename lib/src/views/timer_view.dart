@@ -52,7 +52,7 @@ class _TimerViewState extends State<TimerView> {
     for (final entry in widget.item.history) {
       final entryDate = DateUtils.dateOnly(entry.date);
       _log.info(
-          'Checking history: date=${entryDate}, actual=${entry.actualValue}, done=${entry.doneToday}, target=${entry.targetValue}');
+          'Checking history: date=$entryDate, actual=${entry.actualValue}, done=${entry.doneToday}, target=${entry.targetValue}');
       if (entryDate == todayDate &&
           entry.actualValue != null &&
           !entry.doneToday) {
