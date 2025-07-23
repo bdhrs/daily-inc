@@ -130,7 +130,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel',
-                  style: TextStyle(color: ColorPalette.errorRed)),
+                  style: TextStyle(color: ColorPalette.warningOrange)),
               onPressed: () {
                 _log.info('Delete cancelled.');
                 Navigator.of(context).pop(false);
@@ -138,7 +138,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             ),
             TextButton(
               child: const Text('Delete',
-                  style: TextStyle(color: ColorPalette.errorRed)),
+                  style: TextStyle(color: ColorPalette.warningOrange)),
               onPressed: () {
                 _log.info('Delete confirmed.');
                 Navigator.of(context).pop(true);
