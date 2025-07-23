@@ -11,6 +11,7 @@
         "softprops",
         "subosito",
         "temurin",
+        "TOOLSETS",
         "wakelock",
         "xcworkspace"
     ]
