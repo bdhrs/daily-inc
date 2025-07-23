@@ -16,7 +16,7 @@ class AppTheme {
         surface: ColorPalette.cardBackground, // For cards and elevated surfaces
         onSurface: ColorPalette.lightText,
 
-        error: ColorPalette.errorRed,
+        error: ColorPalette.warningOrange,
         onError: ColorPalette.lightText,
       ),
       // AppBar theme

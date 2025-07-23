@@ -13,6 +13,9 @@ class ColorPalette {
       Colors.black; // New: Black text for light backgrounds
   static const Color secondaryText =
       Color(0xFFAAAAAA); // A lighter gray for secondary text
-  static const Color errorRed = Color.fromARGB(255, 196, 118, 0); // orange[200]
+  static const Color warningOrange =
+      Color.fromARGB(255, 196, 118, 0); // orange[200]
+  static const Color darkerOrange =
+      Color(0xFFE65100); // orange[700] - darker orange for half-completed tasks
   static const Color scrollbarThumb = Color(0xFF424242);
 }

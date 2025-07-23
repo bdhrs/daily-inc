@@ -67,7 +67,7 @@ class _SettingsViewState extends State<SettingsView> {
               title: const Text('Hard Reset'),
               trailing: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorPalette.errorRed,
+                  backgroundColor: ColorPalette.warningOrange,
                   foregroundColor: ColorPalette.lightText,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -100,7 +100,7 @@ class _SettingsViewState extends State<SettingsView> {
                           ),
                           TextButton(
                             style: TextButton.styleFrom(
-                              foregroundColor: ColorPalette.errorRed,
+                              foregroundColor: ColorPalette.warningOrange,
                             ),
                             onPressed: () {
                               _log.info('Reset pressed');

@@ -4,6 +4,7 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 
 class DailyThingItem extends StatelessWidget {
   final DailyThing item;
@@ -49,6 +50,29 @@ class DailyThingItem extends StatelessWidget {
     }
   }
 
+  bool _hasIncompleteProgress(DailyThing item) {
+    if (item.itemType != ItemType.minutes) return false;
+
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    final todayEntry = item.history.firstWhere(
+      (entry) =>
+          entry.date.year == today.year &&
+          entry.date.month == today.month &&
+          entry.date.day == today.day,
+      orElse: () =>
+          HistoryEntry(date: DateTime(0), targetValue: 0, doneToday: false),
+    );
+
+    return todayEntry.date.year != 0 &&
+        (todayEntry.actualValue ?? 0) > 0 &&
+        !todayEntry.doneToday;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCompletedToday = item.completedForToday;
@@ -75,7 +99,9 @@ class DailyThingItem extends StatelessWidget {
                     isCompletedToday ? Icons.check : Icons.close,
                     color: isCompletedToday
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.error,
+                        : _hasIncompleteProgress(item)
+                            ? ColorPalette.darkerOrange
+                            : Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(width: 12),
                   if (item.icon != null)
@@ -149,7 +175,9 @@ class DailyThingItem extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: item.completedForToday
                           ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.error,
+                          : _hasIncompleteProgress(item)
+                              ? ColorPalette.darkerOrange
+                              : Theme.of(context).colorScheme.error,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment.center,

@@ -143,7 +143,7 @@ class HelpView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           ListTile(
-            leading: Icon(Icons.close, color: ColorPalette.errorRed),
+            leading: Icon(Icons.close, color: ColorPalette.warningOrange),
             title: const Text('Completion Status'),
             subtitle: const Text(
                 'Shows if a task is done for today. Starts as a red cross and turns into a green checkmark upon completion.'),
@@ -158,7 +158,7 @@ class HelpView extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: ColorPalette.errorRed,
+                color: ColorPalette.warningOrange,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
