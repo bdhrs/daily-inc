@@ -152,36 +152,11 @@ class NotificationService {
       _log.info('Notification scheduled successfully.');
     } catch (e, s) {
       _log.severe(
-          'Error scheduling notification, falling back to immediate.', e, s);
-      final prefs = await SharedPreferences.getInstance();
-      final bool stickyNotifications =
-          prefs.getBool('stickyNotifications') ?? false;
-      // Fallback to immediate notification if scheduling fails
-      await flutterLocalNotificationsPlugin.show(
-        id,
-        title,
-        body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'daily_inc_channel',
-            'Daily Inc',
-            channelDescription: 'Channel for Daily Inc notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-            ongoing: stickyNotifications,
-            autoCancel: !stickyNotifications,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          linux: const LinuxNotificationDetails(
-            urgency: LinuxNotificationUrgency.critical,
-            resident: true,
-          ),
-        ),
-      );
+          'Error scheduling notification, no fallback to immediate notification.',
+          e,
+          s);
+      // Removed fallback to immediate notification as per requirements
+      // Notifications should only appear at the specified nag time
     }
   }
 

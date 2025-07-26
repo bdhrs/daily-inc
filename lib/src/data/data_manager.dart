@@ -115,13 +115,29 @@ class DataManager {
 
     // Schedule notification if nag time and message are provided
     if (newItem.nagTime != null && newItem.nagMessage != null) {
+      // Ensure nag time is in the future
+      DateTime scheduledTime = newItem.nagTime!;
+      final now = DateTime.now();
+
+      // If the scheduled time is in the past, schedule for tomorrow at the same time
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          newItem.nagTime!.hour,
+          newItem.nagTime!.minute,
+        ).add(const Duration(days: 1));
+      }
+
       await _notificationService.scheduleNagNotification(
         _getNotificationId(newItem.id),
         newItem.name,
         newItem.nagMessage!,
-        newItem.nagTime!,
+        scheduledTime,
       );
-      _log.info('Scheduled notification for new item: ${newItem.name}');
+      _log.info(
+          'Scheduled notification for new item: ${newItem.name} at $scheduledTime');
     }
   }
 
@@ -157,14 +173,29 @@ class DataManager {
 
       // Schedule new notification if nag time and message are provided
       if (updatedItem.nagTime != null && updatedItem.nagMessage != null) {
+        // Ensure nag time is in the future
+        DateTime scheduledTime = updatedItem.nagTime!;
+        final now = DateTime.now();
+
+        // If the scheduled time is in the past, schedule for tomorrow at the same time
+        if (scheduledTime.isBefore(now)) {
+          scheduledTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            updatedItem.nagTime!.hour,
+            updatedItem.nagTime!.minute,
+          ).add(const Duration(days: 1));
+        }
+
         await _notificationService.scheduleNagNotification(
           _getNotificationId(updatedItem.id),
           updatedItem.name,
           updatedItem.nagMessage!,
-          updatedItem.nagTime!,
+          scheduledTime,
         );
         _log.info(
-            'Rescheduled notification for updated item: ${updatedItem.name}');
+            'Rescheduled notification for updated item: ${updatedItem.name} at $scheduledTime');
       }
     } else {
       _log.warning('Item with id ${updatedItem.id} not found for update.');
