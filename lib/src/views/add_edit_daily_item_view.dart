@@ -126,8 +126,16 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         final DateTime? nagTime;
         if (_selectedNagTime != null) {
           final now = DateTime.now();
-          nagTime = DateTime(now.year, now.month, now.day,
+          // Create the nag time for today at the selected time
+          DateTime scheduledTime = DateTime(now.year, now.month, now.day,
               _selectedNagTime!.hour, _selectedNagTime!.minute);
+
+          // Ensure the time is in the future
+          if (scheduledTime.isBefore(now)) {
+            scheduledTime = scheduledTime.add(const Duration(days: 1));
+          }
+
+          nagTime = scheduledTime;
         } else {
           nagTime = null;
         }
