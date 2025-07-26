@@ -225,6 +225,20 @@ class _TimerViewState extends State<TimerView> {
     return '$minutes:$remainingSeconds';
   }
 
+  String _formatElapsedTotalTime() {
+    final elapsedSeconds = _originalTotalSeconds - _remainingSeconds;
+    final elapsedMinutes = (elapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final elapsedRemainingSeconds =
+        (elapsedSeconds % 60).toString().padLeft(2, '0');
+
+    final totalMinutes =
+        (_originalTotalSeconds ~/ 60).toString().padLeft(2, '0');
+    final totalRemainingSeconds =
+        (_originalTotalSeconds % 60).toString().padLeft(2, '0');
+
+    return '$elapsedMinutes:$elapsedRemainingSeconds / $totalMinutes:$totalRemainingSeconds';
+  }
+
   Future<bool?> _showSaveDialog() async {
     return showDialog<bool>(
       context: context,
@@ -326,6 +340,15 @@ class _TimerViewState extends State<TimerView> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  _formatElapsedTotalTime(),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: ColorPalette.lightText.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
