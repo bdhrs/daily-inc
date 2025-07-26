@@ -196,4 +196,27 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.cancelAll();
     _log.info('All notifications cancelled');
   }
+
+  /// Checks if the app has the necessary permissions for scheduling notifications
+  Future<bool> checkPermissions() async {
+    _log.info('Checking notification permissions');
+    try {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        final bool? granted =
+            await androidImplementation.areNotificationsEnabled();
+        _log.info('Android notifications enabled: $granted');
+        return granted ?? false;
+      }
+
+      // For other platforms, assume permissions are granted
+      return true;
+    } catch (e) {
+      _log.severe('Error checking permissions', e);
+      return false;
+    }
+  }
 }

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'dart:io' show Platform, exit;
 import 'package:daily_inc/src/views/daily_things_view.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/services/background_scheduler.dart';
 import 'package:daily_inc/src/theme/app_theme.dart';
 import 'package:logging/logging.dart';
 
@@ -34,6 +36,14 @@ void main() async {
       final notificationService = NotificationService();
       await notificationService.init();
       await notificationService.requestPermissions();
+
+      // Schedule notifications for existing items on startup
+      final dataManager = DataManager();
+      await dataManager.scheduleAllNotifications();
+
+      // Initialize background scheduler for daily rescheduling
+      await BackgroundScheduler.initialize();
+
       runApp(const MyApp());
       log.info("App started successfully");
     } catch (e, stack) {
