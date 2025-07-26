@@ -112,6 +112,17 @@ class DataManager {
     items.add(newItem);
     await saveData(items);
     _log.info('Item added and data saved.');
+
+    // Schedule notification if nag time and message are provided
+    if (newItem.nagTime != null && newItem.nagMessage != null) {
+      await _notificationService.scheduleNagNotification(
+        _getNotificationId(newItem.id),
+        newItem.name,
+        newItem.nagMessage!,
+        newItem.nagTime!,
+      );
+      _log.info('Scheduled notification for new item: ${newItem.name}');
+    }
   }
 
   Future<void> deleteDailyThing(DailyThing itemToDelete) async {
@@ -143,6 +154,18 @@ class DataManager {
             .cancelNotification(_getNotificationId(updatedItem.id));
         _log.info('Cancelled existing notification for ${updatedItem.name}');
       }
+
+      // Schedule new notification if nag time and message are provided
+      if (updatedItem.nagTime != null && updatedItem.nagMessage != null) {
+        await _notificationService.scheduleNagNotification(
+          _getNotificationId(updatedItem.id),
+          updatedItem.name,
+          updatedItem.nagMessage!,
+          updatedItem.nagTime!,
+        );
+        _log.info(
+            'Rescheduled notification for updated item: ${updatedItem.name}');
+      }
     } else {
       _log.warning('Item with id ${updatedItem.id} not found for update.');
     }
@@ -161,6 +184,53 @@ class DataManager {
       }
     } catch (e, s) {
       _log.severe('Error deleting data file', e, s);
+    }
+  }
+
+  /// Schedules notifications for all items that have nagTime and nagMessage
+  Future<void> scheduleAllNotifications() async {
+    _log.info('scheduleAllNotifications called');
+    try {
+      final items = await loadData();
+      int scheduledCount = 0;
+
+      // Cancel all existing notifications first
+      await _notificationService.cancelAllNotifications();
+      _log.info('Cancelled all existing notifications');
+
+      // Schedule notifications for items with nag time and message
+      for (final thing in items) {
+        if (thing.nagTime != null && thing.nagMessage != null) {
+          // Ensure nag time is in the future
+          DateTime scheduledTime = thing.nagTime!;
+          final now = DateTime.now();
+
+          // If the scheduled time is in the past, schedule for tomorrow at the same time
+          if (scheduledTime.isBefore(now)) {
+            scheduledTime = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              thing.nagTime!.hour,
+              thing.nagTime!.minute,
+            ).add(const Duration(days: 1));
+          }
+
+          await _notificationService.scheduleNagNotification(
+            _getNotificationId(thing.id),
+            thing.name,
+            thing.nagMessage!,
+            scheduledTime,
+          );
+          scheduledCount++;
+          _log.info(
+              'Scheduled notification for: ${thing.name} at $scheduledTime');
+        }
+      }
+
+      _log.info('Successfully scheduled $scheduledCount notifications');
+    } catch (e, s) {
+      _log.severe('Error scheduling notifications', e, s);
     }
   }
 

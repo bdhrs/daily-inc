@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -132,8 +133,10 @@ class _TimerViewState extends State<TimerView> {
 
   void _onTimerComplete() async {
     _log.info('onTimerComplete called');
-    // Play the bell sound
-    await _audioPlayer.play(AssetSource('bell.mp3'));
+
+    // Play notification with sound and vibration (works even with screen off)
+    await _playTimerCompleteNotification();
+
     WakelockPlus.disable();
     _log.info('Wakelock disabled.');
 
@@ -344,7 +347,7 @@ class _TimerViewState extends State<TimerView> {
                   _formatElapsedTotalTime(),
                   style: TextStyle(
                     fontSize: 16,
-                    color: ColorPalette.lightText.withOpacity(0.7),
+                    color: ColorPalette.lightText.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -404,6 +407,23 @@ class _TimerViewState extends State<TimerView> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _playTimerCompleteNotification() async {
+    _log.info('Playing timer complete notification');
+
+    try {
+      // Try to play the bell sound first (for when app is in foreground)
+      await _audioPlayer.play(AssetSource('bell.mp3'));
+    } catch (e) {
+      _log.warning('Failed to play bell sound: $e');
+    }
+
+    // Always show notification (works even with screen off)
+    await NotificationService().showTestNotification(
+      999, // Unique ID for timer completion
+      '${widget.item.name} Complete!',
     );
   }
 }
