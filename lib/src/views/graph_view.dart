@@ -241,7 +241,8 @@ class _GraphViewState extends State<GraphView> {
     } else {
       final historyByDate = {
         for (var entry in widget.dailyThing.history)
-          entry.date.millisecondsSinceEpoch.toDouble(): entry.targetValue
+          entry.date.millisecondsSinceEpoch.toDouble():
+              entry.actualValue ?? entry.targetValue
       };
 
       for (var entry in widget.dailyThing.history) {
