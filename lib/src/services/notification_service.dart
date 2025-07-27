@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logging/logging.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
@@ -18,12 +16,12 @@ class NotificationService {
 
   Future<void> init() async {
     _log.info('Initializing NotificationService...');
-    // Ensure initialization is only done once
     if (_isInitialized) {
       _log.info('NotificationService already initialized.');
       return;
     }
     _isInitialized = true;
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
 
@@ -51,10 +49,11 @@ class NotificationService {
       onDidReceiveNotificationResponse: (details) async {
         _log.info(
             'onDidReceiveNotificationResponse: payload=${details.payload}');
+        if (const bool.fromEnvironment('TEST_NOTIFICATION')) {
+          _log.info('TEST_NOTIFICATION: Received notification response');
+        }
       },
     );
-
-    tz.initializeTimeZones();
     _log.info('NotificationService initialized.');
   }
 
@@ -82,10 +81,13 @@ class NotificationService {
 
   Future<void> showTestNotification(int id, String title) async {
     _log.info('showTestNotification called: id=$id, title=$title');
+    if (const bool.fromEnvironment('TEST_NOTIFICATION')) {
+      _log.info('TEST_NOTIFICATION: Showing test notification');
+    }
     await flutterLocalNotificationsPlugin.show(
       id,
-      "Test: $title",
-      "This is a test notification. The scheduled one will appear at the set time.",
+      title,
+      "complete!",
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_inc_channel',
@@ -111,8 +113,14 @@ class NotificationService {
 
   Future<void> scheduleNagNotification(
       int id, String title, String body, DateTime scheduledTime) async {
+    final utcTime = scheduledTime.toUtc();
     _log.info(
-        'scheduleNagNotification called: id=$id, title=$title, scheduledTime=$scheduledTime');
+        'scheduleNagNotification called: id=$id, title=$title, utcTime=$utcTime');
+
+    if (const bool.fromEnvironment('TEST_NOTIFICATION')) {
+      _log.info('TEST_NOTIFICATION: Scheduling notification for testing');
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final bool stickyNotifications =
@@ -123,13 +131,18 @@ class NotificationService {
         return;
       }
 
-      // For other platforms, use zonedSchedule
-      _log.info('Scheduling zoned notification.');
-      await flutterLocalNotificationsPlugin.zonedSchedule(
+      _log.info('Creating scheduled notification', {
+        'id': id,
+        'title': title,
+        'utcTime': utcTime.toString(),
+        'timestamp': utcTime.millisecondsSinceEpoch,
+        'currentUtcTime': DateTime.now().toUtc().toString()
+      });
+
+      await flutterLocalNotificationsPlugin.show(
         id,
         title,
         body,
-        tz.TZDateTime.from(scheduledTime, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_inc_channel',
@@ -139,6 +152,11 @@ class NotificationService {
             priority: Priority.high,
             ongoing: stickyNotifications,
             autoCancel: !stickyNotifications,
+            when: utcTime.millisecondsSinceEpoch,
+            showWhen: true,
+            styleInformation: const BigTextStyleInformation(''),
+            visibility: NotificationVisibility.public,
+            fullScreenIntent: true,
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -146,17 +164,17 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
       );
+
       _log.info('Notification scheduled successfully.');
+      if (const bool.fromEnvironment('TEST_NOTIFICATION')) {
+        _log.info('TEST_NOTIFICATION: Notification scheduled successfully');
+      }
     } catch (e, s) {
-      _log.severe(
-          'Error scheduling notification, no fallback to immediate notification.',
-          e,
-          s);
-      // Removed fallback to immediate notification as per requirements
-      // Notifications should only appear at the specified nag time
+      _log.severe('Error scheduling notification', e, s);
+      if (const bool.fromEnvironment('TEST_NOTIFICATION')) {
+        _log.severe('TEST_NOTIFICATION: Failed to schedule notification', e, s);
+      }
     }
   }
 
@@ -172,7 +190,6 @@ class NotificationService {
     _log.info('All notifications cancelled');
   }
 
-  /// Checks if the app has the necessary permissions for scheduling notifications
   Future<bool> checkPermissions() async {
     _log.info('Checking notification permissions');
     try {
@@ -186,8 +203,6 @@ class NotificationService {
         _log.info('Android notifications enabled: $granted');
         return granted ?? false;
       }
-
-      // For other platforms, assume permissions are granted
       return true;
     } catch (e) {
       _log.severe('Error checking permissions', e);
