@@ -104,18 +104,43 @@ class DailyThing {
 
     if (lastEntry.doneToday) {
       final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-      final incrementsMissed = (daysSinceLastEntry / frequencyInDays).floor();
+      final daysMissed =
+          daysSinceLastEntry - 1; // Subtract 1 to get missed days
 
-      if (incrementsMissed > 0) {
-        final newValue = lastEntry.targetValue + (increment * incrementsMissed);
-        if (increment < 0) {
+      if (daysMissed >= 2) {
+        // Two or more days missed - apply exactly one increment
+        final newValue = startValue < endValue
+            ? lastEntry.targetValue -
+                increment // Decreasing for increasing progressions
+            : lastEntry.targetValue +
+                increment; // Increasing for decreasing progressions
+        // Handle both increasing and decreasing progressions
+        if (startValue < endValue) {
+          return newValue.clamp(startValue, endValue);
+        } else {
           return newValue.clamp(endValue, startValue);
         }
-        return newValue.clamp(startValue, endValue);
       }
+      // One day missed - no change to value
+      return lastEntry.targetValue;
     }
 
-    // If last entry was not yesterday, or was yesterday but not done, value stays the same.
+    // If last entry was not done, apply same logic as missed days
+    final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
+    final daysMissed = daysSinceLastEntry - 1; // Subtract 1 to get missed days
+
+    if (daysMissed >= 2) {
+      final newValue = startValue < endValue
+          ? lastEntry.targetValue -
+              increment // Decreasing for increasing progressions
+          : lastEntry.targetValue +
+              increment; // Increasing for decreasing progressions
+      if (startValue < endValue) {
+        return newValue.clamp(startValue, endValue);
+      } else {
+        return newValue.clamp(endValue, startValue);
+      }
+    }
     return lastEntry.targetValue;
   }
 
