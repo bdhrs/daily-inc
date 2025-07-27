@@ -15,6 +15,7 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView> {
   final _log = Logger('SettingsView');
   bool _stickyNotifications = false;
+  bool _hideWhenDone = false;
   final DataManager _dataManager = DataManager();
 
   @override
@@ -28,8 +29,10 @@ class _SettingsViewState extends State<SettingsView> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _stickyNotifications = prefs.getBool('stickyNotifications') ?? false;
+      _hideWhenDone = prefs.getBool('hideWhenDone') ?? false;
     });
-    _log.info('Settings loaded: stickyNotifications=$_stickyNotifications');
+    _log.info(
+        'Settings loaded: stickyNotifications=$_stickyNotifications, hideWhenDone=$_hideWhenDone');
   }
 
   Future<void> _updateStickyNotifications(bool value) async {
@@ -40,6 +43,16 @@ class _SettingsViewState extends State<SettingsView> {
       _stickyNotifications = value;
     });
     _log.info('Sticky notifications updated successfully.');
+  }
+
+  Future<void> _updateHideWhenDone(bool value) async {
+    _log.info('Updating hideWhenDone to: $value');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hideWhenDone', value);
+    setState(() {
+      _hideWhenDone = value;
+    });
+    _log.info('hideWhenDone updated successfully.');
   }
 
   @override
@@ -54,6 +67,13 @@ class _SettingsViewState extends State<SettingsView> {
             title: const Text('Sticky Notifications'),
             value: _stickyNotifications,
             onChanged: _updateStickyNotifications,
+          ),
+          SwitchListTile(
+            title: const Text('Hide Completed Items'),
+            subtitle:
+                const Text('Hide items when they are completed for today'),
+            value: _hideWhenDone,
+            onChanged: _updateHideWhenDone,
           ),
           const Divider(
             height: 32,

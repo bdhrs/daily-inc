@@ -423,7 +423,7 @@ class _TimerViewState extends State<TimerView> {
     // Always show notification (works even with screen off)
     await NotificationService().showTestNotification(
       999, // Unique ID for timer completion
-      '${widget.item.name} Complete!',
+      '${widget.item.name} complete!',
     );
   }
 }

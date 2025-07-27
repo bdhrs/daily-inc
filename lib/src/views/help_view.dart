@@ -97,15 +97,14 @@ class HelpView extends StatelessWidget {
                 Text('Toggle between showing all items and only due items.'),
           ),
           const ListTile(
+            leading: Icon(Icons.settings),
+            title: Text('Settings Icon'),
+            subtitle: Text('Access settings to configure app behavior.'),
+          ),
+          const ListTile(
             leading: Icon(Icons.add),
             title: Text('Add Item'),
             subtitle: Text('Add a new daily task.'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings'),
-            subtitle: Text(
-                'Configure app settings like notifications and reset data.'),
           ),
           const ListTile(
             leading: Icon(Icons.help),
@@ -198,6 +197,18 @@ class HelpView extends StatelessWidget {
             leading: Icon(Icons.delete),
             title: Text('Delete'),
             subtitle: Text('Permanently removes the task and its history.'),
+          ),
+          const Divider(height: 32),
+          Text(
+            'Settings',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          const ListTile(
+            leading: Icon(Icons.visibility_off),
+            title: Text('Hide When Done'),
+            subtitle: Text(
+                'When enabled in Settings, completed tasks (blue) will be automatically hidden from view.'),
           ),
         ],
       ),

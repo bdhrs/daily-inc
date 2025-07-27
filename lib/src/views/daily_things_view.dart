@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
@@ -29,12 +30,33 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   bool _hasShownCompletionSnackbar = false;
   bool _allTasksCompleted = false;
   bool _showOnlyDueItems = true;
+  bool _hideWhenDone = false;
 
   @override
   void initState() {
     super.initState();
     _log.info('initState called');
-    _loadData();
+    // Load settings first to ensure they're available for first build
+    _loadHideWhenDoneSetting().then((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadHideWhenDoneSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Update state immediately without setState to ensure value is available for first build
+    _hideWhenDone = prefs.getBool('hideWhenDone') ?? false;
+    _log.info('Initial hideWhenDone setting: $_hideWhenDone');
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _refreshHideWhenDoneSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _hideWhenDone = prefs.getBool('hideWhenDone') ?? false;
+    });
   }
 
   @override
@@ -416,11 +438,16 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
-    final List<DailyThing> displayedItems = _showOnlyDueItems
+    List<DailyThing> displayedItems = _showOnlyDueItems
         ? _dailyThings
             .where((item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
             .toList()
         : _dailyThings;
+
+    if (_hideWhenDone) {
+      displayedItems =
+          displayedItems.where((item) => !item.completedForToday).toList();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -466,13 +493,14 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                   ? Theme.of(context).colorScheme.primary
                   : null,
             ),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const SettingsView(),
                 ),
               );
+              await _refreshHideWhenDoneSetting();
             },
           ),
           IconButton(
