@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:daily_inc/src/services/notification_service.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -419,11 +418,5 @@ class _TimerViewState extends State<TimerView> {
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
     }
-
-    // Always show notification (works even with screen off)
-    await NotificationService().showTestNotification(
-      999, // Unique ID for timer completion
-      '${widget.item.name} complete!',
-    );
   }
 }

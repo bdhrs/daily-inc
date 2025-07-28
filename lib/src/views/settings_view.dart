@@ -1,5 +1,4 @@
 import 'package:daily_inc/src/data/data_manager.dart';
-import 'package:daily_inc/src/views/daily_things_view.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
@@ -14,7 +13,6 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   final _log = Logger('SettingsView');
-  bool _stickyNotifications = false;
   bool _hideWhenDone = false;
   final DataManager _dataManager = DataManager();
 
@@ -28,21 +26,9 @@ class _SettingsViewState extends State<SettingsView> {
     _log.info('Loading settings...');
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _stickyNotifications = prefs.getBool('stickyNotifications') ?? false;
       _hideWhenDone = prefs.getBool('hideWhenDone') ?? false;
     });
-    _log.info(
-        'Settings loaded: stickyNotifications=$_stickyNotifications, hideWhenDone=$_hideWhenDone');
-  }
-
-  Future<void> _updateStickyNotifications(bool value) async {
-    _log.info('Updating sticky notifications to: $value');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('stickyNotifications', value);
-    setState(() {
-      _stickyNotifications = value;
-    });
-    _log.info('Sticky notifications updated successfully.');
+    _log.info('Settings loaded: hideWhenDone=$_hideWhenDone');
   }
 
   Future<void> _updateHideWhenDone(bool value) async {
@@ -55,6 +41,61 @@ class _SettingsViewState extends State<SettingsView> {
     _log.info('hideWhenDone updated successfully.');
   }
 
+  Future<void> _resetAllData() async {
+    _log.info('Resetting all data...');
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset All Data?'),
+        content: const Text(
+            'This will delete ALL your daily items and history. This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Reset',
+              style: TextStyle(color: ColorPalette.warningOrange),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldReset == true) {
+      _log.info('User confirmed data reset');
+      try {
+        await _dataManager.resetAllData();
+        if (mounted) {
+          navigator.pop();
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('All data has been reset'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        _log.warning('Error resetting data: $e');
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+                content: Text('Error resetting data: $e'),
+                duration: const Duration(seconds: 2)),
+          );
+        }
+      }
+    } else {
+      _log.info('Reset operation cancelled');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,148 +103,23 @@ class _SettingsViewState extends State<SettingsView> {
         title: const Text('Settings'),
       ),
       body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
-            title: const Text('Sticky Notifications'),
-            value: _stickyNotifications,
-            onChanged: _updateStickyNotifications,
-          ),
-          SwitchListTile(
             title: const Text('Hide Completed Items'),
-            subtitle:
-                const Text('Hide items when they are completed for today'),
             value: _hideWhenDone,
             onChanged: _updateHideWhenDone,
           ),
-          const Divider(
-            height: 32,
-            thickness: 2,
-            indent: 16,
-            endIndent: 16,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-            child: ListTile(
-              title: const Text('Hard Reset'),
-              trailing: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorPalette.warningOrange,
-                  foregroundColor: ColorPalette.lightText,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Confirm Reset'),
-                        content: const Text(
-                            'Are you sure you want to reset? You will lose all data! Do you want to save first?'),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              _log.info('Save and Reset pressed');
-                              final navigator = Navigator.of(context);
-                              final messenger = ScaffoldMessenger.of(context);
-                              final theme = Theme.of(context);
-                              _handleSaveAndReset(navigator, messenger, theme);
-                            },
-                            child: const Text('Save and Reset'),
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: ColorPalette.warningOrange,
-                            ),
-                            onPressed: () {
-                              _log.info('Reset pressed');
-                              final navigator = Navigator.of(context);
-                              final messenger = ScaffoldMessenger.of(context);
-                              final theme = Theme.of(context);
-                              _handleReset(navigator, messenger, theme);
-                            },
-                            child: const Text('Reset'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.warning_amber_rounded),
-                    SizedBox(width: 8),
-                    Text('Reset'),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorPalette.warningOrange,
             ),
+            onPressed: _resetAllData,
+            child: const Text('Reset All Data'),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _handleSaveAndReset(NavigatorState navigator,
-      ScaffoldMessengerState messenger, ThemeData theme) async {
-    bool saved = await _dataManager.saveHistoryToFile();
-    if (saved) {
-      await _dataManager.resetData();
-      if (mounted) {
-        navigator.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const DailyThingsView()),
-          (route) => false,
-        );
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('Data saved and reset successfully.'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: theme.snackBarTheme.backgroundColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } else {
-      _log.info('Save operation cancelled or failed.');
-      if (mounted) {
-        navigator.pop();
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text(
-                'Save operation cancelled or failed. Data not reset.'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: theme.snackBarTheme.backgroundColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleReset(NavigatorState navigator,
-      ScaffoldMessengerState messenger, ThemeData theme) async {
-    await _dataManager.resetData();
-    if (mounted) {
-      navigator.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const DailyThingsView()),
-        (route) => false,
-      );
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('All data has been reset.'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: theme.snackBarTheme.backgroundColor,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 }
