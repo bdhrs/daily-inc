@@ -66,7 +66,7 @@ class RepsInputDialog extends StatelessWidget {
     _log.info('Reps submitted: $input');
     final int? reps = int.tryParse(input);
 
-    if (reps != null && reps > 0) {
+    if (reps != null && reps >= 0) {
       final today = DateTime(
         DateTime.now().year,
         DateTime.now().month,
