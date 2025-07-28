@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
@@ -445,8 +446,25 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         : _dailyThings;
 
     if (_hideWhenDone) {
-      displayedItems =
-          displayedItems.where((item) => !item.completedForToday).toList();
+      displayedItems = displayedItems.where((item) {
+        // For REPS items, hide when any actual value has been entered today
+        if (item.itemType == ItemType.reps) {
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+
+          // Check if there's any entry for today with actual value
+          final hasActualValueToday = item.history.any((entry) {
+            final entryDate =
+                DateTime(entry.date.year, entry.date.month, entry.date.day);
+            return entryDate == todayDate && entry.actualValue != null;
+          });
+
+          return !hasActualValueToday;
+        }
+
+        // For MINUTES and CHECK items, maintain existing behavior
+        return !item.completedForToday;
+      }).toList();
     }
 
     return Scaffold(
