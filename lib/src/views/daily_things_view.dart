@@ -476,6 +476,21 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             },
           ),
           IconButton(
+            tooltip:
+                _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
+            icon: Icon(
+              _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
+            ),
+            onPressed: () async {
+              final newValue = !_hideWhenDone;
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('hideWhenDone', newValue);
+              setState(() {
+                _hideWhenDone = newValue;
+              });
+            },
+          ),
+          IconButton(
             tooltip: 'Add an item',
             icon: Icon(
               Icons.add,

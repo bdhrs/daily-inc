@@ -65,7 +65,11 @@ class HelpView extends StatelessWidget {
                   IconButton(
                       icon: const Icon(Icons.visibility, color: Colors.white),
                       onPressed: null,
-                      tooltip: 'Show/Hide Completed'),
+                      tooltip: 'Show/Hide Due Items'),
+                  IconButton(
+                      icon: const Icon(Icons.filter_list, color: Colors.white),
+                      onPressed: null,
+                      tooltip: 'Hide Completed Items'),
                   IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: null,
@@ -92,9 +96,14 @@ class HelpView extends StatelessWidget {
           const SizedBox(height: 24),
           const ListTile(
             leading: Icon(Icons.visibility),
-            title: Text('Show/Hide Completed'),
+            title: Text('Show/Hide Due Items'),
             subtitle:
                 Text('Toggle between showing all items and only due items.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.filter_list),
+            title: Text('Hide Completed Items'),
+            subtitle: Text('Toggle to hide or show completed tasks.'),
           ),
           const ListTile(
             leading: Icon(Icons.settings),
@@ -204,12 +213,6 @@ class HelpView extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
-          const ListTile(
-            leading: Icon(Icons.visibility_off),
-            title: Text('Hide When Done'),
-            subtitle: Text(
-                'When enabled in Settings, completed tasks (blue) will be automatically hidden from view.'),
-          ),
         ],
       ),
     );
