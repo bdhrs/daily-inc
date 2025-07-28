@@ -106,14 +106,14 @@ class HelpView extends StatelessWidget {
             subtitle: Text('Toggle to hide or show completed tasks.'),
           ),
           const ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings Icon'),
-            subtitle: Text('Access settings to configure app behavior.'),
-          ),
-          const ListTile(
             leading: Icon(Icons.add),
             title: Text('Add Item'),
             subtitle: Text('Add a new daily task.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.settings),
+            title: Text('Settings Icon'),
+            subtitle: Text('Access settings to configure app behavior.'),
           ),
           const ListTile(
             leading: Icon(Icons.help),
