@@ -63,13 +63,13 @@ class HelpView extends StatelessWidget {
                   ),
                   const Spacer(),
                   IconButton(
-                      icon: const Icon(Icons.visibility, color: Colors.white),
-                      onPressed: null,
-                      tooltip: 'Show/Hide Due Items'),
-                  IconButton(
                       icon: const Icon(Icons.filter_list, color: Colors.white),
                       onPressed: null,
                       tooltip: 'Hide Completed Items'),
+                  IconButton(
+                      icon: const Icon(Icons.visibility, color: Colors.white),
+                      onPressed: null,
+                      tooltip: 'Show/Hide Due Items'),
                   IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: null,
@@ -95,15 +95,15 @@ class HelpView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           const ListTile(
+            leading: Icon(Icons.filter_list),
+            title: Text('Hide Completed Items'),
+            subtitle: Text('Toggle to hide or show completed tasks.'),
+          ),
+          const ListTile(
             leading: Icon(Icons.visibility),
             title: Text('Show/Hide Due Items'),
             subtitle:
                 Text('Toggle between showing all items and only due items.'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.filter_list),
-            title: Text('Hide Completed Items'),
-            subtitle: Text('Toggle to hide or show completed tasks.'),
           ),
           const ListTile(
             leading: Icon(Icons.add),
@@ -207,12 +207,7 @@ class HelpView extends StatelessWidget {
             title: Text('Delete'),
             subtitle: Text('Permanently removes the task and its history.'),
           ),
-          const Divider(height: 32),
-          Text(
-            'Settings',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
+
         ],
       ),
     );
