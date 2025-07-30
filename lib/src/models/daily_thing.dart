@@ -58,9 +58,17 @@ class DailyThing {
           return entry.doneToday ? 1.0 : 0.0;
         }
 
-        // This was the bug. It should always return the target for today,
-        // not the partial progress.
-        return entry.targetValue;
+        if (entryDate == todayDate) {
+          if (itemType == ItemType.check) {
+            return entry.doneToday ? 1.0 : 0.0;
+          }
+          // Return calculated target for today based on last completed entry
+          final lastCompleted = lastCompletedDate;
+          if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
+            return entry.targetValue + increment;
+          }
+          return entry.targetValue;
+        }
       }
     }
 
