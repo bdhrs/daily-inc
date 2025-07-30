@@ -371,24 +371,38 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _startDateController,
-                  decoration: InputDecoration(
-                    labelText: 'Start Date (YYYY-MM-DD)',
-                    hintText: hintDate,
-                    prefixIcon: const Icon(Icons.calendar_today),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a start date';
-                    }
-                    try {
-                      DateFormat('yyyy-MM-dd').parse(value);
-                      return null;
-                    } catch (e) {
-                      return 'Invalid date format';
-                    }
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _startDateController,
+                        decoration: InputDecoration(
+                          labelText: 'Start Date (YYYY-MM-DD)',
+                          hintText: hintDate,
+                          prefixIcon: const Icon(Icons.calendar_today),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a start date';
+                          }
+                          try {
+                            DateFormat('yyyy-MM-dd').parse(value);
+                            return null;
+                          } catch (e) {
+                            return 'Invalid date format';
+                          }
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.today),
+                      tooltip: "Use today's date",
+                      onPressed: () {
+                        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                        _startDateController.text = today;
+                      },
+                    ),
+                  ],
                 ),
                 // Hide start/end values and duration for CHECK items
                 if (_selectedItemType != ItemType.check) ...[
