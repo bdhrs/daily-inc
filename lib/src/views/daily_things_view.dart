@@ -10,6 +10,7 @@ import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/help_view.dart';
+import 'package:daily_inc/src/views/category_graph_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -549,6 +550,23 @@ class _DailyThingsViewState extends State<DailyThingsView> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const HelpView(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Category Graphs',
+            icon: Icon(
+              Icons.bar_chart,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CategoryGraphView(dailyThings: _dailyThings),
                 ),
               );
             },

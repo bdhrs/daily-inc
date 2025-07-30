@@ -20,6 +20,7 @@ class DailyThing {
   final DateTime? nagTime;
   final String? nagMessage;
   final int frequencyInDays;
+  final String category; // New category field
   double? actualTodayValue; // New property to store actual value entered today
 
   DailyThing({
@@ -35,6 +36,7 @@ class DailyThing {
     this.nagTime,
     this.nagMessage,
     this.frequencyInDays = 1,
+    this.category = 'None', // Default category
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -278,6 +280,7 @@ double get displayValue {
       'nagTime': nagTime?.toIso8601String(),
       'nagMessage': nagMessage,
       'frequencyInDays': frequencyInDays,
+      'category': category,
     };
   }
 
@@ -319,6 +322,7 @@ double get displayValue {
           : DateTime.parse(json['nagTime'] as String),
       nagMessage: json['nagMessage'] as String?,
       frequencyInDays: json['frequencyInDays'] as int? ?? 1,
+      category: json['category'] as String? ?? 'None', // Backwards compatibility
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
-import 'package:daily_inc/src/views/graph_view.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 
 class DailyThingItem extends StatelessWidget {
@@ -210,6 +209,14 @@ class DailyThingItem extends StatelessWidget {
                         Text(_formatValue(item.startValue, item.itemType)),
                         const Icon(Icons.trending_flat),
                         Text(_formatValue(item.endValue, item.itemType)),
+                        const SizedBox(width: 16),
+                        Text(
+                          '(${item.category})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -217,18 +224,6 @@ class DailyThingItem extends StatelessWidget {
                   const SizedBox(height: 48.0), // Match height of other rows
                 Row(
                   children: [
-                    IconButton(
-                      tooltip: 'see daily stats',
-                      icon: const Icon(Icons.auto_graph),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GraphView(dailyThing: item),
-                          ),
-                        );
-                      },
-                    ),
                     IconButton(
                       tooltip: 'edit the item',
                       icon: const Icon(Icons.edit),
