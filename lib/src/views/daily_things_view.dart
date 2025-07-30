@@ -480,21 +480,6 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         actions: [
           IconButton(
             tooltip:
-                _showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only',
-            icon: Icon(
-              _showOnlyDueItems ? Icons.visibility_off : Icons.visibility,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () {
-              setState(() {
-                _showOnlyDueItems = !_showOnlyDueItems;
-              });
-            },
-          ),
-          IconButton(
-            tooltip:
                 _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
             icon: Icon(
               _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
@@ -505,6 +490,21 @@ class _DailyThingsViewState extends State<DailyThingsView> {
               await prefs.setBool('hideWhenDone', newValue);
               setState(() {
                 _hideWhenDone = newValue;
+              });
+            },
+          ),
+          IconButton(
+            tooltip:
+                _showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only',
+            icon: Icon(
+              _showOnlyDueItems ? Icons.visibility_off : Icons.visibility,
+              color: _allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            onPressed: () {
+              setState(() {
+                _showOnlyDueItems = !_showOnlyDueItems;
               });
             },
           ),
