@@ -1,5 +1,6 @@
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -99,6 +100,67 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     super.dispose();
   }
 
+  List<HistoryEntry> _updateHistoryEntriesWithNewParameters(
+    List<HistoryEntry> history,
+    double newStartValue,
+    double newEndValue,
+    int newDuration,
+    DateTime newStartDate,
+  ) {
+    _log.info('Updating history entries with new progression parameters');
+    
+    // Calculate new increment
+    final newIncrement = newDuration > 0 ? (newEndValue - newStartValue) / newDuration : 0.0;
+    
+    // Create updated history entries
+    return history.map((entry) {
+      // For entries that have actual values (reps), update their targetValue but keep actualValue
+      if (entry.actualValue != null) {
+        // Recalculate target value based on new parameters for this entry's date
+        final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+        final startDateOnly = DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
+        final daysSinceStart = entryDate.difference(startDateOnly).inDays;
+        
+        double newTargetValue;
+        if (daysSinceStart <= 0) {
+          newTargetValue = newStartValue;
+        } else if (daysSinceStart >= newDuration) {
+          newTargetValue = newEndValue;
+        } else {
+          newTargetValue = newStartValue + (newIncrement * daysSinceStart);
+        }
+        
+        return HistoryEntry(
+          date: entry.date,
+          targetValue: newTargetValue,
+          doneToday: entry.doneToday,
+          actualValue: entry.actualValue,
+        );
+      }
+      
+      // For entries without actual values, recalculate targetValue based on new parameters
+      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      final startDateOnly = DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
+      final daysSinceStart = entryDate.difference(startDateOnly).inDays;
+      
+      double newTargetValue;
+      if (daysSinceStart <= 0) {
+        newTargetValue = newStartValue;
+      } else if (daysSinceStart >= newDuration) {
+        newTargetValue = newEndValue;
+      } else {
+        newTargetValue = newStartValue + (newIncrement * daysSinceStart);
+      }
+      
+      return HistoryEntry(
+        date: entry.date,
+        targetValue: newTargetValue,
+        doneToday: entry.doneToday,
+        actualValue: entry.actualValue,
+      );
+    }).toList();
+  }
+
   void _submitDailyItem() async {
     _log.info('Attempting to submit daily item');
     if (_formKey.currentState!.validate()) {
@@ -140,6 +202,28 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           nagTime = null;
         }
 
+        // Update existing history entries to reflect new progression parameters if needed
+        List<HistoryEntry> updatedHistory = widget.dailyThing?.history ?? [];
+        if (widget.dailyThing != null) {
+          // Only update if progression parameters actually changed
+          final oldStartValue = widget.dailyThing!.startValue;
+          final oldEndValue = widget.dailyThing!.endValue;
+          final oldDuration = widget.dailyThing!.duration;
+          
+          if (oldStartValue != startValue || 
+              oldEndValue != endValue || 
+              oldDuration != duration) {
+            // Progression parameters changed, update history entries
+            updatedHistory = _updateHistoryEntriesWithNewParameters(
+              widget.dailyThing!.history,
+              startValue,
+              endValue,
+              duration,
+              startDate,
+            );
+          }
+        }
+
         final newItem = DailyThing(
           id: widget.dailyThing?.id,
           icon: _iconController.text,
@@ -149,7 +233,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           startValue: startValue,
           duration: duration,
           endValue: endValue,
-          history: widget.dailyThing?.history ?? [],
+          history: updatedHistory,
           nagTime: nagTime,
           nagMessage: _nagMessageController.text.isEmpty
               ? null

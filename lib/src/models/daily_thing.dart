@@ -152,23 +152,26 @@ class DailyThing {
     return lastEntry.targetValue;
   }
 
-  double get displayValue {
+double get displayValue {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-
-    final todaysEntry = history.where((entry) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      return entryDate == todayDate && entry.actualValue != null;
-    }).toList();
-
-    if (todaysEntry.isNotEmpty) {
-      return todaysEntry.first.actualValue!;
+    
+    // For REPS items, show actual value if entered today
+    if (itemType == ItemType.reps) {
+      final todaysEntry = history.where((entry) {
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        return entryDate == todayDate && entry.actualValue != null;
+      }).toList();
+      
+      if (todaysEntry.isNotEmpty) {
+        return todaysEntry.first.actualValue!;
+      }
     }
-
+    
+    // For all item types, show today's target value when no actual progress is recorded
     return todayValue;
   }
-
   Status determineStatus(double currentValue) {
     // For CHECK items, simple logic: green if checked (1.0), red if unchecked (0.0)
     if (itemType == ItemType.check) {
