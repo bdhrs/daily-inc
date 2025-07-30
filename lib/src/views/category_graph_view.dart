@@ -138,7 +138,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     _log.info('build called');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Category Progress'),
+        title: const Text('Progress by Category'),
       ),
       body: _categoryData.isEmpty
           ? const Center(child: Text('No category data available'))
@@ -147,6 +147,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
               itemBuilder: (context, index) {
                 final category = _categoryData.keys.elementAt(index);
                 final dateTotals = _categoryData[category]!;
+                
+                // Skip showing graphs for the category "None"
+                if (category == 'None') {
+                  return const SizedBox.shrink();
+                }
                 
                 return _buildCategoryGraph(category, dateTotals, context);
               },
@@ -215,7 +220,6 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
               borderRadius: BorderRadius.zero,
             ),
           ],
-          showingTooltipIndicators: [0],
         ),
       );
     }
