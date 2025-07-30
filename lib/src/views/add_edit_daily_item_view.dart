@@ -33,6 +33,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _frequencyController;
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
+  TextEditingController? _incrementController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
   final _log = Logger('AddEditDailyItemView');
@@ -61,6 +62,23 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         text: existingItem?.frequencyInDays.toString() ?? '1');
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
+    _incrementController = TextEditingController();
+
+    // Add listeners to update increment field
+    _startValueController.addListener(_updateIncrementField);
+    _endValueController.addListener(_updateIncrementField);
+    _durationController.addListener(_updateIncrementField);
+
+    // Set initial increment value after all controllers are initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _incrementController!.text = _calculateIncrement();
+    });
+
+    // Add listeners to update increment field
+    _startValueController.addListener(_updateIncrementField);
+    _endValueController.addListener(_updateIncrementField);
+    _durationController.addListener(_updateIncrementField);
+
     if (existingItem != null) {
       _log.info('Editing existing item: ${existingItem.name}');
       _selectedItemType = existingItem.itemType;
@@ -88,6 +106,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   @override
   void dispose() {
     _log.info('dispose called');
+    _startValueController.removeListener(_updateIncrementField);
+    _endValueController.removeListener(_updateIncrementField);
+    _durationController.removeListener(_updateIncrementField);
     _iconController.dispose();
     _nameController.dispose();
     _startDateController.dispose();
@@ -97,7 +118,32 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _frequencyController.dispose();
     _nagTimeController.dispose();
     _nagMessageController.dispose();
+    _incrementController?.dispose();
     super.dispose();
+  }
+
+  String _calculateIncrement() {
+    try {
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+      final duration = int.tryParse(_durationController.text) ?? 1;
+
+      if (duration <= 0) return '0.0';
+
+      final increment = (endValue - startValue) / duration;
+      return increment.toStringAsFixed(2);
+    } catch (e) {
+      return '0.0';
+    }
+  }
+
+  void _updateIncrementField() {
+    if (_incrementController != null) {
+      _incrementController!.text = _calculateIncrement();
+      setState(() {
+        // This will trigger a rebuild with the updated increment value
+      });
+    }
   }
 
   List<HistoryEntry> _updateHistoryEntriesWithNewParameters(
@@ -108,19 +154,22 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     DateTime newStartDate,
   ) {
     _log.info('Updating history entries with new progression parameters');
-    
+
     // Calculate new increment
-    final newIncrement = newDuration > 0 ? (newEndValue - newStartValue) / newDuration : 0.0;
-    
+    final newIncrement =
+        newDuration > 0 ? (newEndValue - newStartValue) / newDuration : 0.0;
+
     // Create updated history entries
     return history.map((entry) {
       // For entries that have actual values (reps), update their targetValue but keep actualValue
       if (entry.actualValue != null) {
         // Recalculate target value based on new parameters for this entry's date
-        final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-        final startDateOnly = DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        final startDateOnly =
+            DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
         final daysSinceStart = entryDate.difference(startDateOnly).inDays;
-        
+
         double newTargetValue;
         if (daysSinceStart <= 0) {
           newTargetValue = newStartValue;
@@ -129,7 +178,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         } else {
           newTargetValue = newStartValue + (newIncrement * daysSinceStart);
         }
-        
+
         return HistoryEntry(
           date: entry.date,
           targetValue: newTargetValue,
@@ -137,12 +186,14 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           actualValue: entry.actualValue,
         );
       }
-      
+
       // For entries without actual values, recalculate targetValue based on new parameters
-      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-      final startDateOnly = DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      final startDateOnly =
+          DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
       final daysSinceStart = entryDate.difference(startDateOnly).inDays;
-      
+
       double newTargetValue;
       if (daysSinceStart <= 0) {
         newTargetValue = newStartValue;
@@ -151,7 +202,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       } else {
         newTargetValue = newStartValue + (newIncrement * daysSinceStart);
       }
-      
+
       return HistoryEntry(
         date: entry.date,
         targetValue: newTargetValue,
@@ -209,9 +260,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           final oldStartValue = widget.dailyThing!.startValue;
           final oldEndValue = widget.dailyThing!.endValue;
           final oldDuration = widget.dailyThing!.duration;
-          
-          if (oldStartValue != startValue || 
-              oldEndValue != endValue || 
+
+          if (oldStartValue != startValue ||
+              oldEndValue != endValue ||
               oldDuration != duration) {
             // Progression parameters changed, update history entries
             updatedHistory = _updateHistoryEntriesWithNewParameters(
@@ -398,7 +449,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       icon: const Icon(Icons.today),
                       tooltip: "Use today's date",
                       onPressed: () {
-                        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                        final today =
+                            DateFormat('yyyy-MM-dd').format(DateTime.now());
                         _startDateController.text = today;
                       },
                     ),
@@ -451,23 +503,66 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duration (days)',
-                      hintText: '30',
-                      prefixIcon: Icon(Icons.schedule),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a duration';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Please enter a valid number';
-                      }
-                      return null;
-                    },
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _durationController,
+                          decoration: const InputDecoration(
+                            labelText: 'Duration (days)',
+                            hintText: '30',
+                            prefixIcon: Icon(Icons.schedule),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a duration';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Increment',
+                            hintText: '0.0',
+                            filled: true,
+                            fillColor: Theme.of(context)
+                                .disabledColor
+                                .withOpacity(0.1),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context)
+                                    .disabledColor
+                                    .withOpacity(0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context)
+                                    .disabledColor
+                                    .withOpacity(0.3),
+                              ),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          readOnly: true,
+                          controller: _incrementController,
+                          style: TextStyle(
+                            color: Theme.of(context).disabledColor,
+                          ),
+                          onTap: () {
+                            // Do nothing, visually indicate it's not editable
+                            FocusScope.of(context).unfocus();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 16),
