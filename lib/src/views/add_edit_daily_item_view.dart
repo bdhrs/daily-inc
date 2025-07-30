@@ -33,6 +33,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _frequencyController;
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
+  late TextEditingController _categoryController; // New category controller
   TextEditingController? _incrementController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
@@ -62,6 +63,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         text: existingItem?.frequencyInDays.toString() ?? '1');
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
+    _categoryController = TextEditingController(text: existingItem?.category ?? 'None'); // Initialize category controller
     _incrementController = TextEditingController();
 
     // Add listeners to update increment field
@@ -118,6 +120,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _frequencyController.dispose();
     _nagTimeController.dispose();
     _nagMessageController.dispose();
+    _categoryController.dispose(); // Dispose category controller
     _incrementController?.dispose();
     super.dispose();
   }
@@ -290,6 +293,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               ? null
               : _nagMessageController.text,
           frequencyInDays: int.parse(_frequencyController.text),
+          category: _categoryController.text.isEmpty ? 'None' : _categoryController.text,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -375,6 +379,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _categoryController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    hintText: 'e.g. Health, Work, etc.',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -532,21 +545,20 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             labelText: 'Increment',
                             hintText: '0.0',
                             filled: true,
-                            fillColor: Theme.of(context)
-                                .disabledColor
-                                .withOpacity(0.1),
-                            enabledBorder: OutlineInputBorder(
+fillColor: Theme.of(context)
+    .disabledColor
+    .withValues(alpha: 0.1),                            enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Theme.of(context)
                                     .disabledColor
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Theme.of(context)
                                     .disabledColor
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                           ),
