@@ -34,6 +34,7 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          echo "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
@@ -102,5 +103,4 @@ jobs:
           body: |
             Automated development build
             Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
-          files: |
-            artifacts/android/*
+          files: artifacts/android/*
