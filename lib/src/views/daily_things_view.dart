@@ -470,18 +470,13 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Daily Inc',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: _allTasksCompleted
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).textTheme.headlineSmall?.color,
-              ),
-        ),
+        title: const Text('Daily Inc'),
         actions: [
+          // Essential actions that should always be visible
           IconButton(
-            tooltip:
-                _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
+            tooltip: _hideWhenDone
+                ? 'Show Completed Items'
+                : 'Hide Completed Items',
             icon: Icon(
               _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
             ),
@@ -519,74 +514,77 @@ class _DailyThingsViewState extends State<DailyThingsView> {
             ),
             onPressed: _openAddDailyItemPopup,
           ),
-          IconButton(
-            tooltip: 'Settings',
-            icon: Icon(
-              Icons.settings,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsView(),
-                ),
-              );
-              await _refreshHideWhenDoneSetting();
-            },
-          ),
-          IconButton(
-            tooltip: 'Help',
-            icon: Icon(
-              Icons.help,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HelpView(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Category Graphs',
-            icon: Icon(
-              Icons.bar_chart,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CategoryGraphView(dailyThings: _dailyThings),
-                ),
-              );
-            },
-          ),
+          // All other actions in a single overflow menu to prevent title cropping
           PopupMenuButton<String>(
-            tooltip: 'Save and Load History',
-            icon: Icon(
-              Icons.save,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
+            tooltip: 'More options',
+            icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'load_history') {
-                _loadHistoryFromFile();
-              } else if (value == 'save_history') {
-                _saveHistoryToFile();
+              switch (value) {
+                case 'settings':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsView(),
+                    ),
+                  ).then((_) => _refreshHideWhenDoneSetting());
+                  break;
+                case 'help':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpView(),
+                    ),
+                  );
+                  break;
+                case 'graphs':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CategoryGraphView(dailyThings: _dailyThings),
+                    ),
+                  );
+                  break;
+                case 'load_history':
+                  _loadHistoryFromFile();
+                  break;
+                case 'save_history':
+                  _saveHistoryToFile();
+                  break;
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings),
+                    SizedBox(width: 8),
+                    Text('Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'help',
+                child: Row(
+                  children: [
+                    Icon(Icons.help),
+                    SizedBox(width: 8),
+                    Text('Help'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'graphs',
+                child: Row(
+                  children: [
+                    Icon(Icons.bar_chart),
+                    SizedBox(width: 8),
+                    Text('Category Graphs'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               const PopupMenuItem<String>(
                 value: 'load_history',
                 child: Row(
