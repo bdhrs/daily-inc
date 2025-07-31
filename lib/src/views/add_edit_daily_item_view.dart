@@ -40,7 +40,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   TimeOfDay? _selectedNagTime;
   final _log = Logger('AddEditDailyItemView');
   List<String> _uniqueCategories = [];
-  List<String> _filteredCategories = [];
 
   bool _didChangeDependencies = false;
 
@@ -68,10 +67,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagMessageController = TextEditingController();
     _categoryController = TextEditingController(
         text:
-            existingItem?.category ?? 'None'); // Initialize category controller
+            existingItem?.category ?? ''); // Initialize category controller
 
-    // Add listener to filter categories as user types
-    _categoryController.addListener(_filterCategories);
     _incrementController = TextEditingController();
 
     // Add listeners to update increment field
@@ -101,11 +98,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
 
     // Load unique categories for autofill
-    _loadUniqueCategories().then((_) {
-      setState(() {
-        // Force a rebuild to show the dropdown if categories were loaded
-      });
-    });
+    _loadUniqueCategories();
   }
 
   @override
@@ -135,26 +128,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _frequencyController.dispose();
     _nagTimeController.dispose();
     _nagMessageController.dispose();
-    _categoryController.removeListener(_filterCategories);
     _categoryController.dispose(); // Dispose category controller
     _incrementController?.dispose();
     super.dispose();
   }
 
-  void _filterCategories() {
-    final query = _categoryController.text.toLowerCase();
-    if (query.isEmpty) {
-      setState(() {
-        _filteredCategories = [];
-      });
-    } else {
-      setState(() {
-        _filteredCategories = _uniqueCategories
-            .where((category) => category.toLowerCase().contains(query))
-            .toList();
-      });
-    }
-  }
+
 
   String _calculateIncrement() {
     try {
@@ -363,67 +342,40 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   },
                 ),
                 const SizedBox(height: 16),
-                Stack(
-                  children: [
-                    Focus(
-                      onFocusChange: (hasFocus) {
-                        if (hasFocus) {
-                          setState(() {
-                            _filteredCategories = _uniqueCategories;
-                          });
-                        }
-                      },
-                      child: TextFormField(
-                        controller: _categoryController,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          hintText: 'e.g. Health, Work, etc.',
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _filteredCategories = _uniqueCategories;
-                          });
-                        },
+                Autocomplete<String>(
+                  initialValue: TextEditingValue(text: _categoryController.text),
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return _uniqueCategories;
+                    }
+                    return _uniqueCategories.where((String option) {
+                      return option
+                          .toLowerCase()
+                          .contains(textEditingValue.text.toLowerCase());
+                    });
+                  },
+                  onSelected: (String selection) {
+                    _categoryController.text = selection;
+                  },
+                  fieldViewBuilder: (BuildContext context,
+                      TextEditingController fieldTextEditingController,
+                      FocusNode fieldFocusNode,
+                      VoidCallback onFieldSubmitted) {
+                    // Update the local controller when the field changes.
+                    fieldTextEditingController.addListener(() {
+                      _categoryController.text = fieldTextEditingController.text;
+                    });
+
+                    return TextFormField(
+                      controller: fieldTextEditingController,
+                      focusNode: fieldFocusNode,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        hintText: 'e.g. Health, Work, etc.',
                       ),
-                    ),
-                    if (_filteredCategories.isNotEmpty)
-                      Positioned(
-                        top: 60,
-                        left: 0,
-                        right: 0,
-                        child: Material(
-                          elevation: 4,
-                          borderRadius: BorderRadius.circular(4),
-                          child: Container(
-                            constraints: const BoxConstraints(maxHeight: 200),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: _filteredCategories.length,
-                              itemBuilder: (context, index) {
-                                return ListTile(
-                                  title: Text(_filteredCategories[index]),
-                                  onTap: () {
-                                    setState(() {
-                                      _categoryController.text =
-                                          _filteredCategories[index];
-                                      _filteredCategories = [];
-                                    });
-                                  },
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 0),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -454,12 +406,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                  onChanged: (value) {
+                      onChanged: (value) {
                     setState(() {
                       _selectedItemType = value!;
                     });
-                  },
-                  decoration: const InputDecoration(
+                  },                  decoration: const InputDecoration(
                     labelText: 'Type',
                   ),
                 ),
