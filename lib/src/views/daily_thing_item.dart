@@ -183,7 +183,7 @@ class DailyThingItem extends StatelessWidget {
                     alignment: Alignment.center,
                     child: item.itemType == ItemType.check
                         ? Icon(
-                            item.todayValue == 1.0 ? Icons.check : Icons.close,
+                            item.completedForToday ? Icons.check : Icons.close,
                             color: Theme.of(context).colorScheme.onPrimary,
                             size: 16.0,
                           )
@@ -215,7 +215,8 @@ class DailyThingItem extends StatelessWidget {
                           '(${item.category})',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
