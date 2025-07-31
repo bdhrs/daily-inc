@@ -96,11 +96,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Development Build v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}
-          tag_name: dev-${{ steps.commit_info.outputs.SHA }}
+          tag_name: v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}
           draft: true
           prerelease: true
           body: |
-            Automated dev build
+            Automated development build
             Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
           files: |
             artifacts/android/*
