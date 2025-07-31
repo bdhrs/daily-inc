@@ -225,5 +225,5 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            artifacts/appimage/daily-inc.AppImage
+            artifacts/appimage/*
             artifacts/android/*
