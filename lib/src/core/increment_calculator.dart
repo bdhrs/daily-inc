@@ -1,6 +1,7 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/core/missed_days_calculator.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('IncrementCalculator');
@@ -47,10 +48,12 @@ class IncrementCalculator {
 
     // Check for today's entry first
     for (final entry in sortedHistory) {
-      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
-        _logger.info('Found entry for today: target=${entry.targetValue}, done=${entry.doneToday}');
-        
+        _logger.info(
+            'Found entry for today: target=${entry.targetValue}, done=${entry.doneToday}');
+
         if (item.itemType == ItemType.check) {
           return entry.doneToday ? 1.0 : 0.0;
         }
@@ -64,14 +67,15 @@ class IncrementCalculator {
     final lastCompleted = getLastCompletedDate(item.history);
     _logger.info('Last completed date: $lastCompleted');
 
-if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
+    if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
       // There was a completion before today - check if we should apply increment
       _logger.info('Found previous completion, checking increment rules');
-      
+
       // Find the last completed entry to get the base value
       HistoryEntry? lastCompletedEntry;
       for (final entry in sortedHistory) {
-        final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
         if (entry.doneToday && entryDate.isBefore(todayDate)) {
           lastCompletedEntry = entry;
           break;
@@ -79,82 +83,60 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
       }
 
       if (lastCompletedEntry != null) {
-        final lastCompletedDate = DateTime(lastCompletedEntry.date.year, lastCompletedEntry.date.month, lastCompletedEntry.date.day);
-        final daysSinceLastCompleted = todayDate.difference(lastCompletedDate).inDays;
-        
-        _logger.info('Last completed entry: target=${lastCompletedEntry.targetValue}, date=$lastCompletedDate');
+        final lastCompletedDate = DateTime(lastCompletedEntry.date.year,
+            lastCompletedEntry.date.month, lastCompletedEntry.date.day);
+        final daysSinceLastCompleted =
+            todayDate.difference(lastCompletedDate).inDays;
+
+        _logger.info(
+            'Last completed entry: target=${lastCompletedEntry.targetValue}, date=$lastCompletedDate');
         _logger.info('Days since last completed: $daysSinceLastCompleted');
 
         // Check frequency - if not due yet, don't increment
         if (daysSinceLastCompleted < item.frequencyInDays) {
-          _logger.info('Not due yet (frequency: ${item.frequencyInDays}), returning last completed value');
+          _logger.info(
+              'Not due yet (frequency: ${item.frequencyInDays}), returning last completed value');
           return lastCompletedEntry.targetValue;
         }
 
-        // CORE LOGIC: Check if we should apply increment or penalty
-        // Special case: for DECREASING progressions only, if last completion was exactly 2 days ago, 
-        // yesterday was missed, AND frequency is 1 (daily), don't increment
-        if (item.startValue > item.endValue && daysSinceLastCompleted == 2 && item.frequencyInDays == 1) {
-          final yesterday = todayDate.subtract(const Duration(days: 1));
-          bool yesterdayCompleted = false;
-          for (final entry in item.history) {
-            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-            if (entryDate == yesterday && entry.doneToday) {
-              yesterdayCompleted = true;
-              break;
-            }
-          }
-          
-          if (!yesterdayCompleted) {
-            _logger.info('DECREASING progression: last completion was 2 days ago, yesterday missed, and frequency is 1, returning last completed value without increment');
-            return lastCompletedEntry.targetValue;
-          }
+        // Handle special cases for missed days using the MissedDaysCalculator
+        double? specialCaseValue;
+
+        // Handle decreasing progression special case
+        specialCaseValue = MissedDaysCalculator.handleDecreasingProgression(
+          item,
+          lastCompletedEntry,
+          todayDate,
+        );
+
+        if (specialCaseValue != null) {
+          return specialCaseValue;
         }
-        
-        // Special case: for INCREASING progressions with explicit missed day entries, apply one-day decrement penalty
-        // Only apply penalty if more than one day was missed (grace period for one missed day)
-        if (item.startValue < item.endValue && daysSinceLastCompleted > 2) {
-          bool hasExplicitMissedDays = false;
-          final lastCompletedDate = DateTime(lastCompletedEntry.date.year, lastCompletedEntry.date.month, lastCompletedEntry.date.day);
-          
-          for (final entry in item.history) {
-            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-            if (entryDate.isAfter(lastCompletedDate) && entryDate.isBefore(todayDate) && !entry.doneToday) {
-              hasExplicitMissedDays = true;
-              break;
-            }
-          }
-          
-          if (hasExplicitMissedDays) {
-            _logger.info('INCREASING progression with explicit missed day entries, applying one-day decrement penalty');
-            // Apply penalty: subtract one increment (decrement by one day)
-            double newValue = lastCompletedEntry.targetValue - increment;
-            return newValue.clamp(item.startValue, item.endValue);
-          }
+
+        // Handle increasing progression penalty
+        specialCaseValue = MissedDaysCalculator.handleIncreasingProgression(
+          item,
+          lastCompletedEntry,
+          todayDate,
+          increment,
+        );
+
+        if (specialCaseValue != null) {
+          return specialCaseValue;
         }
-        
-        // Special case: for DECREASING progressions with explicit missed day entries, apply one-day increment penalty
-        // Only apply penalty if more than one day was missed (grace period for one missed day)
-        if (item.startValue > item.endValue && daysSinceLastCompleted > 2) {
-          bool hasExplicitMissedDays = false;
-          final lastCompletedDate = DateTime(lastCompletedEntry.date.year, lastCompletedEntry.date.month, lastCompletedEntry.date.day);
-          
-          for (final entry in item.history) {
-            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-            if (entryDate.isAfter(lastCompletedDate) && entryDate.isBefore(todayDate) && !entry.doneToday) {
-              hasExplicitMissedDays = true;
-              break;
-            }
-          }
-          
-          if (hasExplicitMissedDays) {
-            _logger.info('DECREASING progression with explicit missed day entries, applying one-day increment penalty');
-            // Apply penalty: add one increment (increment by one day - penalty goes upward)
-            double newValue = lastCompletedEntry.targetValue - increment; // increment is negative for decreasing, so subtracting it adds value
-            return newValue.clamp(item.endValue, item.startValue);
-          }
+
+        // Handle decreasing progression penalty
+        specialCaseValue = MissedDaysCalculator.handleDecreasingPenalty(
+          item,
+          lastCompletedEntry,
+          todayDate,
+          increment,
+        );
+
+        if (specialCaseValue != null) {
+          return specialCaseValue;
         }
-        
+
         // For all other cases, apply one increment
         _logger.info('Applying one increment');
         // Apply increment based on progression direction
@@ -173,7 +155,8 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
     // No previous completion or no last entry - find the latest entry before today
     HistoryEntry? lastEntry;
     for (final entry in sortedHistory) {
-      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate.isBefore(todayDate)) {
         lastEntry = entry;
         break;
@@ -182,20 +165,25 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
 
     if (lastEntry == null) {
       // No history before today - return start value
-      _logger.info('No history before today, returning start value: ${item.startValue}');
+      _logger.info(
+          'No history before today, returning start value: ${item.startValue}');
       return item.startValue;
     }
 
-    final lastEntryDate = DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
+    final lastEntryDate =
+        DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
     final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
     final daysMissed = calculateDaysMissed(lastEntryDate, todayDate);
 
-    _logger.info('Last entry before today: target=${lastEntry.targetValue}, date=$lastEntryDate');
-    _logger.info('Days since last entry: $daysSinceLastEntry, days missed: $daysMissed');
+    _logger.info(
+        'Last entry before today: target=${lastEntry.targetValue}, date=$lastEntryDate');
+    _logger.info(
+        'Days since last entry: $daysSinceLastEntry, days missed: $daysMissed');
 
     // Check frequency - if not due yet, don't change value
     if (daysSinceLastEntry < item.frequencyInDays) {
-      _logger.info('Not due yet (frequency: ${item.frequencyInDays}), returning last value');
+      _logger.info(
+          'Not due yet (frequency: ${item.frequencyInDays}), returning last value');
       return lastEntry.targetValue;
     }
 
@@ -213,16 +201,18 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
 
     // If last entry was not done, apply same logic as missed days
     if (daysMissed >= 2) {
-      _logger.info('2+ days missed with incomplete entry, applying one increment');
+      _logger
+          .info('2+ days missed with incomplete entry, applying one increment');
       return _applyIncrement(lastEntry.targetValue, increment, item);
     }
-    
+
     _logger.info('No increment needed, returning last value');
     return lastEntry.targetValue;
   }
 
   /// Apply increment with proper direction handling
-  static double _applyIncrement(double currentValue, double increment, DailyThing item) {
+  static double _applyIncrement(
+      double currentValue, double increment, DailyThing item) {
     double newValue;
     if (item.startValue < item.endValue) {
       // Increasing progression - add increment
@@ -239,19 +229,20 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
   static double calculateDisplayValue(DailyThing item) {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    
+
     // For REPS items, show actual value if entered today
     if (item.itemType == ItemType.reps) {
       final todaysEntry = item.history.where((entry) {
-        final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
         return entryDate == todayDate && entry.actualValue != null;
       }).toList();
-      
+
       if (todaysEntry.isNotEmpty) {
         return todaysEntry.first.actualValue!;
       }
     }
-    
+
     // For all item types, show today's target value when no actual progress is recorded
     return calculateTodayValue(item);
   }
@@ -261,7 +252,7 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
     if (item.itemType == ItemType.reps) {
       final increment = calculateIncrement(item);
       final todayValue = calculateTodayValue(item);
-      
+
       if (increment > 0) {
         // For incrementing reps, done if current rounded is >= target rounded
         return currentValue.round() >= todayValue.round();
@@ -273,7 +264,7 @@ if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
         return currentValue.round() == todayValue.round();
       }
     }
-    
+
     return determineStatus(item, currentValue) == Status.green;
   }
 
