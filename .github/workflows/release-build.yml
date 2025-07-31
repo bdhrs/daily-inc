@@ -79,14 +79,11 @@ jobs:
           echo "APK_PATH=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_OUTPUT
           echo "APK_NAME=$APK_NAME" >> $GITHUB_OUTPUT
           
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
         with:
-          name: Release v${{ steps.set_version.outputs.VERSION }}+${{ github.run_number }}
-          tag_name: v${{ steps.set_version.outputs.VERSION }}+${{ github.run_number }}
-          draft: false
-          prerelease: false
-          files: ${{ steps.rename_apk.outputs.APK_PATH }}
+          name: android-apk
+          path: ${{ steps.rename_apk.outputs.APK_PATH }}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -205,13 +202,13 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: linux-build
-          path: artifacts/linux
+          name: appimage
+          path: artifacts/appimage
 
       - uses: actions/download-artifact@v4
         with:
-          name: appimage
-          path: artifacts/appimage
+          name: android-apk
+          path: artifacts/android
 
       - name: Get version
         id: get_version
@@ -224,7 +221,8 @@ jobs:
         with:
           name: Release v${{ steps.get_version.outputs.VERSION }}+${{ github.run_number }}
           tag_name: v${{ steps.get_version.outputs.VERSION }}+${{ github.run_number }}
-          draft: false
+          draft: true
           prerelease: false
           files: |
             artifacts/appimage/daily-inc.AppImage
+            artifacts/android/*
