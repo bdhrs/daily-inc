@@ -8,7 +8,7 @@ void main() {
   group('Increment Scenarios', () {
     group('Minutes - Increasing Progression (10 to 60)', () {
       late DailyThing baseItem;
-      
+
       setUp(() {
         baseItem = DailyThing(
           name: 'Increasing Minutes',
@@ -32,8 +32,9 @@ void main() {
 
       test('yesterday completed - should increment', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Increasing Minutes',
           itemType: ItemType.minutes,
@@ -56,8 +57,9 @@ void main() {
 
       test('yesterday not completed - should not increment', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Increasing Minutes',
           itemType: ItemType.minutes,
@@ -80,8 +82,9 @@ void main() {
 
       test('multiple days missed - should increment once', () {
         final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
-        final threeDaysAgoDate = DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
-        
+        final threeDaysAgoDate =
+            DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
+
         final item = DailyThing(
           name: 'Increasing Minutes',
           itemType: ItemType.minutes,
@@ -99,13 +102,16 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(21.0)); // 20 + 1 increment (only one increment even after 2 missed days)
+        expect(
+            todayValue,
+            equals(
+                21.0)); // 20 + 1 increment (only one increment even after 2 missed days)
       });
     });
 
     group('Minutes - Decreasing Progression (60 to 10)', () {
       late DailyThing baseItem;
-      
+
       setUp(() {
         baseItem = DailyThing(
           name: 'Decreasing Minutes',
@@ -129,8 +135,9 @@ void main() {
 
       test('yesterday completed - should decrement', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Decreasing Minutes',
           itemType: ItemType.minutes,
@@ -153,8 +160,9 @@ void main() {
 
       test('yesterday not completed - should not decrement', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Decreasing Minutes',
           itemType: ItemType.minutes,
@@ -177,8 +185,9 @@ void main() {
 
       test('multiple days missed - should decrement once', () {
         final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
-        final threeDaysAgoDate = DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
-        
+        final threeDaysAgoDate =
+            DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
+
         final item = DailyThing(
           name: 'Decreasing Minutes',
           itemType: ItemType.minutes,
@@ -196,13 +205,16 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(49.0)); // 50 + (-1) = 49 (only one decrement even after 2 missed days)
+        expect(
+            todayValue,
+            equals(
+                49.0)); // 50 + (-1) = 49 (only one decrement even after 2 missed days)
       });
     });
 
     group('Reps - Increasing Progression (10 to 60)', () {
       late DailyThing baseItem;
-      
+
       setUp(() {
         baseItem = DailyThing(
           name: 'Increasing Reps',
@@ -226,8 +238,9 @@ void main() {
 
       test('yesterday completed - should increment', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Increasing Reps',
           itemType: ItemType.reps,
@@ -251,7 +264,7 @@ void main() {
       test('display value shows actual value when entered today', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Increasing Reps',
           itemType: ItemType.reps,
@@ -276,7 +289,7 @@ void main() {
       test('isDone with actual value meeting target', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Increasing Reps',
           itemType: ItemType.reps,
@@ -301,7 +314,7 @@ void main() {
       test('isDone with actual value not meeting target', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Increasing Reps',
           itemType: ItemType.reps,
@@ -326,7 +339,7 @@ void main() {
 
     group('Reps - Decreasing Progression (60 to 10)', () {
       late DailyThing baseItem;
-      
+
       setUp(() {
         baseItem = DailyThing(
           name: 'Decreasing Reps',
@@ -350,8 +363,9 @@ void main() {
 
       test('yesterday completed - should decrement', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Decreasing Reps',
           itemType: ItemType.reps,
@@ -375,7 +389,7 @@ void main() {
       test('display value shows actual value when entered today', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Decreasing Reps',
           itemType: ItemType.reps,
@@ -400,7 +414,7 @@ void main() {
       test('isDone with actual value meeting target (decreasing)', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Decreasing Reps',
           itemType: ItemType.reps,
@@ -425,7 +439,7 @@ void main() {
       test('isDone with actual value not meeting target (decreasing)', () {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
-        
+
         final item = DailyThing(
           name: 'Decreasing Reps',
           itemType: ItemType.reps,
@@ -451,8 +465,9 @@ void main() {
     group('Edge Cases', () {
       test('frequencyInDays respected - not due yet', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Every 2 Days',
           itemType: ItemType.minutes,
@@ -476,8 +491,9 @@ void main() {
 
       test('frequencyInDays respected - due today', () {
         final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
-        final twoDaysAgoDate = DateTime(twoDaysAgo.year, twoDaysAgo.month, twoDaysAgo.day);
-        
+        final twoDaysAgoDate =
+            DateTime(twoDaysAgo.year, twoDaysAgo.month, twoDaysAgo.day);
+
         final item = DailyThing(
           name: 'Every 2 Days',
           itemType: ItemType.minutes,
@@ -501,8 +517,9 @@ void main() {
 
       test('bounds clamping - increasing progression', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Near End',
           itemType: ItemType.minutes,
@@ -525,8 +542,9 @@ void main() {
 
       test('bounds clamping - decreasing progression', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
-        final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        
+        final yesterdayDate =
+            DateTime(yesterday.year, yesterday.month, yesterday.day);
+
         final item = DailyThing(
           name: 'Near End',
           itemType: ItemType.minutes,

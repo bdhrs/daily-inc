@@ -474,9 +474,8 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         actions: [
           // Essential actions that should always be visible
           IconButton(
-            tooltip: _hideWhenDone
-                ? 'Show Completed Items'
-                : 'Hide Completed Items',
+            tooltip:
+                _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
             icon: Icon(
               _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
             ),

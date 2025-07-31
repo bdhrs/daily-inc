@@ -5,7 +5,9 @@ import 'package:daily_inc/src/models/history_entry.dart';
 
 void main() {
   group('Decreasing Progression Missed Days Test', () {
-    test('minutes type, start value 60 end value 5, duration 55, 3 days ago entry was 15, 2 days ago missed, yesterday missed. whats today\'s value?', () {
+    test(
+        'minutes type, start value 60 end value 5, duration 55, 3 days ago entry was 15, 2 days ago missed, yesterday missed. whats today\'s value?',
+        () {
       // Create history entries
       final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
       final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
