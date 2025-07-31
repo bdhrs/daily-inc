@@ -12,6 +12,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,16 +50,17 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
       - name: Rename APK
+        id: rename_apk
         run: |
           APK_NAME="daily-inc-v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}.apk"
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$APK_NAME
-          echo "APK_PATH=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_ENV
+          echo "apk_path=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: ${{ env.APK_PATH }}
+          path: ${{ steps.rename_apk.outputs.apk_path }}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -96,8 +99,8 @@ jobs:
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          name: Development Build v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}
-          tag_name: v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}
+          name: Development Build v${{ needs.build-android.outputs.version }}+${{ github.run_number }}
+          tag_name: v${{ needs.build-android.outputs.version }}+${{ github.run_number }}
           draft: true
           prerelease: true
           body: |
