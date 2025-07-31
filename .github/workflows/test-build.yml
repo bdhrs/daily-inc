@@ -1,4 +1,4 @@
-name: Test Build
+name: Optimized Dev Build
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-build-android:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,83 +24,65 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
           key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-
 
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Get version from pubspec.yaml
-        id: get_version
+      - name: Get version and build number
+        id: version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "Current version from pubspec: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
-      
-      - name: Build APK
-        run: flutter build apk --debug
+
+      - name: Build Release APK
+        run: flutter build apk --release --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
-      
-      - name: Upload APK artifact
+
+      - name: Rename APK
+        run: |
+          APK_NAME="daily-inc-v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$APK_NAME
+          echo "APK_PATH=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_ENV
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: android-release
+          path: ${{ env.APK_PATH }}
 
-  test-build-linux:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ~/.gradle/caches
-          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
-
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
-
       - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-      
-      - name: Install Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-      
-      - run: flutter build linux --debug
-
-      - name: Upload Linux artifact
+      - run: flutter build linux --release
+      - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-debug-build
-          path: build/linux/x64/debug/bundle
+          name: linux-release
+          path: build/linux/x64/release/bundle
 
   create-draft-release:
-    needs: [test-build-android, test-build-linux]
+    needs: [build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: debug-apk
+          name: android-release
           path: artifacts/android
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: linux-debug-build
-          path: artifacts/linux
 
       - name: Get commit info
         id: commit_info
@@ -111,13 +93,12 @@ jobs:
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          name: Test Build ${{ steps.commit_info.outputs.SHA }}
-          tag_name: test-${{ steps.commit_info.outputs.SHA }}
+          name: Dev Build ${{ steps.commit_info.outputs.SHA }}
+          tag_name: dev-${{ steps.commit_info.outputs.SHA }}
           draft: true
           prerelease: true
           body: |
-            Automated test build
+            Automated dev build
             Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
           files: |
-            artifacts/android/app-debug.apk
-            artifacts/linux/*
+            artifacts/android/*
