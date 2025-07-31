@@ -85,3 +85,39 @@ jobs:
         with:
           name: linux-debug-build
           path: build/linux/x64/debug/bundle
+
+  create-draft-release:
+    needs: [test-build-android, test-build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: artifacts/android
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-debug-build
+          path: artifacts/linux
+
+      - name: Get commit info
+        id: commit_info
+        run: |
+          echo "SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "COMMIT_MSG=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Test Build ${{ steps.commit_info.outputs.SHA }}
+          tag_name: test-${{ steps.commit_info.outputs.SHA }}
+          draft: true
+          prerelease: true
+          body: |
+            Automated test build
+            Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
+          files: |
+            artifacts/android/app-debug.apk
+            artifacts/linux/*
