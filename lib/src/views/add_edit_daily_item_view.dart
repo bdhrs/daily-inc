@@ -1,4 +1,5 @@
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/data/history_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
@@ -63,7 +64,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         text: existingItem?.frequencyInDays.toString() ?? '1');
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
-    _categoryController = TextEditingController(text: existingItem?.category ?? 'None'); // Initialize category controller
+    _categoryController = TextEditingController(
+        text:
+            existingItem?.category ?? 'None'); // Initialize category controller
     _incrementController = TextEditingController();
 
     // Add listeners to update increment field
@@ -149,71 +152,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
   }
 
-  List<HistoryEntry> _updateHistoryEntriesWithNewParameters(
-    List<HistoryEntry> history,
-    double newStartValue,
-    double newEndValue,
-    int newDuration,
-    DateTime newStartDate,
-  ) {
-    _log.info('Updating history entries with new progression parameters');
-
-    // Calculate new increment
-    final newIncrement =
-        newDuration > 0 ? (newEndValue - newStartValue) / newDuration : 0.0;
-
-    // Create updated history entries
-    return history.map((entry) {
-      // For entries that have actual values (reps), update their targetValue but keep actualValue
-      if (entry.actualValue != null) {
-        // Recalculate target value based on new parameters for this entry's date
-        final entryDate =
-            DateTime(entry.date.year, entry.date.month, entry.date.day);
-        final startDateOnly =
-            DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
-        final daysSinceStart = entryDate.difference(startDateOnly).inDays;
-
-        double newTargetValue;
-        if (daysSinceStart <= 0) {
-          newTargetValue = newStartValue;
-        } else if (daysSinceStart >= newDuration) {
-          newTargetValue = newEndValue;
-        } else {
-          newTargetValue = newStartValue + (newIncrement * daysSinceStart);
-        }
-
-        return HistoryEntry(
-          date: entry.date,
-          targetValue: newTargetValue,
-          doneToday: entry.doneToday,
-          actualValue: entry.actualValue,
-        );
-      }
-
-      // For entries without actual values, recalculate targetValue based on new parameters
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      final startDateOnly =
-          DateTime(newStartDate.year, newStartDate.month, newStartDate.day);
-      final daysSinceStart = entryDate.difference(startDateOnly).inDays;
-
-      double newTargetValue;
-      if (daysSinceStart <= 0) {
-        newTargetValue = newStartValue;
-      } else if (daysSinceStart >= newDuration) {
-        newTargetValue = newEndValue;
-      } else {
-        newTargetValue = newStartValue + (newIncrement * daysSinceStart);
-      }
-
-      return HistoryEntry(
-        date: entry.date,
-        targetValue: newTargetValue,
-        doneToday: entry.doneToday,
-        actualValue: entry.actualValue,
-      );
-    }).toList();
-  }
+  
 
   void _submitDailyItem() async {
     _log.info('Attempting to submit daily item');
@@ -268,12 +207,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               oldEndValue != endValue ||
               oldDuration != duration) {
             // Progression parameters changed, update history entries
-            updatedHistory = _updateHistoryEntriesWithNewParameters(
-              widget.dailyThing!.history,
-              startValue,
-              endValue,
-              duration,
-              startDate,
+            updatedHistory = HistoryManager.updateHistoryEntriesWithNewParameters(
+              history: widget.dailyThing!.history,
+              newStartValue: startValue,
+              newEndValue: endValue,
+              newDuration: duration,
+              newStartDate: startDate,
             );
           }
         }
@@ -293,7 +232,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               ? null
               : _nagMessageController.text,
           frequencyInDays: int.parse(_frequencyController.text),
-          category: _categoryController.text.isEmpty ? 'None' : _categoryController.text,
+          category: _categoryController.text.isEmpty
+              ? 'None'
+              : _categoryController.text,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -545,9 +486,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             labelText: 'Increment',
                             hintText: '0.0',
                             filled: true,
-fillColor: Theme.of(context)
-    .disabledColor
-    .withValues(alpha: 0.1),                            enabledBorder: OutlineInputBorder(
+                            fillColor: Theme.of(context)
+                                .disabledColor
+                                .withValues(alpha: 0.1),
+                            enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Theme.of(context)
                                     .disabledColor
