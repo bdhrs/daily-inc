@@ -66,8 +66,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
     _categoryController = TextEditingController(
-        text:
-            existingItem?.category ?? ''); // Initialize category controller
+        text: existingItem?.category ?? ''); // Initialize category controller
 
     _incrementController = TextEditingController();
 
@@ -132,8 +131,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _incrementController?.dispose();
     super.dispose();
   }
-
-
 
   String _calculateIncrement() {
     try {
@@ -343,7 +340,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ),
                 const SizedBox(height: 16),
                 Autocomplete<String>(
-                  initialValue: TextEditingValue(text: _categoryController.text),
+                  initialValue:
+                      TextEditingValue(text: _categoryController.text),
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text.isEmpty) {
                       return _uniqueCategories;
@@ -363,7 +361,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       VoidCallback onFieldSubmitted) {
                     // Update the local controller when the field changes.
                     fieldTextEditingController.addListener(() {
-                      _categoryController.text = fieldTextEditingController.text;
+                      _categoryController.text =
+                          fieldTextEditingController.text;
                     });
 
                     return TextFormField(
@@ -406,11 +405,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                      onChanged: (value) {
+                  onChanged: (value) {
                     setState(() {
                       _selectedItemType = value!;
                     });
-                  },                  decoration: const InputDecoration(
+                  },
+                  decoration: const InputDecoration(
                     labelText: 'Type',
                   ),
                 ),

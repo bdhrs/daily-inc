@@ -17,21 +17,21 @@ class CategoryGraphView extends StatefulWidget {
 
 class _CategoryGraphViewState extends State<CategoryGraphView> {
   final _log = Logger('CategoryGraphView');
-  
+
   // Map to store category data: category -> date -> total value
   final Map<String, Map<DateTime, double>> _categoryData = {};
-  
+
   @override
   void initState() {
     super.initState();
     _log.info('initState called for category graph view');
     _processCategoryData();
   }
-  
+
   void _processCategoryData() {
     _log.info('Processing category data...');
     _categoryData.clear();
-    
+
     // Group items by category
     final Map<String, List<DailyThing>> itemsByCategory = {};
     for (final thing in widget.dailyThings) {
@@ -40,38 +40,39 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       }
       itemsByCategory[thing.category]!.add(thing);
     }
-    
+
     // Process each category separately
     for (final entry in itemsByCategory.entries) {
       final category = entry.key;
       final items = entry.value;
-      
+
       // Get all unique dates for this category
       final Set<DateTime> allDates = {};
       for (final thing in items) {
         for (final historyEntry in thing.history) {
-          final date = DateTime(historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
+          final date = DateTime(historyEntry.date.year, historyEntry.date.month,
+              historyEntry.date.day);
           allDates.add(date);
         }
       }
-      
+
       // Add today's date if not already present
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
       allDates.add(todayDate);
-      
+
       // Sort dates
       final sortedDates = allDates.toList()..sort();
-      
+
       // Calculate totals for each date
       final dateTotals = <DateTime, double>{};
       for (final date in sortedDates) {
         double total = 0;
-        
+
         for (final thing in items) {
           // Find the most relevant history entry for this date
           HistoryEntry? relevantEntry;
-          
+
           // First try to find an exact match
           try {
             relevantEntry = thing.history.firstWhere((e) {
@@ -84,24 +85,25 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
               final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
               return entryDate.isBefore(date);
             }).toList();
-            
+
             if (pastEntries.isNotEmpty) {
               pastEntries.sort((a, b) => b.date.compareTo(a.date));
               relevantEntry = pastEntries.first;
             } else {
               // No past entries, check for future entries
               final futureEntries = thing.history.where((e) {
-                final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
+                final entryDate =
+                    DateTime(e.date.year, e.date.month, e.date.day);
                 return entryDate.isAfter(date);
               }).toList();
-              
+
               if (futureEntries.isNotEmpty) {
                 futureEntries.sort((a, b) => a.date.compareTo(b.date));
                 relevantEntry = futureEntries.first;
               }
             }
           }
-          
+
           // Calculate value based on item type
           if (relevantEntry != null) {
             double value = 0;
@@ -123,16 +125,16 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
             }
           }
         }
-        
+
         dateTotals[date] = total;
       }
-      
+
       _categoryData[category] = dateTotals;
     }
-    
+
     _log.info('Processed data for ${_categoryData.length} categories');
   }
-  
+
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
@@ -147,34 +149,35 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
               itemBuilder: (context, index) {
                 final category = _categoryData.keys.elementAt(index);
                 final dateTotals = _categoryData[category]!;
-                
+
                 // Skip showing graphs for the category "None"
                 if (category == 'None') {
                   return const SizedBox.shrink();
                 }
-                
+
                 return _buildCategoryGraph(category, dateTotals, context);
               },
             ),
     );
   }
-  
-  Widget _buildCategoryGraph(String category, Map<DateTime, double> dateTotals, BuildContext context) {
+
+  Widget _buildCategoryGraph(
+      String category, Map<DateTime, double> dateTotals, BuildContext context) {
     // Calculate ranges
     double minY = 0;
     double maxY = 0;
-    
+
     if (dateTotals.isNotEmpty) {
       // Y range
       final values = dateTotals.values.toList();
       minY = values.reduce(min);
       maxY = values.reduce(max);
-      
+
       // Add padding
       final padding = (maxY - minY) * 0.1;
       minY = max(0, minY - padding);
       maxY = maxY + padding;
-      
+
       // If all values are the same, create a sensible range
       if (minY == maxY) {
         if (minY == 0) {
@@ -188,11 +191,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       // Default range if no data
       maxY = 10;
     }
-    
+
     // Create bars for the bar chart
     final List<BarChartGroupData> barGroups = [];
     final sortedDates = dateTotals.keys.toList()..sort();
-    
+
     // Determine which dates to show labels for (every 3rd date to avoid overcrowding)
     final Set<DateTime> labelDates = {};
     if (sortedDates.length > 7) {
@@ -204,11 +207,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     } else {
       labelDates.addAll(sortedDates);
     }
-    
+
     for (int i = 0; i < sortedDates.length; i++) {
       final date = sortedDates[i];
       final yValue = dateTotals[date]!;
-      
+
       barGroups.add(
         BarChartGroupData(
           x: i,
@@ -223,7 +226,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         ),
       );
     }
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -246,7 +249,8 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 40,
-                        interval: (maxY - minY) / 5, // Show about 5 labels on Y axis
+                        interval:
+                            (maxY - minY) / 5, // Show about 5 labels on Y axis
                         getTitlesWidget: (value, meta) {
                           // Only show labels at regular intervals
                           if (value % meta.appliedInterval == 0) {
@@ -283,8 +287,10 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
                         },
                       ),
                     ),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(
                     show: true,

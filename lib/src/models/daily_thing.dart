@@ -46,9 +46,10 @@ class DailyThing {
     return IncrementCalculator.calculateTodayValue(this);
   }
 
-double get displayValue {
+  double get displayValue {
     return IncrementCalculator.calculateDisplayValue(this);
   }
+
   Status determineStatus(double currentValue) {
     return IncrementCalculator.determineStatus(this, currentValue);
   }
@@ -162,7 +163,8 @@ double get displayValue {
           : DateTime.parse(json['nagTime'] as String),
       nagMessage: json['nagMessage'] as String?,
       frequencyInDays: json['frequencyInDays'] as int? ?? 1,
-      category: json['category'] as String? ?? 'None', // Backwards compatibility
+      category:
+          json['category'] as String? ?? 'None', // Backwards compatibility
     );
   }
 }

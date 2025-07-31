@@ -1,10 +1,12 @@
 {
     "cSpell.words": [
+        "appimage",
         "appimagetool",
         "audioplayers",
         "Cupertino",
         "flutterlocalnotifications",
         "grabability",
+        "libgstreamer",
         "logcat",
         "prefs",
         "pubspec",

@@ -223,7 +223,22 @@ class DailyThingItem extends StatelessWidget {
                     ),
                   )
                 else
-                  const SizedBox(height: 48.0), // Match height of other rows
+                  Container(
+                    constraints: const BoxConstraints(minHeight: 48.0),
+                    padding: const EdgeInsets.only(left: 32.0),
+                    alignment: Alignment.centerLeft,
+                    child: item.category.isNotEmpty
+                        ? Text(
+                            '(${item.category})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          )
+                        : null,
+                  ),
                 Row(
                   children: [
                     IconButton(

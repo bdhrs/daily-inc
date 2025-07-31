@@ -207,7 +207,6 @@ class HelpView extends StatelessWidget {
             title: Text('Delete'),
             subtitle: Text('Permanently removes the task and its history.'),
           ),
-
         ],
       ),
     );

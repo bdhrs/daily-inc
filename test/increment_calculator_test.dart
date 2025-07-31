@@ -20,10 +20,12 @@ void main() {
       expect(increment, equals(1.0));
     });
 
-    test('calculateTodayValue applies increment when previous day completed', () {
+    test('calculateTodayValue applies increment when previous day completed',
+        () {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      
+      final yesterdayDate =
+          DateTime(yesterday.year, yesterday.month, yesterday.day);
+
       final item = DailyThing(
         name: 'Test Item',
         itemType: ItemType.minutes,
@@ -44,10 +46,13 @@ void main() {
       expect(todayValue, equals(13.0)); // 12 + 1 increment
     });
 
-    test('calculateTodayValue does not increment when previous day not completed', () {
+    test(
+        'calculateTodayValue does not increment when previous day not completed',
+        () {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      
+      final yesterdayDate =
+          DateTime(yesterday.year, yesterday.month, yesterday.day);
+
       final item = DailyThing(
         name: 'Test Item',
         itemType: ItemType.minutes,
@@ -70,8 +75,9 @@ void main() {
 
     test('calculateTodayValue handles decreasing progression', () {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      
+      final yesterdayDate =
+          DateTime(yesterday.year, yesterday.month, yesterday.day);
+
       final item = DailyThing(
         name: 'Test Item',
         itemType: ItemType.minutes,
@@ -90,10 +96,10 @@ void main() {
 
       final increment = IncrementCalculator.calculateIncrement(item);
       print('Increment: $increment'); // Debug: should be -1.0
-      
+
       final todayValue = IncrementCalculator.calculateTodayValue(item);
       print('Today value: $todayValue'); // Debug
-      
+
       // For decreasing progression: 20 -> 10 over 10 days = -1.0 increment
       // Yesterday was 18, so today should be 18 + (-1.0) = 17.0
       expect(todayValue, equals(17.0)); // 18 - 1 increment
@@ -102,9 +108,11 @@ void main() {
     test('getLastCompletedDate returns correct date', () {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
       final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      final twoDaysAgoDate = DateTime(twoDaysAgo.year, twoDaysAgo.month, twoDaysAgo.day);
-      
+      final yesterdayDate =
+          DateTime(yesterday.year, yesterday.month, yesterday.day);
+      final twoDaysAgoDate =
+          DateTime(twoDaysAgo.year, twoDaysAgo.month, twoDaysAgo.day);
+
       final history = [
         HistoryEntry(
           date: twoDaysAgoDate,
@@ -124,8 +132,9 @@ void main() {
 
     test('getLastCompletedDate returns null when no completed entries', () {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      
+      final yesterdayDate =
+          DateTime(yesterday.year, yesterday.month, yesterday.day);
+
       final history = [
         HistoryEntry(
           date: yesterdayDate,
