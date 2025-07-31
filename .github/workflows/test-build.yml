@@ -62,6 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install GTK dependencies
+        run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -93,7 +95,7 @@ jobs:
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          name: Dev Build ${{ steps.commit_info.outputs.SHA }}
+          name: Development Build v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}
           tag_name: dev-${{ steps.commit_info.outputs.SHA }}
           draft: true
           prerelease: true
