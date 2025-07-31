@@ -156,4 +156,22 @@ class DataManager {
       return false;
     }
   }
+
+  /// Returns a list of unique categories from all daily things
+  Future<List<String>> getUniqueCategories() async {
+    _log.info('getUniqueCategories called');
+    try {
+      final items = await loadData();
+      final categories = items
+          .map((item) => item.category)
+          .where((category) => category != 'None' && category.isNotEmpty)
+          .toSet()
+          .toList();
+      _log.info('Found ${categories.length} unique categories');
+      return categories;
+    } catch (e, s) {
+      _log.severe('Error getting unique categories', e, s);
+      return [];
+    }
+  }
 }
