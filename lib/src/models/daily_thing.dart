@@ -1,11 +1,10 @@
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 final _logger = Logger('DailyThing');
-
-enum Status { green, red }
 
 class DailyThing {
   final String id;
@@ -40,185 +39,26 @@ class DailyThing {
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
-    if (duration <= 0) return 0.0;
-    return (endValue - startValue) / duration;
+    return IncrementCalculator.calculateIncrement(this);
   }
 
   double get todayValue {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    final sortedHistory = List<HistoryEntry>.from(history)
-      ..sort((a, b) => b.date.compareTo(a.date));
-
-    // Check for today's entry
-    for (final entry in sortedHistory) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate == todayDate) {
-        if (itemType == ItemType.check) {
-          return entry.doneToday ? 1.0 : 0.0;
-        }
-
-        if (entryDate == todayDate) {
-          if (itemType == ItemType.check) {
-            return entry.doneToday ? 1.0 : 0.0;
-          }
-          // Return calculated target for today based on last completed entry
-          final lastCompleted = lastCompletedDate;
-          if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
-            return entry.targetValue + increment;
-          }
-          return entry.targetValue;
-        }
-      }
-    }
-
-    // For CHECK items, if no entry for today, it's unchecked.
-    if (itemType == ItemType.check) {
-      return 0.0;
-    }
-
-    // No entry for today, find the latest entry before today
-    HistoryEntry? lastEntry;
-    for (final entry in sortedHistory) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate.isBefore(todayDate)) {
-        lastEntry = entry;
-        break; // since it's sorted, first one is the latest
-      }
-    }
-
-    if (lastEntry == null) {
-      // No history before today
-      try {
-        return startValue;
-      } catch (e) {
-        _logger.warning('Error with startValue: $e');
-        return 0.0;
-      }
-    }
-
-    final lastEntryDate =
-        DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
-
-    final lastCompleted = lastCompletedDate;
-    if (lastCompleted != null) {
-      final difference = todayDate.difference(lastCompleted).inDays;
-      if (difference > 0 && difference < frequencyInDays) {
-        // Not due yet, value stays the same as the last entry.
-        return lastEntry.targetValue;
-      }
-    }
-
-    if (lastEntry.doneToday) {
-      final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-      final daysMissed =
-          daysSinceLastEntry - 1; // Subtract 1 to get missed days
-
-      if (daysMissed >= 2) {
-        // Two or more days missed - apply exactly one increment
-        final newValue = startValue < endValue
-            ? lastEntry.targetValue -
-                increment // Decreasing for increasing progressions
-            : lastEntry.targetValue +
-                increment; // Increasing for decreasing progressions
-        // Handle both increasing and decreasing progressions
-        if (startValue < endValue) {
-          return newValue.clamp(startValue, endValue);
-        } else {
-          return newValue.clamp(endValue, startValue);
-        }
-      }
-      // One day missed - no change to value
-      return lastEntry.targetValue;
-    }
-
-    // If last entry was not done, apply same logic as missed days
-    final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-    final daysMissed = daysSinceLastEntry - 1; // Subtract 1 to get missed days
-
-    if (daysMissed >= 2) {
-      final newValue = startValue < endValue
-          ? lastEntry.targetValue -
-              increment // Decreasing for increasing progressions
-          : lastEntry.targetValue +
-              increment; // Increasing for decreasing progressions
-      if (startValue < endValue) {
-        return newValue.clamp(startValue, endValue);
-      } else {
-        return newValue.clamp(endValue, startValue);
-      }
-    }
-    return lastEntry.targetValue;
+    return IncrementCalculator.calculateTodayValue(this);
   }
 
 double get displayValue {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    
-    // For REPS items, show actual value if entered today
-    if (itemType == ItemType.reps) {
-      final todaysEntry = history.where((entry) {
-        final entryDate =
-            DateTime(entry.date.year, entry.date.month, entry.date.day);
-        return entryDate == todayDate && entry.actualValue != null;
-      }).toList();
-      
-      if (todaysEntry.isNotEmpty) {
-        return todaysEntry.first.actualValue!;
-      }
-    }
-    
-    // For all item types, show today's target value when no actual progress is recorded
-    return todayValue;
+    return IncrementCalculator.calculateDisplayValue(this);
   }
   Status determineStatus(double currentValue) {
-    // For CHECK items, simple logic: green if checked (1.0), red if unchecked (0.0)
-    if (itemType == ItemType.check) {
-      return currentValue >= 1.0 ? Status.green : Status.red;
-    }
-
-    if (increment > 0) {
-      // Incrementing case - green if currentValue meets or exceeds today's target
-      return currentValue >= todayValue ? Status.green : Status.red;
-    } else if (increment < 0) {
-      // Decrementing case - green if currentValue meets or is below today's target
-      // For decreasing items, being above the target is bad (red)
-      return currentValue <= todayValue ? Status.green : Status.red;
-    } else {
-      // No change case (increment == 0) - green if currentValue equals today's value
-      return currentValue == todayValue ? Status.green : Status.red;
-    }
+    return IncrementCalculator.determineStatus(this, currentValue);
   }
 
   bool isDone(double currentValue) {
-    if (itemType == ItemType.reps) {
-      if (increment > 0) {
-        // For incrementing reps, done if current rounded is >= target rounded
-        return currentValue.round() >= todayValue.round();
-      } else if (increment < 0) {
-        // For decrementing reps, done if current rounded is <= target rounded
-        return currentValue.round() <= todayValue.round();
-      } else {
-        // No change case (increment == 0) - green if currentValue equals today's value
-        return currentValue.round() == todayValue.round();
-      }
-    }
-    return determineStatus(currentValue) == Status.green;
+    return IncrementCalculator.isDone(this, currentValue);
   }
 
   DateTime? get lastCompletedDate {
-    final sortedHistory = List<HistoryEntry>.from(history)
-      ..sort((a, b) => b.date.compareTo(a.date));
-
-    for (final entry in sortedHistory) {
-      if (entry.doneToday) {
-        return DateTime(entry.date.year, entry.date.month, entry.date.day);
-      }
-    }
-    return null;
+    return IncrementCalculator.getLastCompletedDate(history);
   }
 
   bool get isDueToday {
