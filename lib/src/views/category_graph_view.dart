@@ -56,77 +56,34 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         }
       }
 
-      // Add today's date if not already present
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
-      allDates.add(todayDate);
-
       // Sort dates
       final sortedDates = allDates.toList()..sort();
 
-      // Calculate totals for each date
+      // Calculate totals for each date using only actuals
       final dateTotals = <DateTime, double>{};
       for (final date in sortedDates) {
         double total = 0;
 
         for (final thing in items) {
-          // Find the most relevant history entry for this date
-          HistoryEntry? relevantEntry;
+          // Find exact same-day entry only
+          final sameDayEntries = thing.history.where((e) {
+            final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
+            return entryDate == date;
+          });
 
-          // First try to find an exact match
-          try {
-            relevantEntry = thing.history.firstWhere((e) {
-              final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-              return entryDate == date;
-            });
-          } catch (e) {
-            // No exact match, find the most recent entry before this date
-            final pastEntries = thing.history.where((e) {
-              final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-              return entryDate.isBefore(date);
-            }).toList();
-
-            if (pastEntries.isNotEmpty) {
-              pastEntries.sort((a, b) => b.date.compareTo(a.date));
-              relevantEntry = pastEntries.first;
-            } else {
-              // No past entries, check for future entries
-              final futureEntries = thing.history.where((e) {
-                final entryDate =
-                    DateTime(e.date.year, e.date.month, e.date.day);
-                return entryDate.isAfter(date);
-              }).toList();
-
-              if (futureEntries.isNotEmpty) {
-                futureEntries.sort((a, b) => a.date.compareTo(b.date));
-                relevantEntry = futureEntries.first;
-              }
-            }
-          }
-
-          // Calculate value based on item type
-          if (relevantEntry != null) {
-            double value = 0;
+          for (final e in sameDayEntries) {
             if (thing.itemType == ItemType.check) {
-              value = relevantEntry.doneToday ? 1.0 : 0.0;
+              if (e.doneToday) total += 1.0;
             } else {
-              // For reps and minutes, use actual value if available, otherwise target value
-              value = relevantEntry.actualValue ?? relevantEntry.targetValue;
-            }
-            total += value;
-          } else if (thing.history.isNotEmpty) {
-            // If no relevant entry found but item has history, use the most recent entry
-            thing.history.sort((a, b) => b.date.compareTo(a.date));
-            final latestEntry = thing.history.first;
-            if (thing.itemType == ItemType.check) {
-              total += latestEntry.doneToday ? 1.0 : 0.0;
-            } else {
-              total += latestEntry.actualValue ?? latestEntry.targetValue;
+              if (e.actualValue != null) total += e.actualValue!;
             }
           }
         }
 
-        dateTotals[date] = total;
+        // Only record the date if there is any actual progress
+        if (total > 0) {
+          dateTotals[date] = total;
+        }
       }
 
       _categoryData[category] = dateTotals;
