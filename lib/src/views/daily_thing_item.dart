@@ -141,12 +141,11 @@ class DailyThingItem extends StatelessWidget {
                       DateTime.now().day,
                     );
                     final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
-                    final newEntry = HistoryEntry(
-                      date: today,
-                      targetValue: newValue,
-                      doneToday: item.isDone(newValue),
-                    );
-                    HistoryEntry? existingEntry = item.history.firstWhere(
+                     final newEntry = HistoryEntry(
+                       date: today,
+                       targetValue: newValue,
+                       doneToday: newValue >= 1.0,
+                     );                    HistoryEntry? existingEntry = item.history.firstWhere(
                       (entry) =>
                           entry.date.year == today.year &&
                           entry.date.month == today.month &&
