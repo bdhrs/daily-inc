@@ -42,18 +42,44 @@ class DataManager {
     return '${directory.path}/$_dataFileName';
   }
 
-  Future<List<DailyThing>> loadData() async {
-    _log.info('loadData called');
+  Future<Map<String, dynamic>> _readRawStore() async {
     try {
       final filePath = await _getFilePath();
       final file = File(filePath);
       if (!file.existsSync()) {
-        _log.warning('Data file not found at $filePath');
-        return [];
+        return {};
       }
       final contents = await file.readAsString();
-      final List<dynamic> dataList = jsonDecode(contents);
-      final loadedThings = dataList
+      final decoded = jsonDecode(contents);
+      if (decoded is List) {
+        return {'dailyThings': decoded, 'meta': {}};
+      }
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {};
+    } catch (e, s) {
+      _log.severe('Error reading raw store', e, s);
+      return {};
+    }
+  }
+
+  Future<void> _writeRawStore(Map<String, dynamic> data) async {
+    try {
+      final filePath = await _getFilePath();
+      final file = File(filePath);
+      await file.writeAsString(jsonEncode(data));
+    } catch (e, s) {
+      _log.severe('Error writing raw store', e, s);
+    }
+  }
+
+  Future<List<DailyThing>> loadData() async {
+    _log.info('loadData called');
+    try {
+      final raw = await _readRawStore();
+      final list = (raw['dailyThings'] as List<dynamic>? ?? []);
+      final loadedThings = list
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
       _log.info('Loaded ${loadedThings.length} items from file-based storage.');
@@ -67,12 +93,11 @@ class DataManager {
   Future<void> saveData(List<DailyThing> items) async {
     _log.info('saveData called with ${items.length} items.');
     try {
-      final filePath = await _getFilePath();
-      final file = File(filePath);
-      final dataList = items.map((item) => item.toJson()).toList();
-      final dataString = jsonEncode(dataList);
-      await file.writeAsString(dataString);
-      _log.info('Saved data to file-based storage at $filePath.');
+      final raw = await _readRawStore();
+      raw['dailyThings'] = items.map((item) => item.toJson()).toList();
+      raw['meta'] = (raw['meta'] as Map<String, dynamic>? ?? {});
+      await _writeRawStore(raw);
+      _log.info('Saved data to file-based storage.');
     } catch (e, s) {
       _log.severe('Error saving data to file', e, s);
     }
@@ -157,7 +182,6 @@ class DataManager {
     }
   }
 
-  /// Returns a list of unique categories from all daily things
   Future<List<String>> getUniqueCategories() async {
     _log.info('getUniqueCategories called');
     try {
@@ -173,5 +197,26 @@ class DataManager {
       _log.severe('Error getting unique categories', e, s);
       return [];
     }
+  }
+
+  Future<String?> getLastMotivationShownDate() async {
+    final raw = await _readRawStore();
+    final dynamicMeta = raw['meta'];
+    if (dynamicMeta is Map) {
+      final m = Map<String, dynamic>.from(dynamicMeta);
+      return m['lastMotivationShownDate'] as String?;
+    }
+    return null;
+  }
+
+  Future<void> setLastMotivationShownDate(String yyyymmdd) async {
+    final raw = await _readRawStore();
+    final dynamicMeta = raw['meta'];
+    final meta = (dynamicMeta is Map)
+        ? Map<String, dynamic>.from(dynamicMeta)
+        : <String, dynamic>{};
+    meta['lastMotivationShownDate'] = yyyymmdd;
+    raw['meta'] = meta;
+    await _writeRawStore(raw);
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
