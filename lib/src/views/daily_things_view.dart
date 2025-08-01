@@ -23,7 +23,7 @@ class DailyThingsView extends StatefulWidget {
   State<DailyThingsView> createState() => _DailyThingsViewState();
 }
 
-class _DailyThingsViewState extends State<DailyThingsView> {
+class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingObserver {
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
@@ -33,9 +33,11 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   bool _allTasksCompleted = false;
   bool _showOnlyDueItems = true;
   bool _hideWhenDone = false;
+  bool _motivationCheckedThisBuild = false;
 
   @override
   void initState() {
+    WidgetsBinding.instance.addObserver(this);
     super.initState();
     _log.info('initState called');
     // Load settings first to ensure they're available for first build
@@ -63,6 +65,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _log.info('dispose called');
     _isExpanded.clear();
     _expansionTileKeys.clear();
@@ -89,6 +92,7 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   void _refreshDisplay() {
+    _maybeShowMotivation();
     _log.info('Refreshing display.');
     _loadData();
   }
@@ -256,9 +260,37 @@ class _DailyThingsViewState extends State<DailyThingsView> {
       _checkAndShowCompletionSnackbar();
     });
   }
-
-  Widget _buildItemRow(DailyThing item) {
-    return DailyThingItem(
+ 
+  Future<void> _maybeShowMotivation() async {
+    try {
+      final today = DateTime.now();
+      final ymd = '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final last = await _dataManager.getLastMotivationShownDate();
+      if (last == ymd || !mounted) return;
+      await Future.delayed(const Duration(milliseconds: 50));
+      if (!mounted) return;
+      // ignore: use_build_context_synchronously
+      final acknowledged = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: const Text('Finish all your things today!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text("I'll do my very best"),
+            ),
+          ],
+        ),
+      );
+      if (acknowledged == true) {
+        await _dataManager.setLastMotivationShownDate(ymd);
+      }
+    } catch (e, s) {
+      _log.severe('Error showing motivation dialog', e, s);
+    }
+  }
+ 
+   Widget _buildItemRow(DailyThing item) {    return DailyThingItem(
       item: item,
       dataManager: _dataManager,
       allTasksCompleted: _allTasksCompleted,
@@ -364,6 +396,19 @@ class _DailyThingsViewState extends State<DailyThingsView> {
         _hasShownCompletionSnackbar = true;
         _allTasksCompleted = true;
       });
+      // ignore: use_build_context_synchronously
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: const Text('Well done! You did it!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("I'll do it again tomorrow"),
+            ),
+          ],
+        ),
+      );
     } else if (!allCompleted) {
       setState(() {
         _hasShownCompletionSnackbar = false;
@@ -438,7 +483,17 @@ class _DailyThingsViewState extends State<DailyThingsView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _maybeShowMotivation();
+    }
+  }
+
+   @override
+   Widget build(BuildContext context) {    if (!_motivationCheckedThisBuild) {
+      _motivationCheckedThisBuild = true;
+      _maybeShowMotivation();
+    }
     _log.info('build called');
     List<DailyThing> displayedItems = _showOnlyDueItems
         ? _dailyThings
