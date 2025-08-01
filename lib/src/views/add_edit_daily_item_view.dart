@@ -218,10 +218,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           final oldStartValue = widget.dailyThing!.startValue;
           final oldEndValue = widget.dailyThing!.endValue;
           final oldDuration = widget.dailyThing!.duration;
+          final oldStartDate = widget.dailyThing!.startDate;
 
           if (oldStartValue != startValue ||
               oldEndValue != endValue ||
-              oldDuration != duration) {
+              oldDuration != duration ||
+              oldStartDate != startDate) {
             // Progression parameters changed, update history entries
             updatedHistory =
                 HistoryManager.updateHistoryEntriesWithNewParameters(
