@@ -2,9 +2,6 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/core/missed_days_calculator.dart';
-import 'package:logging/logging.dart';
-
-final _logger = Logger('IncrementCalculator');
 
 class IncrementCalculator {
   /// Calculate the daily increment value for a DailyThing
@@ -38,9 +35,6 @@ class IncrementCalculator {
     final todayDate = DateTime(today.year, today.month, today.day);
     final increment = calculateIncrement(item);
 
-    _logger.info('Calculating todayValue for ${item.name}');
-    _logger.info('Increment: $increment');
-    _logger.info('Today date: $todayDate');
 
     // Sort history by date (newest first)
     final sortedHistory = List<HistoryEntry>.from(item.history)
@@ -51,8 +45,6 @@ class IncrementCalculator {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
-        _logger.info(
-            'Found entry for today: target=${entry.targetValue}, done=${entry.doneToday}');
 
         if (item.itemType == ItemType.check) {
           return entry.doneToday ? 1.0 : 0.0;
@@ -65,11 +57,9 @@ class IncrementCalculator {
 
     // No entry for today - check if we should apply increment
     final lastCompleted = getLastCompletedDate(item.history);
-    _logger.info('Last completed date: $lastCompleted');
 
     if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
       // There was a completion before today - check if we should apply increment
-      _logger.info('Found previous completion, checking increment rules');
 
       // Find the last completed entry to get the base value
       HistoryEntry? lastCompletedEntry;
@@ -88,14 +78,9 @@ class IncrementCalculator {
         final daysSinceLastCompleted =
             todayDate.difference(lastCompletedDate).inDays;
 
-        _logger.info(
-            'Last completed entry: target=${lastCompletedEntry.targetValue}, date=$lastCompletedDate');
-        _logger.info('Days since last completed: $daysSinceLastCompleted');
 
         // Check frequency - if not due yet, don't increment
         if (daysSinceLastCompleted < item.frequencyInDays) {
-          _logger.info(
-              'Not due yet (frequency: ${item.frequencyInDays}), returning last completed value');
           return lastCompletedEntry.targetValue;
         }
 
@@ -138,7 +123,6 @@ class IncrementCalculator {
         }
 
         // For all other cases, apply one increment
-        _logger.info('Applying one increment');
         // Apply increment based on progression direction
         double newValue;
         if (item.startValue < item.endValue) {
@@ -165,8 +149,6 @@ class IncrementCalculator {
 
     if (lastEntry == null) {
       // No history before today - return start value
-      _logger.info(
-          'No history before today, returning start value: ${item.startValue}');
       return item.startValue;
     }
 
@@ -175,15 +157,9 @@ class IncrementCalculator {
     final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
     final daysMissed = calculateDaysMissed(lastEntryDate, todayDate);
 
-    _logger.info(
-        'Last entry before today: target=${lastEntry.targetValue}, date=$lastEntryDate');
-    _logger.info(
-        'Days since last entry: $daysSinceLastEntry, days missed: $daysMissed');
 
     // Check frequency - if not due yet, don't change value
     if (daysSinceLastEntry < item.frequencyInDays) {
-      _logger.info(
-          'Not due yet (frequency: ${item.frequencyInDays}), returning last value');
       return lastEntry.targetValue;
     }
 
@@ -191,22 +167,17 @@ class IncrementCalculator {
     if (lastEntry.doneToday) {
       if (daysMissed >= 2) {
         // Two or more days missed - apply exactly one increment
-        _logger.info('2+ days missed, applying one increment');
         return _applyIncrement(lastEntry.targetValue, increment, item);
       }
       // One day missed - no change to value
-      _logger.info('1 day missed, no increment applied');
       return lastEntry.targetValue;
     }
 
     // If last entry was not done, apply same logic as missed days
     if (daysMissed >= 2) {
-      _logger
-          .info('2+ days missed with incomplete entry, applying one increment');
       return _applyIncrement(lastEntry.targetValue, increment, item);
     }
 
-    _logger.info('No increment needed, returning last value');
     return lastEntry.targetValue;
   }
 
