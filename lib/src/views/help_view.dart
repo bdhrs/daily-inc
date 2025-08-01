@@ -21,17 +21,18 @@ class HelpView extends StatelessWidget {
       icon: '🏃',
       history: [],
       startDate: DateTime.now(),
+      category: 'Exercise',
     );
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Help'),
+        actions: const [],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: <Widget>[
           Text(
-            'App Bar',
+            'App bar',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
@@ -65,28 +66,78 @@ class HelpView extends StatelessWidget {
                   IconButton(
                       icon: const Icon(Icons.filter_list, color: Colors.white),
                       onPressed: null,
-                      tooltip: 'Hide Completed Items'),
-                  IconButton(
-                      icon: const Icon(Icons.visibility, color: Colors.white),
-                      onPressed: null,
-                      tooltip: 'Show/Hide Due Items'),
+                      tooltip: 'Show/Hide Completed Items'),
                   IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: null,
-                      tooltip: 'Add Item'),
-                  IconButton(
-                      icon: const Icon(Icons.settings, color: Colors.white),
-                      onPressed: null,
-                      tooltip: 'Settings'),
-                  IconButton(
-                      icon: const Icon(Icons.help, color: Colors.white),
-                      onPressed: null,
-                      tooltip: 'Help'),
+                      tooltip: 'Add an item'),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.save, color: Colors.white),
-                    tooltip: 'Save/Load Menu',
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    tooltip: 'More options',
                     itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[],
+                        <PopupMenuEntry<String>>[
+                      PopupMenuItem<String>(
+                        value: 'toggle_due',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.visibility),
+                            SizedBox(width: 8),
+                            Text('Show/Hide Due Items'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'settings',
+                        child: Row(
+                          children: [
+                            Icon(Icons.settings),
+                            SizedBox(width: 8),
+                            Text('Settings'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'help',
+                        child: Row(
+                          children: [
+                            Icon(Icons.help),
+                            SizedBox(width: 8),
+                            Text('Help'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'graphs',
+                        child: Row(
+                          children: [
+                            Icon(Icons.bar_chart),
+                            SizedBox(width: 8),
+                            Text('Category Graphs'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem<String>(
+                        value: 'load_history',
+                        child: Row(
+                          children: [
+                            Icon(Icons.folder_open),
+                            SizedBox(width: 8),
+                            Text('Load History'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'save_history',
+                        child: Row(
+                          children: [
+                            Icon(Icons.save_alt),
+                            SizedBox(width: 8),
+                            Text('Save History'),
+                          ],
+                        ),
+                      ),
+                    ],
                     enabled: false,
                   ),
                 ],
@@ -96,35 +147,65 @@ class HelpView extends StatelessWidget {
           const SizedBox(height: 24),
           const ListTile(
             leading: Icon(Icons.filter_list),
-            title: Text('Hide Completed Items'),
-            subtitle: Text('Toggle to hide or show completed tasks.'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.visibility),
-            title: Text('Show/Hide Due Items'),
-            subtitle:
-                Text('Toggle between showing all items and only due items.'),
+            title: Text('Show/Hide Completed Items'),
+            subtitle: Text('Toggle whether completed items are hidden.'),
           ),
           const ListTile(
             leading: Icon(Icons.add),
-            title: Text('Add Item'),
-            subtitle: Text('Add a new daily task.'),
+            title: Text('Add an item'),
+            subtitle: Text('Create a new daily thing.'),
           ),
-          const ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings Icon'),
-            subtitle: Text('Access settings to configure app behavior.'),
+
+          const Divider(height: 32),
+          Text(
+            'More options menu',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const ListTile(
-            leading: Icon(Icons.help),
-            title: Text('Help'),
-            subtitle: Text('You are here!'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.save),
-            title: Text('Save/Load Menu'),
-            subtitle: Text(
-                'Access options to save your data to a file or load data from a file.'),
+          const SizedBox(height: 16),
+          Material(
+            elevation: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              color: Theme.of(context).cardColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  ListTile(
+                    leading: Icon(Icons.visibility),
+                    title: Text('Show/Hide Due Items'),
+                    subtitle: Text(
+                        'Toggle between all items or only those due today.'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.settings),
+                    title: Text('Settings'),
+                    subtitle: Text('Configure app behavior and preferences.'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.help),
+                    title: Text('Help'),
+                    subtitle: Text('You are here!'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.bar_chart),
+                    title: Text('Category Graphs'),
+                    subtitle: Text('View graphs aggregated by category.'),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.folder_open),
+                    title: Text('Load History'),
+                    subtitle:
+                        Text('Load previously exported data from a JSON file.'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.save_alt),
+                    title: Text('Save History'),
+                    subtitle: Text('Export your data to a JSON file.'),
+                  ),
+                ],
+              ),
+            ),
           ),
           const Divider(height: 32),
           Text(
@@ -134,6 +215,10 @@ class HelpView extends StatelessWidget {
           const SizedBox(height: 16),
           const Text(
               "Here is an example of a task. Tap it to reveal more controls. Long hold and drag to reorder tasks"),
+          const SizedBox(height: 8),
+          const Text(
+            '(Exercise) is this task\'s category.',
+          ),
           const SizedBox(height: 16),
           // This is a non-functional representation for display only.
           DailyThingItem(
@@ -187,10 +272,15 @@ class HelpView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const ListTile(
+            leading: Icon(Icons.timelapse),
+            title: Text('Target progression and Category'),
+            subtitle: Text(
+                '5m→25m (Exercise) Shows the start and end values and category'),
+          ),
+          const ListTile(
             leading: Icon(Icons.auto_graph),
             title: Text('View Stats'),
-            subtitle:
-                Text('Opens a graph to visualize your progress over time.'),
+            subtitle: Text('Shows your progress over time for this task.'),
           ),
           const ListTile(
             leading: Icon(Icons.edit),

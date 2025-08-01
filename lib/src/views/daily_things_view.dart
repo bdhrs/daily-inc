@@ -543,21 +543,7 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
               });
             },
           ),
-          IconButton(
-            tooltip:
-                _showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only',
-            icon: Icon(
-              _showOnlyDueItems ? Icons.visibility_off : Icons.visibility,
-              color: _allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () {
-              setState(() {
-                _showOnlyDueItems = !_showOnlyDueItems;
-              });
-            },
-          ),
+          
           IconButton(
             tooltip: 'Add an item',
             icon: Icon(
@@ -572,10 +558,14 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
           PopupMenuButton<String>(
             tooltip: 'More options',
             icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              switch (value) {
-                case 'settings':
-                  Navigator.push(
+             onSelected: (value) {
+               switch (value) {
+                 case 'toggle_due':
+                   setState(() {
+                     _showOnlyDueItems = !_showOnlyDueItems;
+                   });
+                   break;
+                 case 'settings':                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const SettingsView(),
@@ -607,8 +597,17 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
                   break;
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem<String>(
+             itemBuilder: (context) => [
+               PopupMenuItem<String>(
+                 value: 'toggle_due',
+                 child: Row(
+                   children: [
+                     Icon(_showOnlyDueItems ? Icons.visibility : Icons.visibility_off),
+                     const SizedBox(width: 8),
+                     Text(_showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only'),
+                   ],
+                 ),
+               ),              const PopupMenuItem<String>(
                 value: 'settings',
                 child: Row(
                   children: [
