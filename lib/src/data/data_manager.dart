@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -195,6 +196,24 @@ class DataManager {
       return categories;
     } catch (e, s) {
       _log.severe('Error getting unique categories', e, s);
+      return [];
+    }
+  }
+
+  Future<List<String>> getUniqueCategoriesForType(ItemType type) async {
+    _log.info('getUniqueCategoriesForType called for type: $type');
+    try {
+      final items = await loadData();
+      final categories = items
+          .where((item) => item.itemType == type)
+          .map((item) => item.category.trim())
+          .where((category) => category.isNotEmpty && category != 'None')
+          .toSet()
+          .toList();
+      _log.info('Found ${categories.length} unique categories for type $type');
+      return categories;
+    } catch (e, s) {
+      _log.severe('Error getting unique categories for type', e, s);
       return [];
     }
   }
