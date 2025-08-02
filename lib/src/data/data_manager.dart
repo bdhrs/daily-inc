@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:logging/logging.dart';
@@ -27,8 +28,48 @@ class DataManager {
         final loadedThings = thingsList
             .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
             .toList();
-        _log.info('Loaded ${loadedThings.length} items from file.');
-        return loadedThings;
+
+        // Fix missing actual_value for minutes items where done_today is true
+        final fixedThings = <DailyThing>[];
+        for (final thing in loadedThings) {
+          if (thing.itemType == ItemType.minutes) {
+            final fixedHistory = <HistoryEntry>[];
+            for (final entry in thing.history) {
+              if (entry.doneToday && entry.actualValue == null) {
+                _log.info(
+                    'Fixing missing actual_value for ${thing.name} on ${entry.date}');
+                fixedHistory.add(HistoryEntry(
+                  date: entry.date,
+                  targetValue: entry.targetValue,
+                  doneToday: entry.doneToday,
+                  actualValue: entry.targetValue,
+                ));
+              } else {
+                fixedHistory.add(entry);
+              }
+            }
+            fixedThings.add(DailyThing(
+              id: thing.id,
+              icon: thing.icon,
+              name: thing.name,
+              itemType: thing.itemType,
+              startDate: thing.startDate,
+              startValue: thing.startValue,
+              duration: thing.duration,
+              endValue: thing.endValue,
+              history: fixedHistory,
+              nagTime: thing.nagTime,
+              nagMessage: thing.nagMessage,
+              category: thing.category,
+              frequencyInDays: thing.frequencyInDays,
+            ));
+          } else {
+            fixedThings.add(thing);
+          }
+        }
+
+        _log.info('Loaded ${fixedThings.length} items from file.');
+        return fixedThings;
       }
       _log.warning('No file picked.');
       return [];
