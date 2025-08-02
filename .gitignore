@@ -44,6 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release keystore (generated during build process)
+android/app/release.keystore
+
 # Flutter project specific files
 .metadata
 daily_inc_history.json
