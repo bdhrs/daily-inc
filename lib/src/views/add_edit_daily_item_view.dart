@@ -96,8 +96,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _log.info('Creating new item');
     }
 
-    // Load unique categories for autofill
-    _loadUniqueCategories();
+    // Load unique categories for autofill (type-specific)
+    _loadUniqueCategoriesForSelectedType();
   }
 
   @override
@@ -156,17 +156,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
   }
 
-  /// Load unique categories for autofill
-  Future<void> _loadUniqueCategories() async {
-    _log.info('Loading unique categories for autofill');
+  /// Load unique categories for autofill for the currently selected type
+  Future<void> _loadUniqueCategoriesForSelectedType() async {
+    _log.info('Loading unique categories for type $_selectedItemType');
     try {
-      final categories = await widget.dataManager.getUniqueCategories();
+      final categories = await widget.dataManager
+          .getUniqueCategoriesForType(_selectedItemType);
       setState(() {
         _uniqueCategories = categories;
       });
-      _log.info('Loaded ${categories.length} unique categories');
+      _log.info(
+          'Loaded ${categories.length} unique categories for $_selectedItemType');
     } catch (e, s) {
-      _log.severe('Error loading unique categories', e, s);
+      _log.severe('Error loading type-specific unique categories', e, s);
     }
   }
 
@@ -342,13 +344,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ),
                 const SizedBox(height: 16),
                 Autocomplete<String>(
+                  key: ValueKey(_selectedItemType), // rebuild when type changes
                   initialValue:
                       TextEditingValue(text: _categoryController.text),
                   optionsBuilder: (TextEditingValue textEditingValue) {
+                    final source = _uniqueCategories;
                     if (textEditingValue.text.isEmpty) {
-                      return _uniqueCategories;
+                      return source;
                     }
-                    return _uniqueCategories.where((String option) {
+                    return source.where((String option) {
                       return option
                           .toLowerCase()
                           .contains(textEditingValue.text.toLowerCase());
@@ -407,10 +411,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedItemType = value!;
-                    });
+                  onChanged: (value) async {
+                    // Update selected type first
+                    _selectedItemType = value!;
+                    // Refresh category suggestions for the new type
+                    await _loadUniqueCategoriesForSelectedType();
+                    // If current category is not valid for this type, clear it
+                    final current = _categoryController.text.trim();
+                    if (current.isNotEmpty &&
+                        !_uniqueCategories.contains(current)) {
+                      _categoryController.text = '';
+                    }
+                    // Trigger rebuild after data and controller updates
+                    setState(() {});
                   },
                   decoration: const InputDecoration(
                     labelText: 'Type',
