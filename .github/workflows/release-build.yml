@@ -64,6 +64,13 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       
+      - name: Generate Release Keystore
+        run: |
+          cd android/app
+          chmod +x ../generate-keystore.sh
+          ../generate-keystore.sh
+          cd ../..
+      
       - name: Build APK
         run: flutter build apk --release --build-name=${{ steps.set_version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
