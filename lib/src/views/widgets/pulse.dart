@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 
 class Pulse extends StatefulWidget {
   final Widget child;
@@ -10,9 +11,9 @@ class Pulse extends StatefulWidget {
   const Pulse({
     super.key,
     required this.child,
-    this.pulseColor = Colors.blue,
+    this.pulseColor = ColorPalette.warningOrange,
     this.borderWidth = 2.0,
-    this.duration = const Duration(milliseconds: 1500),
+    this.duration = const Duration(milliseconds: 1000),
     this.enableShadow = true,
   });
 
