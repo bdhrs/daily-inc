@@ -120,18 +120,25 @@ This document provides a map of the project, listing the location of all functio
   - `build(BuildContext context)` method: [`lib/src/views/add_edit_daily_item_view.dart:172`](lib/src/views/add_edit_daily_item_view.dart:172)
 
 ## lib/src/views/daily_thing_item.dart
-- `DailyThingItem` class: [`lib/src/views/daily_thing_item.dart:8`](lib/src/views/daily_thing_item.dart:8)
-  - `item` property: [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9)
-  - `dataManager` property: [`lib/src/views/daily_thing_item.dart:10`](lib/src/views/daily_thing_item.dart:10)
-  - `onEdit` property: [`lib/src/views/daily_thing_item.dart:11`](lib/src/views/daily_thing_item.dart:11)
-  - `onDelete` property: [`lib/src/views/daily_thing_item.dart:12`](lib/src/views/daily_thing_item.dart:12)
-  - `showFullscreenTimer` property: [`lib/src/views/daily_thing_item.dart:13`](lib/src/views/daily_thing_item.dart:13)
-  - `showRepsInputDialog` property: [`lib/src/views/daily_thing_item.dart:14`](lib/src/views/daily_thing_item.dart:14)
-  - `checkAndShowCompletionSnackbar` property: [`lib/src/views/daily_thing_item.dart:15`](lib/src/views/daily_thing_item.dart:15)
-  - `isExpanded` property: [`lib/src/views/daily_thing_item.dart:16`](lib/src/views/daily_thing_item.dart:16)
-  - `onExpansionChanged` property: [`lib/src/views/daily_thing_item.dart:17`](lib/src/views/daily_thing_item.dart:17)
-  - `_formatValue(double value, ItemType itemType)` method: [`lib/src/views/daily_thing_item.dart:32`](lib/src/views/daily_thing_item.dart:32)
-  - `build(BuildContext context)` method: [`lib/src/views/daily_thing_item.dart:49`](lib/src/views/daily_thing_item.dart:49)
+- `DailyThingItem` class: [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9) - StatefulWidget for managing individual daily thing items
+  - `item` property: [`lib/src/views/daily_thing_item.dart:10`](lib/src/views/daily_thing_item.dart:10)
+  - `dataManager` property: [`lib/src/views/daily_thing_item.dart:11`](lib/src/views/daily_thing_item.dart:11)
+  - `onEdit` property: [`lib/src/views/daily_thing_item.dart:12`](lib/src/views/daily_thing_item.dart:12)
+  - `onDelete` property: [`lib/src/views/daily_thing_item.dart:13`](lib/src/views/daily_thing_item.dart:13)
+  - `onDuplicate` property: [`lib/src/views/daily_thing_item.dart:14`](lib/src/views/daily_thing_item.dart:14)
+  - `showFullscreenTimer` property: [`lib/src/views/daily_thing_item.dart:15`](lib/src/views/daily_thing_item.dart:15)
+  - `showRepsInputDialog` property: [`lib/src/views/daily_thing_item.dart:16`](lib/src/views/daily_thing_item.dart:16)
+  - `checkAndShowCompletionSnackbar` property: [`lib/src/views/daily_thing_item.dart:17`](lib/src/views/daily_thing_item.dart:17)
+  - `isExpanded` property: [`lib/src/views/daily_thing_item.dart:18`](lib/src/views/daily_thing_item.dart:18)
+  - `onExpansionChanged` property: [`lib/src/views/daily_thing_item.dart:19`](lib/src/views/daily_thing_item.dart:19)
+  - `allTasksCompleted` property: [`lib/src/views/daily_thing_item.dart:20`](lib/src/views/daily_thing_item.dart:20)
+- `_DailyThingItemState` class: [`lib/src/views/daily_thing_item.dart:41`](lib/src/views/daily_thing_item.dart:41) - State class for managing expansion state
+  - `_isExpanded` variable: [`lib/src/views/daily_thing_item.dart:42`](lib/src/views/daily_thing_item.dart:42)
+  - `initState()` method: [`lib/src/views/daily_thing_item.dart:44`](lib/src/views/daily_thing_item.dart:44)
+  - `didUpdateWidget(DailyThingItem oldWidget)` method: [`lib/src/views/daily_thing_item.dart:50`](lib/src/views/daily_thing_item.dart:50)
+  - `_formatValue(double value, ItemType itemType)` method: [`lib/src/views/daily_thing_item.dart:60`](lib/src/views/daily_thing_item.dart:60)
+  - `_hasIncompleteProgress(DailyThing item)` method: [`lib/src/views/daily_thing_item.dart:76`](lib/src/views/daily_thing_item.dart:76)
+  - `build(BuildContext context)` method: [`lib/src/views/daily_thing_item.dart:100`](lib/src/views/daily_thing_item.dart:100)
 
 ## lib/src/views/daily_things_view.dart
 - `DailyThingsView` class: [`lib/src/views/daily_things_view.dart:15`](lib/src/views/daily_things_view.dart:15)
@@ -144,6 +151,9 @@ This document provides a map of the project, listing the location of all functio
   - `_hasShownCompletionSnackbar` variable: [`lib/src/views/daily_things_view.dart:29`](lib/src/views/daily_things_view.dart:29)
   - `_allTasksCompleted` variable: [`lib/src/views/daily_things_view.dart:30`](lib/src/views/daily_things_view.dart:30)
   - `_showOnlyDueItems` variable: [`lib/src/views/daily_things_view.dart:31`](lib/src/views/daily_things_view.dart:31)
+  - `_hideWhenDone` variable: [`lib/src/views/daily_things_view.dart:32`](lib/src/views/daily_things_view.dart:32)
+  - `_motivationCheckedThisBuild` variable: [`lib/src/views/daily_things_view.dart:33`](lib/src/views/daily_things_view.dart:33)
+  - `_allExpanded` variable: [`lib/src/views/daily_things_view.dart:34`](lib/src/views/daily_things_view.dart:34)
   - `initState()` method: [`lib/src/views/daily_things_view.dart:34`](lib/src/views/daily_things_view.dart:34)
   - `dispose()` method: [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39)
   - `_loadData()` method: [`lib/src/views/daily_things_view.dart:46`](lib/src/views/daily_things_view.dart:46)
@@ -155,9 +165,10 @@ This document provides a map of the project, listing the location of all functio
   - `_buildItemRow(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:187`](lib/src/views/daily_things_view.dart:187)
   - `_showRepsInputDialog(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:205`](lib/src/views/daily_things_view.dart:205)
   - `_saveHistoryToFile()` method: [`lib/src/views/daily_things_view.dart:217`](lib/src/views/daily_things_view.dart:217)
-  - `_checkAndShowCompletionSnackbar()` method: [`lib/src/views/daily_things_view.dart:270`](lib/src/views/daily_things_view.dart:270)
-  - `_loadHistoryFromFile()` method: [`lib/src/views/daily_things_view.dart:304`](lib/src/views/daily_things_view.dart:304)
-  - `build(BuildContext context)` method: [`lib/src/views/daily_things_view.dart:370`](lib/src/views/daily_things_view.dart:370)
+  - `_expandAllVisibleItems()` method: [`lib/src/views/daily_things_view.dart:419`](lib/src/views/daily_things_view.dart:419) - Toggles expansion state of all visible items
+  - `_checkAndShowCompletionSnackbar()` method: [`lib/src/views/daily_things_view.dart:461`](lib/src/views/daily_things_view.dart:461)
+  - `_loadHistoryFromFile()` method: [`lib/src/views/daily_things_view.dart:495`](lib/src/views/daily_things_view.dart:495)
+  - `build(BuildContext context)` method: [`lib/src/views/daily_things_view.dart:561`](lib/src/views/daily_things_view.dart:561)
 
 ## lib/src/views/graph_view.dart
 - `GraphView` class: [`lib/src/views/graph_view.dart:9`](lib/src/views/graph_view.dart:9)
