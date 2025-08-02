@@ -123,16 +123,7 @@ class _GraphViewState extends State<GraphView> {
             maxX: _maxX,
             lineBarsData: [
               // Projected line (only if not a 'check' item)
-              if (widget.dailyThing.itemType != ItemType.check)
-                LineChartBarData(
-                  spots: _getTargetSpots(),
-                  isCurved: false,
-                  color: Colors.grey,
-                  barWidth: 2,
-                  isStrokeCapRound: true,
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(show: false),
-                ),
+
               // Actual "bars"
               ..._getActualBarsAsLines(context),
             ],
@@ -241,8 +232,8 @@ class _GraphViewState extends State<GraphView> {
     } else {
       final historyByDate = {
         for (var entry in widget.dailyThing.history)
-          entry.date.millisecondsSinceEpoch.toDouble():
-              entry.actualValue ?? entry.targetValue
+          if (entry.actualValue != null)
+            entry.date.millisecondsSinceEpoch.toDouble(): entry.actualValue!
       };
 
       for (var entry in widget.dailyThing.history) {
@@ -262,19 +253,7 @@ class _GraphViewState extends State<GraphView> {
     return lines;
   }
 
-  List<FlSpot> _getTargetSpots() {
-    if (widget.dailyThing.itemType == ItemType.check) {
-      return [];
-    }
-    final List<FlSpot> spots = [];
-    for (int i = 0; i <= widget.dailyThing.duration; i++) {
-      final date = widget.dailyThing.startDate.add(Duration(days: i));
-      final value =
-          widget.dailyThing.startValue + (widget.dailyThing.increment * i);
-      spots.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), value));
-    }
-    return spots;
-  }
+
 }
 
 String _getUnitForType(ItemType type) {

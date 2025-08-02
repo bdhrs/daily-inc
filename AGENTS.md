@@ -13,3 +13,7 @@
 - Logging: Use `logging` package with Logger instances
 - Error handling: Use try-catch with logging for async operations
 - Naming: camelCase for variables/functions, PascalCase for classes/types
+
+# Project Map
+- A map of the project can be found in `project_map.md`. 
+- Keep this file updated as changes get made
