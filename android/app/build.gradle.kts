@@ -27,15 +27,25 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
+        // Note: versionCode and versionName will be overridden by flutter build command
         versionCode = 1
         versionName = "0.1.1"
     }
 
+    signingConfigs {
+        create("release") {
+            // Use a unique keystore for release builds to avoid installation conflicts
+            storeFile = file("release.keystore")
+            storePassword = "daily_inc_release"
+            keyAlias = "daily_inc_key"
+            keyPassword = "daily_inc_release"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // See https://flutter.dev/docs/deployment/android#signing-the-app
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the release signing configuration
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
