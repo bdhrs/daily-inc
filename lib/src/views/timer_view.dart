@@ -148,8 +148,8 @@ class _TimerViewState extends State<TimerView> {
       date: todayDate,
       targetValue: widget.item.todayValue, // Save target value
       doneToday: true, // Timer completion implies meeting the target
-      // No actual value needed for timer-based items
-      // since completion implies meeting the target
+      actualValue: widget.item
+          .todayValue, // Set actual_value to today's target for MINUTES items
     );
     _log.info('Created new history entry for today.');
 
