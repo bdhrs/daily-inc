@@ -11,6 +11,7 @@ import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/help_view.dart';
 import 'package:daily_inc/src/views/category_graph_view.dart';
+import 'package:daily_inc/src/views/widgets/pulse.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -23,7 +24,8 @@ class DailyThingsView extends StatefulWidget {
   State<DailyThingsView> createState() => _DailyThingsViewState();
 }
 
-class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingObserver {
+class _DailyThingsViewState extends State<DailyThingsView>
+    with WidgetsBindingObserver {
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
@@ -260,11 +262,12 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
       _checkAndShowCompletionSnackbar();
     });
   }
- 
+
   Future<void> _maybeShowMotivation() async {
     try {
       final today = DateTime.now();
-      final ymd = '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final ymd =
+          '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
       final last = await _dataManager.getLastMotivationShownDate();
       if (last == ymd || !mounted) return;
       await Future.delayed(const Duration(milliseconds: 50));
@@ -289,8 +292,9 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
       _log.severe('Error showing motivation dialog', e, s);
     }
   }
- 
-   Widget _buildItemRow(DailyThing item) {    return DailyThingItem(
+
+  Widget _buildItemRow(DailyThing item, int index, int nextUndoneIndex) {
+    final dailyThingItem = DailyThingItem(
       item: item,
       dataManager: _dataManager,
       allTasksCompleted: _allTasksCompleted,
@@ -307,6 +311,15 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
         });
       },
     );
+
+    // Wrap with Pulse animation if this is the next undone item
+    if (index == nextUndoneIndex) {
+      return Pulse(
+        child: dailyThingItem,
+      );
+    }
+
+    return dailyThingItem;
   }
 
   void _showRepsInputDialog(DailyThing item) {
@@ -372,6 +385,31 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
         );
       }
     }
+  }
+
+  int _getNextUndoneIndex(List<DailyThing> items) {
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (item.itemType == ItemType.check && !item.completedForToday) {
+        return i;
+      } else if (item.itemType == ItemType.reps) {
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+        final hasActualValueToday = item.history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate && entry.actualValue != null;
+        });
+        if (!hasActualValueToday) {
+          return i;
+        }
+      } else if (item.itemType == ItemType.minutes) {
+        if (!item.completedForToday) {
+          return i;
+        }
+      }
+    }
+    return -1; // All items are done
   }
 
   void _checkAndShowCompletionSnackbar() {
@@ -489,8 +527,9 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
     }
   }
 
-   @override
-   Widget build(BuildContext context) {    if (!_motivationCheckedThisBuild) {
+  @override
+  Widget build(BuildContext context) {
+    if (!_motivationCheckedThisBuild) {
       _motivationCheckedThisBuild = true;
       _maybeShowMotivation();
     }
@@ -523,6 +562,9 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
       }).toList();
     }
 
+    // Compute next undone index for the displayed list (after filters)
+    final nextUndoneIndex = _getNextUndoneIndex(displayedItems);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Inc'),
@@ -543,7 +585,7 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
               });
             },
           ),
-          
+
           IconButton(
             tooltip: 'Add an item',
             icon: Icon(
@@ -558,14 +600,15 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
           PopupMenuButton<String>(
             tooltip: 'More options',
             icon: const Icon(Icons.more_vert),
-             onSelected: (value) {
-               switch (value) {
-                 case 'toggle_due':
-                   setState(() {
-                     _showOnlyDueItems = !_showOnlyDueItems;
-                   });
-                   break;
-                 case 'settings':                  Navigator.push(
+            onSelected: (value) {
+              switch (value) {
+                case 'toggle_due':
+                  setState(() {
+                    _showOnlyDueItems = !_showOnlyDueItems;
+                  });
+                  break;
+                case 'settings':
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const SettingsView(),
@@ -597,17 +640,22 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
                   break;
               }
             },
-             itemBuilder: (context) => [
-               PopupMenuItem<String>(
-                 value: 'toggle_due',
-                 child: Row(
-                   children: [
-                     Icon(_showOnlyDueItems ? Icons.visibility : Icons.visibility_off),
-                     const SizedBox(width: 8),
-                     Text(_showOnlyDueItems ? 'Show All Items' : 'Show Due Items Only'),
-                   ],
-                 ),
-               ),              const PopupMenuItem<String>(
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'toggle_due',
+                child: Row(
+                  children: [
+                    Icon(_showOnlyDueItems
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    const SizedBox(width: 8),
+                    Text(_showOnlyDueItems
+                        ? 'Show All Items'
+                        : 'Show Due Items Only'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
                 value: 'settings',
                 child: Row(
                   children: [
@@ -682,10 +730,12 @@ class _DailyThingsViewState extends State<DailyThingsView> with WidgetsBindingOb
           });
           _dataManager.saveData(_dailyThings);
         },
-        children: displayedItems.map((item) {
+        children: displayedItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
           return Container(
             key: ValueKey(item.id),
-            child: _buildItemRow(item),
+            child: _buildItemRow(item, index, nextUndoneIndex),
           );
         }).toList(),
       ),
