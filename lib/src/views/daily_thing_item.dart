@@ -6,7 +6,7 @@ import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 
-class DailyThingItem extends StatelessWidget {
+class DailyThingItem extends StatefulWidget {
   final DailyThing item;
   final DataManager dataManager;
   final Function(DailyThing) onEdit;
@@ -33,6 +33,29 @@ class DailyThingItem extends StatelessWidget {
     required this.onExpansionChanged,
     required this.allTasksCompleted,
   });
+
+  @override
+  State<DailyThingItem> createState() => _DailyThingItemState();
+}
+
+class _DailyThingItemState extends State<DailyThingItem> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.isExpanded;
+  }
+
+  @override
+  void didUpdateWidget(DailyThingItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isExpanded != widget.isExpanded) {
+      setState(() {
+        _isExpanded = widget.isExpanded;
+      });
+    }
+  }
 
   String _formatValue(double value, ItemType itemType) {
     if (itemType == ItemType.minutes) {
@@ -75,15 +98,21 @@ class DailyThingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompletedToday = item.completedForToday;
+    final isCompletedToday = widget.item.completedForToday;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(10, 0.5, 10, 0.5),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         child: ExpansionTile(
-          initiallyExpanded: isExpanded,
-          onExpansionChanged: onExpansionChanged,
+          key: ValueKey('${widget.item.id}_${widget.isExpanded}'),
+          initiallyExpanded: widget.isExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _isExpanded = expanded;
+            });
+            widget.onExpansionChanged(expanded);
+          },
           trailing: const SizedBox.shrink(),
           tilePadding: EdgeInsets.zero,
           childrenPadding: EdgeInsets.zero,
@@ -99,27 +128,27 @@ class DailyThingItem extends StatelessWidget {
                     isCompletedToday ? Icons.check : Icons.close,
                     color: isCompletedToday
                         ? Theme.of(context).colorScheme.primary
-                        : _hasIncompleteProgress(item)
+                        : _hasIncompleteProgress(widget.item)
                             ? ColorPalette.darkerOrange
                             : Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(width: 12),
-                  if (item.icon != null)
+                  if (widget.item.icon != null)
                     Text(
-                      item.icon!,
+                      widget.item.icon!,
                       style: TextStyle(
                         fontSize: 16,
-                        color: allTasksCompleted
+                        color: widget.allTasksCompleted
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   const SizedBox(width: 8),
                   Text(
-                    item.name,
+                    widget.item.name,
                     style: TextStyle(
                       fontSize: 16,
-                      color: allTasksCompleted
+                      color: widget.allTasksCompleted
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
                     ),
@@ -128,24 +157,29 @@ class DailyThingItem extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () async {
-                  if (item.itemType == ItemType.minutes) {
+                  if (widget.item.itemType == ItemType.minutes) {
                     if (isCompletedToday) {
-                      onExpansionChanged(!isExpanded);
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                      widget.onExpansionChanged(_isExpanded);
                     } else {
-                      showFullscreenTimer(item);
+                      widget.showFullscreenTimer(widget.item);
                     }
-                  } else if (item.itemType == ItemType.check) {
+                  } else if (widget.item.itemType == ItemType.check) {
                     final today = DateTime(
                       DateTime.now().year,
                       DateTime.now().month,
                       DateTime.now().day,
                     );
-                    final newValue = item.todayValue == 1.0 ? 0.0 : 1.0;
-                     final newEntry = HistoryEntry(
-                       date: today,
-                       targetValue: newValue,
-                       doneToday: newValue >= 1.0,
-                     );                    HistoryEntry? existingEntry = item.history.firstWhere(
+                    final newValue = widget.item.todayValue == 1.0 ? 0.0 : 1.0;
+                    final newEntry = HistoryEntry(
+                      date: today,
+                      targetValue: newValue,
+                      doneToday: newValue >= 1.0,
+                    );
+                    HistoryEntry? existingEntry =
+                        widget.item.history.firstWhere(
                       (entry) =>
                           entry.date.year == today.year &&
                           entry.date.month == today.month &&
@@ -155,15 +189,15 @@ class DailyThingItem extends StatelessWidget {
                     );
 
                     if (existingEntry.date.year != 0) {
-                      final index = item.history.indexOf(existingEntry);
-                      item.history[index] = newEntry;
+                      final index = widget.item.history.indexOf(existingEntry);
+                      widget.item.history[index] = newEntry;
                     } else {
-                      item.history.add(newEntry);
+                      widget.item.history.add(newEntry);
                     }
-                    await dataManager.updateDailyThing(item);
-                    checkAndShowCompletionSnackbar();
-                  } else if (item.itemType == ItemType.reps) {
-                    showRepsInputDialog(item);
+                    await widget.dataManager.updateDailyThing(widget.item);
+                    widget.checkAndShowCompletionSnackbar();
+                  } else if (widget.item.itemType == ItemType.reps) {
+                    widget.showRepsInputDialog(widget.item);
                   }
                 },
                 child: SizedBox(
@@ -172,22 +206,25 @@ class DailyThingItem extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: item.completedForToday
+                      color: widget.item.completedForToday
                           ? Theme.of(context).colorScheme.primary
-                          : _hasIncompleteProgress(item)
+                          : _hasIncompleteProgress(widget.item)
                               ? ColorPalette.darkerOrange
                               : Theme.of(context).colorScheme.error,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment.center,
-                    child: item.itemType == ItemType.check
+                    child: widget.item.itemType == ItemType.check
                         ? Icon(
-                            item.completedForToday ? Icons.check : Icons.close,
+                            widget.item.completedForToday
+                                ? Icons.check
+                                : Icons.close,
                             color: Theme.of(context).colorScheme.onPrimary,
                             size: 16.0,
                           )
                         : Text(
-                            _formatValue(item.displayValue, item.itemType),
+                            _formatValue(
+                                widget.item.displayValue, widget.item.itemType),
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.onPrimary,
                                 fontSize: 14),
@@ -201,17 +238,19 @@ class DailyThingItem extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (item.itemType != ItemType.check)
+                if (widget.item.itemType != ItemType.check)
                   Padding(
                     padding: const EdgeInsets.only(left: 32.0),
                     child: Row(
                       children: [
-                        Text(_formatValue(item.startValue, item.itemType)),
+                        Text(_formatValue(
+                            widget.item.startValue, widget.item.itemType)),
                         const Icon(Icons.trending_flat),
-                        Text(_formatValue(item.endValue, item.itemType)),
+                        Text(_formatValue(
+                            widget.item.endValue, widget.item.itemType)),
                         const SizedBox(width: 16),
                         Text(
-                          '(${item.category})',
+                          '(${widget.item.category})',
                           style: TextStyle(
                             fontSize: 12,
                             color:
@@ -226,9 +265,9 @@ class DailyThingItem extends StatelessWidget {
                     constraints: const BoxConstraints(minHeight: 48.0),
                     padding: const EdgeInsets.only(left: 32.0),
                     alignment: Alignment.centerLeft,
-                    child: item.category.isNotEmpty
+                    child: widget.item.category.isNotEmpty
                         ? Text(
-                            '(${item.category})',
+                            '(${widget.item.category})',
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context)
@@ -247,7 +286,8 @@ class DailyThingItem extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => GraphView(dailyThing: item),
+                            builder: (context) =>
+                                GraphView(dailyThing: widget.item),
                           ),
                         );
                       },
@@ -255,17 +295,17 @@ class DailyThingItem extends StatelessWidget {
                     IconButton(
                       tooltip: 'edit the item',
                       icon: const Icon(Icons.edit),
-                      onPressed: () => onEdit(item),
+                      onPressed: () => widget.onEdit(widget.item),
                     ),
                     IconButton(
                       tooltip: 'duplicate the item',
                       icon: const Icon(Icons.content_copy),
-                      onPressed: () => onDuplicate(item),
+                      onPressed: () => widget.onDuplicate(widget.item),
                     ),
                     IconButton(
                       tooltip: 'delete the item',
                       icon: const Icon(Icons.delete),
-                      onPressed: () => onDelete(item),
+                      onPressed: () => widget.onDelete(widget.item),
                     ),
                   ],
                 ),

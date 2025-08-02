@@ -68,6 +68,10 @@ class HelpView extends StatelessWidget {
                       onPressed: null,
                       tooltip: 'Show/Hide Completed Items'),
                   IconButton(
+                      icon: const Icon(Icons.expand_more, color: Colors.white),
+                      onPressed: null,
+                      tooltip: 'Expand/Collapse all items'),
+                  IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: null,
                       tooltip: 'Add an item'),
@@ -149,6 +153,12 @@ class HelpView extends StatelessWidget {
             leading: Icon(Icons.filter_list),
             title: Text('Show/Hide Completed Items'),
             subtitle: Text('Toggle whether completed items are hidden.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.expand_more),
+            title: Text('Expand/Collapse all items'),
+            subtitle: Text(
+                'Expand or collapse all visible items to show or hide their details.'),
           ),
           const ListTile(
             leading: Icon(Icons.add),

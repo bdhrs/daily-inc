@@ -36,6 +36,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _showOnlyDueItems = true;
   bool _hideWhenDone = false;
   bool _motivationCheckedThisBuild = false;
+  bool _allExpanded = false;
 
   @override
   void initState() {
@@ -294,6 +295,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   Widget _buildItemRow(DailyThing item, int index, int nextUndoneIndex) {
+    // Initialize expansion state if not already set - always start closed
+    _isExpanded.putIfAbsent(item.id, () => false);
+
     final dailyThingItem = DailyThingItem(
       item: item,
       dataManager: _dataManager,
@@ -410,6 +414,53 @@ class _DailyThingsViewState extends State<DailyThingsView>
       }
     }
     return -1; // All items are done
+  }
+
+  void _expandAllVisibleItems() {
+    _log.info('Toggling expansion of all visible items');
+    setState(() {
+      // Get the list of displayed items (same filtering as in build method)
+      List<DailyThing> displayedItems = _showOnlyDueItems
+          ? _dailyThings
+              .where(
+                  (item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
+              .toList()
+          : _dailyThings;
+
+      if (_hideWhenDone) {
+        displayedItems = displayedItems.where((item) {
+          // For REPS items, hide when any actual value has been entered today
+          if (item.itemType == ItemType.reps) {
+            final today = DateTime.now();
+            final todayDate = DateTime(today.year, today.month, today.day);
+
+            // Check if there's any entry for today with actual value
+            final hasActualValueToday = item.history.any((entry) {
+              final entryDate =
+                  DateTime(entry.date.year, entry.date.month, entry.date.day);
+              return entryDate == todayDate && entry.actualValue != null;
+            });
+
+            return !hasActualValueToday;
+          }
+
+          // For MINUTES and CHECK items, maintain existing behavior
+          return !item.completedForToday;
+        }).toList();
+      }
+
+      // Check if all visible items are currently expanded
+      bool allExpanded =
+          displayedItems.every((item) => _isExpanded[item.id] ?? false);
+
+      // Toggle expansion state for all visible items
+      _allExpanded = !allExpanded;
+      for (final item in displayedItems) {
+        _isExpanded[item.id] = _allExpanded;
+      }
+
+      _log.info('Setting all visible items to expanded: $_allExpanded');
+    });
   }
 
   void _checkAndShowCompletionSnackbar() {
@@ -586,6 +637,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
             },
           ),
 
+          IconButton(
+            tooltip: _allExpanded ? 'Collapse all items' : 'Expand all items',
+            icon: Icon(_allExpanded ? Icons.expand_less : Icons.expand_more),
+            onPressed: _expandAllVisibleItems,
+          ),
           IconButton(
             tooltip: 'Add an item',
             icon: Icon(
