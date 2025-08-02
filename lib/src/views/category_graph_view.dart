@@ -49,15 +49,15 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       DateTime? maxDate;
       for (final thing in items) {
         final start = DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
-        if (minDate == null || start.isBefore(minDate!)) {
+        if (minDate == null || start.isBefore(minDate)) {
           minDate = start;
         }
         for (final historyEntry in thing.history) {
           final date = DateTime(historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
-          if (minDate == null || date.isBefore(minDate!)) {
+          if (minDate == null || date.isBefore(minDate)) {
             minDate = date;
           }
-          if (maxDate == null || date.isAfter(maxDate!)) {
+          if (maxDate == null || date.isAfter(maxDate)) {
             maxDate = date;
           }
         }
@@ -69,7 +69,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       }
 
       final dateTotals = <DateTime, double>{};
-      for (DateTime d = minDate!; !d.isAfter(maxDate!); d = DateTime(d.year, d.month, d.day + 1)) {
+      for (DateTime d = minDate; !d.isAfter(maxDate); d = DateTime(d.year, d.month, d.day + 1)) {
         double total = 0;
         for (final thing in items) {
           final sameDayEntries = thing.history.where((e) {
