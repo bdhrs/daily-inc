@@ -18,6 +18,7 @@ class DailyThingItem extends StatefulWidget {
   final bool isExpanded;
   final Function(bool) onExpansionChanged;
   final bool allTasksCompleted;
+  final VoidCallback? onItemChanged;
 
   const DailyThingItem({
     super.key,
@@ -32,6 +33,7 @@ class DailyThingItem extends StatefulWidget {
     required this.isExpanded,
     required this.onExpansionChanged,
     required this.allTasksCompleted,
+    this.onItemChanged,
   });
 
   @override
@@ -105,7 +107,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         child: ExpansionTile(
-          key: ValueKey('${widget.item.id}_${widget.isExpanded}'),
+          // Include today's completion state in the key so Flutter doesn't reuse a stale widget after toggle
+          key: ValueKey(
+              '${widget.item.id}_${widget.isExpanded}_${widget.item.completedForToday}'),
           initiallyExpanded: widget.isExpanded,
           onExpansionChanged: (expanded) {
             setState(() {
@@ -195,6 +199,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       widget.item.history.add(newEntry);
                     }
                     await widget.dataManager.updateDailyThing(widget.item);
+                    // Trigger parent to refresh immediately so UI reflects the change on first tap
+                    widget.onItemChanged?.call();
                     widget.checkAndShowCompletionSnackbar();
                   } else if (widget.item.itemType == ItemType.reps) {
                     widget.showRepsInputDialog(widget.item);

@@ -97,6 +97,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
   void _refreshDisplay() {
     _maybeShowMotivation();
     _log.info('Refreshing display.');
+    // Ensure a rebuild occurs immediately before async reload,
+    // so UI reflects updated completion state without needing a second tap.
+    if (mounted) {
+      setState(() {});
+    }
     _loadData();
   }
 
@@ -314,6 +319,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           _isExpanded[item.id] = expanded;
         });
       },
+      onItemChanged: _refreshDisplay,
     );
 
     // Wrap with Pulse animation if this is the next undone item
