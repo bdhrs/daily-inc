@@ -45,31 +45,37 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       final category = entry.key;
       final items = entry.value;
 
-      // Get all unique dates for this category
-      final Set<DateTime> allDates = {};
+      DateTime? minDate;
+      DateTime? maxDate;
       for (final thing in items) {
+        final start = DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
+        if (minDate == null || start.isBefore(minDate!)) {
+          minDate = start;
+        }
         for (final historyEntry in thing.history) {
-          final date = DateTime(historyEntry.date.year, historyEntry.date.month,
-              historyEntry.date.day);
-          allDates.add(date);
+          final date = DateTime(historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
+          if (minDate == null || date.isBefore(minDate!)) {
+            minDate = date;
+          }
+          if (maxDate == null || date.isAfter(maxDate!)) {
+            maxDate = date;
+          }
         }
       }
 
-      // Sort dates
-      final sortedDates = allDates.toList()..sort();
+      if (minDate == null || maxDate == null) {
+        _categoryData[category] = {};
+        continue;
+      }
 
-      // Calculate totals for each date using only actuals
       final dateTotals = <DateTime, double>{};
-      for (final date in sortedDates) {
+      for (DateTime d = minDate!; !d.isAfter(maxDate!); d = DateTime(d.year, d.month, d.day + 1)) {
         double total = 0;
-
         for (final thing in items) {
-          // Find exact same-day entry only
           final sameDayEntries = thing.history.where((e) {
             final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-            return entryDate == date;
+            return entryDate == d;
           });
-
           for (final e in sameDayEntries) {
             if (thing.itemType == ItemType.check) {
               if (e.doneToday) total += 1.0;
@@ -78,11 +84,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
             }
           }
         }
-
-        // Only record the date if there is any actual progress
-        if (total > 0) {
-          dateTotals[date] = total;
-        }
+        dateTotals[d] = total;
       }
 
       _categoryData[category] = dateTotals;
