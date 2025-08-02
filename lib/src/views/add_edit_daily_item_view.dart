@@ -177,9 +177,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     if (_formKey.currentState!.validate()) {
       _log.info('Form is valid');
       try {
+        // Trim all text inputs
+        _iconController.text = _iconController.text.trim();
+        _nameController.text = _nameController.text.trim();
+        _categoryController.text = _categoryController.text.trim();
+        _nagMessageController.text = _nagMessageController.text.trim();
+        
         final startDate = DateFormat(
           'yyyy-MM-dd',
-        ).parse(_startDateController.text);
+        ).parse(_startDateController.text.trim());
 
         // For CHECK items, use default values since the fields are hidden
         final double startValue;
@@ -191,9 +197,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           duration = 1; // Duration is irrelevant for check items
           endValue = 1.0; // End value is checked state
         } else {
-          startValue = double.parse(_startValueController.text);
-          duration = int.parse(_durationController.text);
-          endValue = double.parse(_endValueController.text);
+          startValue = double.parse(_startValueController.text.trim());
+          duration = int.parse(_durationController.text.trim());
+          endValue = double.parse(_endValueController.text.trim());
         }
 
         final DateTime? nagTime;
@@ -252,7 +258,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           nagMessage: _nagMessageController.text.isEmpty
               ? null
               : _nagMessageController.text,
-          frequencyInDays: int.parse(_frequencyController.text),
+          frequencyInDays: int.parse(_frequencyController.text.trim()),
           category: _categoryController.text.isEmpty
               ? 'None'
               : _categoryController.text,
@@ -343,6 +349,34 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   },
                 ),
                 const SizedBox(height: 16),
+                DropdownButtonFormField<ItemType>(
+                  value: _selectedItemType,
+                  items: ItemType.values.map((type) {
+                    return DropdownMenuItem(
+                        value: type,
+                        child: Text(
+                          type.toString().split('.').last.toUpperCase(),
+                        ));
+                  }).toList(),
+                  onChanged: widget.dailyThing == null ? (value) async {
+                    // Update selected type first
+                    _selectedItemType = value!;
+                    // Refresh category suggestions for the new type
+                    await _loadUniqueCategoriesForSelectedType();
+                    // If current category is not valid for this type, clear it
+                    final current = _categoryController.text.trim();
+                    if (current.isNotEmpty &&
+                        !_uniqueCategories.contains(current)) {
+                      _categoryController.text = '';
+                    }
+                    // Trigger rebuild after data and controller updates
+                    setState(() {});
+                  } : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Type',
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Autocomplete<String>(
                   key: ValueKey(_selectedItemType), // rebuild when type changes
                   initialValue:
@@ -400,34 +434,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     }
                     return null;
                   },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<ItemType>(
-                  value: _selectedItemType,
-                  items: ItemType.values.map((type) {
-                    return DropdownMenuItem(
-                        value: type,
-                        child: Text(
-                          type.toString().split('.').last.toUpperCase(),
-                        ));
-                  }).toList(),
-                  onChanged: (value) async {
-                    // Update selected type first
-                    _selectedItemType = value!;
-                    // Refresh category suggestions for the new type
-                    await _loadUniqueCategoriesForSelectedType();
-                    // If current category is not valid for this type, clear it
-                    final current = _categoryController.text.trim();
-                    if (current.isNotEmpty &&
-                        !_uniqueCategories.contains(current)) {
-                      _categoryController.text = '';
-                    }
-                    // Trigger rebuild after data and controller updates
-                    setState(() {});
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Type',
-                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
