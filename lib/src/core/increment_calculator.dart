@@ -1,7 +1,9 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
-import 'package:daily_inc/src/core/missed_days_calculator.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('IncrementCalculator');
 
 class IncrementCalculator {
   /// Calculate the daily increment value for a DailyThing
@@ -35,7 +37,6 @@ class IncrementCalculator {
     final todayDate = DateTime(today.year, today.month, today.day);
     final increment = calculateIncrement(item);
 
-
     // Sort history by date (newest first)
     final sortedHistory = List<HistoryEntry>.from(item.history)
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -45,98 +46,15 @@ class IncrementCalculator {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
-
         if (item.itemType == ItemType.check) {
           return entry.doneToday ? 1.0 : 0.0;
         }
-
         // For non-check items, return the target value from today's entry
         return entry.targetValue;
       }
     }
 
-    // No entry for today - check if we should apply increment
-    final lastCompleted = getLastCompletedDate(item.history);
-
-    if (lastCompleted != null && lastCompleted.isBefore(todayDate)) {
-      // There was a completion before today - check if we should apply increment
-
-      // Find the last completed entry to get the base value
-      HistoryEntry? lastCompletedEntry;
-      for (final entry in sortedHistory) {
-        final entryDate =
-            DateTime(entry.date.year, entry.date.month, entry.date.day);
-        if (entry.doneToday && entryDate.isBefore(todayDate)) {
-          lastCompletedEntry = entry;
-          break;
-        }
-      }
-
-      if (lastCompletedEntry != null) {
-        final lastCompletedDate = DateTime(lastCompletedEntry.date.year,
-            lastCompletedEntry.date.month, lastCompletedEntry.date.day);
-        final daysSinceLastCompleted =
-            todayDate.difference(lastCompletedDate).inDays;
-
-
-        // Check frequency - if not due yet, don't increment
-        if (daysSinceLastCompleted < item.frequencyInDays) {
-          return lastCompletedEntry.targetValue;
-        }
-
-        // Handle special cases for missed days using the MissedDaysCalculator
-        double? specialCaseValue;
-
-        // Handle decreasing progression special case
-        specialCaseValue = MissedDaysCalculator.handleDecreasingProgression(
-          item,
-          lastCompletedEntry,
-          todayDate,
-        );
-
-        if (specialCaseValue != null) {
-          return specialCaseValue;
-        }
-
-        // Handle increasing progression penalty
-        specialCaseValue = MissedDaysCalculator.handleIncreasingProgression(
-          item,
-          lastCompletedEntry,
-          todayDate,
-          increment,
-        );
-
-        if (specialCaseValue != null) {
-          return specialCaseValue;
-        }
-
-        // Handle decreasing progression penalty
-        specialCaseValue = MissedDaysCalculator.handleDecreasingPenalty(
-          item,
-          lastCompletedEntry,
-          todayDate,
-          increment,
-        );
-
-        if (specialCaseValue != null) {
-          return specialCaseValue;
-        }
-
-        // For all other cases, apply one increment
-        // Apply increment based on progression direction
-        double newValue;
-        if (item.startValue < item.endValue) {
-          // Increasing progression - add increment (which is positive)
-          newValue = lastCompletedEntry.targetValue + increment;
-          return newValue.clamp(item.startValue, item.endValue);
-        } else {
-          // Decreasing progression - add increment (which is negative)
-          newValue = lastCompletedEntry.targetValue + increment;
-          return newValue.clamp(item.endValue, item.startValue);
-        }
-      }
-    }
-    // No previous completion or no last entry - find the latest entry before today
+    // No entry for today - find the last relevant entry
     HistoryEntry? lastEntry;
     for (final entry in sortedHistory) {
       final entryDate =
@@ -155,43 +73,66 @@ class IncrementCalculator {
     final lastEntryDate =
         DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
     final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-    final daysMissed = calculateDaysMissed(lastEntryDate, todayDate);
-
 
     // Check frequency - if not due yet, don't change value
     if (daysSinceLastEntry < item.frequencyInDays) {
       return lastEntry.targetValue;
     }
 
-    // Handle missed days logic
-    if (lastEntry.doneToday) {
-      if (daysMissed >= 2) {
-        // Two or more days missed - apply exactly one increment
-        return _applyIncrement(lastEntry.targetValue, increment, item);
-      }
-      // One day missed - no change to value
-      return lastEntry.targetValue;
-    }
+    // Calculate days missed (adjusted for frequency)
+    final daysMissed =
+        _calculateDaysMissed(lastEntryDate, todayDate, item.frequencyInDays);
 
-    // If last entry was not done, apply same logic as missed days
-    if (daysMissed >= 2) {
-      return _applyIncrement(lastEntry.targetValue, increment, item);
-    }
-
-    return lastEntry.targetValue;
+    // Apply increment logic with penalty
+    return _applyIncrementWithPenalty(lastEntry, increment, daysMissed, item);
   }
 
-  /// Apply increment with proper direction handling
-  static double _applyIncrement(
-      double currentValue, double increment, DailyThing item) {
+  /// Calculate days missed since last entry, adjusted for frequency
+  static int _calculateDaysMissed(
+      DateTime lastEntryDate, DateTime todayDate, int frequencyInDays) {
+    final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
+
+    // Calculate how many frequency periods have passed
+    final periodsPassed = (daysSinceLastEntry / frequencyInDays).floor();
+
+    // Return the number of missed days (0 if no periods have passed)
+    return periodsPassed > 0 ? periodsPassed : 0;
+  }
+
+  /// Apply increment with penalty logic
+  static double _applyIncrementWithPenalty(HistoryEntry lastEntry,
+      double increment, int daysMissed, DailyThing item) {
+    // Base value is the target value from the last entry
+    double baseValue = lastEntry.targetValue;
+
     double newValue;
+
+    // Apply penalty logic
+    if (daysMissed == 0) {
+      // No days missed - apply normal daily increment
+      newValue = baseValue + increment;
+      _logger.info(
+          'Normal increment applied for item "${item.name}": $increment, new target value: $newValue');
+    } else if (daysMissed == 1) {
+      // One day missed - no change to target value (keep the last completed value)
+      newValue = baseValue;
+      _logger.info(
+          'One day missed for item "${item.name}" - keeping target value at $baseValue');
+    } else {
+      // Two or more days missed - apply daily increment + penalty decrement
+      // Apply normal increment first
+      newValue = baseValue + increment;
+      // Then apply penalty decrement for each additional missed day beyond the first
+      double penalty = -increment * (daysMissed - 1);
+      newValue = newValue + penalty;
+      _logger.info(
+          'Penalty applied for item "${item.name}": $daysMissed days missed, increment: $increment, penalty: $penalty, new target value: $newValue');
+    }
+
+    // Clamp to appropriate bounds
     if (item.startValue < item.endValue) {
-      // Increasing progression - add increment
-      newValue = currentValue + increment;
       return newValue.clamp(item.startValue, item.endValue);
     } else {
-      // Decreasing progression - subtract increment
-      newValue = currentValue - increment;
       return newValue.clamp(item.endValue, item.startValue);
     }
   }
