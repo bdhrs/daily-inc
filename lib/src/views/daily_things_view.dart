@@ -515,54 +515,30 @@ class _DailyThingsViewState extends State<DailyThingsView>
   Future<void> _loadHistoryFromFile() async {
     _log.info('Attempting to load history from file.');
     try {
-      final FilePickerResult? result = await FilePicker.platform.pickFiles(
-        dialogTitle: 'Load History Data',
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
+      // Use DataManager's loadFromFile method which includes the fix for missing actual_value
+      final loadedThings = await _dataManager.loadFromFile();
 
-      if (result != null && result.files.single.path != null) {
-        _log.info('Loading history from: ${result.files.single.path}');
-        final file = File(result.files.single.path!);
-        _log.info('Reading file content.');
-        final jsonString = await file.readAsString();
-        _log.info('Decoding JSON data.');
-        final jsonData = jsonDecode(jsonString);
+      if (loadedThings.isNotEmpty) {
+        setState(() {
+          _dailyThings = loadedThings;
+        });
 
-        if (jsonData['dailyThings'] != null) {
-          _log.info('Mapping JSON to DailyThing objects.');
-          final List<dynamic> thingsJson = jsonData['dailyThings'];
-          final List<DailyThing> loadedThings =
-              thingsJson.map((json) => DailyThing.fromJson(json)).toList();
+        // Save the loaded data to the default storage
+        await _dataManager.saveData(_dailyThings);
+        _log.info('History loaded and saved to default storage successfully.');
 
-          setState(() {
-            _dailyThings = loadedThings;
-          });
-
-          // Save the loaded data to the default storage
-          await _dataManager.saveData(_dailyThings);
-          _log.info(
-              'History loaded and saved to default storage successfully.');
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'History loaded successfully',
-                ),
-                duration: const Duration(seconds: 2),
-                backgroundColor:
-                    Theme.of(context).snackBarTheme.backgroundColor,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        } else {
-          _log.severe('Invalid file format for loading history.');
-          throw Exception('Invalid file format');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('History loaded successfully'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       } else {
-        _log.info('Load file operation cancelled.');
+        _log.info('No items loaded from file or file selection was cancelled.');
       }
     } catch (e, s) {
       _log.severe('Failed to load history', e, s);
