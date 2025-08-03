@@ -70,7 +70,7 @@ void main() {
       );
 
       final todayValue = IncrementCalculator.calculateTodayValue(item);
-      expect(todayValue, equals(12.0)); // No increment applied
+      expect(todayValue, equals(13.0)); // Increment is applied regardless of completion
     });
 
     test('calculateTodayValue handles decreasing progression', () {

@@ -79,54 +79,36 @@ class IncrementCalculator {
       return lastEntry.targetValue;
     }
 
-    // Calculate days missed (adjusted for frequency)
-    final daysMissed =
-        _calculateDaysMissed(lastEntryDate, todayDate, item.frequencyInDays);
-
     // Apply increment logic with penalty
-    return _applyIncrementWithPenalty(lastEntry, increment, daysMissed, item);
-  }
-
-  /// Calculate days missed since last entry, adjusted for frequency
-  static int _calculateDaysMissed(
-      DateTime lastEntryDate, DateTime todayDate, int frequencyInDays) {
-    final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-
-    // Calculate how many frequency periods have passed
-    final periodsPassed = (daysSinceLastEntry / frequencyInDays).floor();
-
-    // Return the number of missed days (0 if no periods have passed)
-    return periodsPassed > 0 ? periodsPassed : 0;
+    return _applyIncrementWithPenalty(
+        lastEntry, increment, daysSinceLastEntry, item);
   }
 
   /// Apply increment with penalty logic
   static double _applyIncrementWithPenalty(HistoryEntry lastEntry,
-      double increment, int daysMissed, DailyThing item) {
+      double increment, int daysSinceLast, DailyThing item) {
     // Base value is the target value from the last entry
     double baseValue = lastEntry.targetValue;
 
     double newValue;
 
-    // Apply penalty logic
-    if (daysMissed == 0) {
-      // No days missed - apply normal daily increment
+    // Apply penalty logic from logic.md
+    if (daysSinceLast == 1) {
+      // One day missed - apply normal daily increment
       newValue = baseValue + increment;
       _logger.info(
           'Normal increment applied for item "${item.name}": $increment, new target value: $newValue');
-    } else if (daysMissed == 1) {
-      // One day missed - no change to target value (keep the last completed value)
+    } else if (daysSinceLast == 2) {
+      // Two days missed - no change to target value
       newValue = baseValue;
       _logger.info(
-          'One day missed for item "${item.name}" - keeping target value at $baseValue');
+          'Two days missed for item "${item.name}" - keeping target value at $baseValue');
     } else {
-      // Two or more days missed - apply daily increment + penalty decrement
-      // Apply normal increment first
-      newValue = baseValue + increment;
-      // Then apply penalty decrement for each additional missed day beyond the first
-      double penalty = -increment * (daysMissed - 1);
-      newValue = newValue + penalty;
+      // Three or more days missed - apply penalty decrement
+      double penalty = increment * (daysSinceLast - 1);
+      newValue = baseValue - penalty;
       _logger.info(
-          'Penalty applied for item "${item.name}": $daysMissed days missed, increment: $increment, penalty: $penalty, new target value: $newValue');
+          'Penalty applied for item "${item.name}": $daysSinceLast days missed, increment: $increment, penalty: $penalty, new target value: $newValue');
     }
 
     // Clamp to appropriate bounds
