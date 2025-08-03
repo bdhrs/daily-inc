@@ -51,23 +51,40 @@ jobs:
           ../generate-keystore.sh
           cd ../..
 
-      - name: Build Release APK
-        run: flutter build apk --release --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
+      - name: Build per-ABI APKs
+        run: flutter build apk --release --split-per-abi --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
-      - name: Rename APK
-        id: rename_apk
+      - name: Rename per-ABI APKs
+        id: rename_apks
         run: |
-          APK_NAME="daily-inc-v${{ steps.version.outputs.VERSION }}+${{ github.run_number }}.apk"
-          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$APK_NAME
-          echo "apk_path=build/app/outputs/flutter-apk/$APK_NAME" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          VERSION_NAME="${{ steps.version.outputs.VERSION }}"
+          BUILD_NUMBER="${{ github.run_number }}"
+          OUT_DIR="build/app/outputs/flutter-apk"
+          declare -A MAP=( \
+            ["app-arm64-v8a-release.apk"]="daily-inc-arm64-v8a-v${VERSION_NAME}+${BUILD_NUMBER}.apk" \
+            ["app-armeabi-v7a-release.apk"]="daily-inc-armeabi-v7a-v${VERSION_NAME}+${BUILD_NUMBER}.apk" \
+            ["app-x86_64-release.apk"]="daily-inc-x86_64-v${VERSION_NAME}+${BUILD_NUMBER}.apk" \
+          )
+          for SRC in "${!MAP[@]}"; do
+            if [ -f "${OUT_DIR}/${SRC}" ]; then
+              mv "${OUT_DIR}/${SRC}" "${OUT_DIR}/${MAP[$SRC]}"
+            fi
+          done
+          echo "ARM64_APK=${OUT_DIR}/daily-inc-arm64-v8a-v${VERSION_NAME}+${BUILD_NUMBER}.apk" >> $GITHUB_OUTPUT
+          echo "ARMEABI7_APK=${OUT_DIR}/daily-inc-armeabi-v7a-v${VERSION_NAME}+${BUILD_NUMBER}.apk" >> $GITHUB_OUTPUT
+          echo "X86_64_APK=${OUT_DIR}/daily-inc-x86_64-v${VERSION_NAME}+${BUILD_NUMBER}.apk" >> $GITHUB_OUTPUT
 
-      - name: Upload APK
+      - name: Upload per-ABI APKs
         uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: ${{ steps.rename_apk.outputs.apk_path }}
+          path: |
+            ${{ steps.rename_apks.outputs.ARM64_APK }}
+            ${{ steps.rename_apks.outputs.ARMEABI7_APK }}
+            ${{ steps.rename_apks.outputs.X86_64_APK }}
 
   build-linux:
     runs-on: ubuntu-latest
