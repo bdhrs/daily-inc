@@ -1,8 +1,10 @@
 {
     "cSpell.words": [
         "actuals",
+        "apks",
         "appimage",
         "appimagetool",
+        "armeabi",
         "audioplayers",
         "buildlog",
         "Cupertino",
@@ -16,6 +18,7 @@
         "keytool",
         "libgstreamer",
         "logcat",
+        "pipefail",
         "prefs",
         "proguard",
         "pubspec",
