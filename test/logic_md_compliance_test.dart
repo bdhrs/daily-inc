@@ -9,17 +9,6 @@ void main() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    // Scenario: startValue < endValue (e.g., increasing minutes)
-    final increasingItem = DailyThing(
-      id: '1',
-      name: 'Meditation',
-      startDate: todayDate,
-      startValue: 10,
-      endValue: 20,
-      duration: 10, // increment of 1.0 per day
-      itemType: ItemType.minutes,
-      frequencyInDays: 1,
-    );
 
     test(
         'when 1 day has passed since last completion, value should increase by increment',
@@ -98,7 +87,6 @@ void main() {
               doneToday: true)
         ],
       );
-      final increment = IncrementCalculator.calculateIncrement(item); // is 1.0
 
       // Act
       final newValue = IncrementCalculator.calculateTodayValue(item);
@@ -194,8 +182,6 @@ void main() {
               doneToday: true)
         ],
       );
-      final increment =
-          IncrementCalculator.calculateIncrement(item); // is -1.0
 
       // Act
       final newValue = IncrementCalculator.calculateTodayValue(item);
