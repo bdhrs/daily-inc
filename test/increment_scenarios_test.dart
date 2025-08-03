@@ -77,10 +77,10 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(25.0)); // No increment
+        expect(todayValue, equals(26.0));
       });
 
-      test('multiple days missed - should increment once', () {
+      test('multiple days missed - should apply penalty', () {
         final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
         final threeDaysAgoDate =
             DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
@@ -105,7 +105,7 @@ void main() {
         expect(
             todayValue,
             equals(
-                21.0)); // 20 + 1 increment (only one increment even after 2 missed days)
+                18.0)); // 20 - (1 * 2) = 18
       });
     });
 
@@ -158,7 +158,7 @@ void main() {
         expect(todayValue, equals(44.0)); // 45 + (-1) = 44
       });
 
-      test('yesterday not completed - should not decrement', () {
+      test('yesterday not completed - should decrement', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
         final yesterdayDate =
             DateTime(yesterday.year, yesterday.month, yesterday.day);
@@ -180,10 +180,10 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(45.0)); // No decrement
+        expect(todayValue, equals(44.0));
       });
 
-      test('multiple days missed - should decrement once', () {
+      test('multiple days missed - should apply penalty', () {
         final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
         final threeDaysAgoDate =
             DateTime(threeDaysAgo.year, threeDaysAgo.month, threeDaysAgo.day);
@@ -208,7 +208,7 @@ void main() {
         expect(
             todayValue,
             equals(
-                49.0)); // 50 + (-1) = 49 (only one decrement even after 2 missed days)
+                52.0)); // 50 - (-1 * 2) = 52
       });
     });
 
@@ -512,7 +512,7 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(16.0)); // Due today, increment applied
+        expect(todayValue, equals(15.0));
       });
 
       test('bounds clamping - increasing progression', () {
