@@ -18,7 +18,6 @@ class CategoryGraphView extends StatefulWidget {
 class _CategoryGraphViewState extends State<CategoryGraphView> {
   final _log = Logger('CategoryGraphView');
 
-  // Map to store category data: category -> date -> total value
   final Map<String, Map<DateTime, double>> _categoryData = {};
 
   @override
@@ -32,16 +31,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     _log.info('Processing category data...');
     _categoryData.clear();
 
-    // Group items by category
     final Map<String, List<DailyThing>> itemsByCategory = {};
     for (final thing in widget.dailyThings) {
-      if (!itemsByCategory.containsKey(thing.category)) {
-        itemsByCategory[thing.category] = [];
-      }
-      itemsByCategory[thing.category]!.add(thing);
+      itemsByCategory.putIfAbsent(thing.category, () => []).add(thing);
     }
 
-    // Process each category separately
     for (final entry in itemsByCategory.entries) {
       final category = entry.key;
       final items = entry.value;
@@ -49,20 +43,12 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       DateTime? minDate;
       DateTime? maxDate;
       for (final thing in items) {
-        final start =
-            DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
-        if (minDate == null || start.isBefore(minDate)) {
-          minDate = start;
-        }
+        final start = DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
+        if (minDate == null || start.isBefore(minDate)) minDate = start;
         for (final historyEntry in thing.history) {
-          final date = DateTime(
-              historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
-          if (minDate == null || date.isBefore(minDate)) {
-            minDate = date;
-          }
-          if (maxDate == null || date.isAfter(maxDate)) {
-            maxDate = date;
-          }
+          final date = DateTime(historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
+          if (minDate == null || date.isBefore(minDate)) minDate = date;
+          if (maxDate == null || date.isAfter(maxDate)) maxDate = date;
         }
       }
 
@@ -71,15 +57,12 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         continue;
       }
 
-      // Extend to today
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
       final endDate = maxDate.isAfter(todayDate) ? maxDate : todayDate;
 
       final dateTotals = <DateTime, double>{};
-      for (DateTime d = minDate;
-          !d.isAfter(endDate);
-          d = DateTime(d.year, d.month, d.day + 1)) {
+      for (DateTime d = minDate; !d.isAfter(endDate); d = DateTime(d.year, d.month, d.day + 1)) {
         double total = 0;
         for (final thing in items) {
           final sameDayEntries = thing.history.where((e) {
@@ -117,71 +100,24 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
               itemBuilder: (context, index) {
                 final category = _categoryData.keys.elementAt(index);
                 final dateTotals = _categoryData[category]!;
-
-                // Skip showing graphs for the category "None"
-                if (category == 'None') {
-                  return const SizedBox.shrink();
-                }
-
+                if (category == 'None') return const SizedBox.shrink();
                 return _buildCategoryGraph(category, dateTotals, context);
               },
             ),
     );
   }
 
-  Widget _buildCategoryGraph(
-      String category, Map<DateTime, double> dateTotals, BuildContext context) {
-    // Calculate ranges
-    double minY = 0;
+  Widget _buildCategoryGraph(String category, Map<DateTime, double> dateTotals, BuildContext context) {
     double maxY = 0;
-
     if (dateTotals.isNotEmpty) {
-      // Y range
-      final values = dateTotals.values.toList();
-      minY = values.reduce(min);
-      maxY = values.reduce(max);
-
-      // Add padding
-      final padding = (maxY - minY) * 0.1;
-      minY = max(0, minY - padding);
-      maxY = maxY + padding;
-
-      // If all values are the same, create a sensible range
-      if (minY == maxY) {
-        if (minY == 0) {
-          maxY = 10;
-        } else {
-          minY = max(0, minY - 5);
-          maxY = maxY + 5;
-        }
-      }
+      maxY = dateTotals.values.reduce(max);
+      maxY = maxY == 0 ? 1 : maxY * 1.1;
     } else {
-      // Default range if no data
-      maxY = 10;
+      maxY = 1;
     }
 
-    // Create bars for the bar chart
-    final List<BarChartGroupData> barGroups = [];
     final sortedDates = dateTotals.keys.toList()..sort();
-
-    for (int i = 0; i < sortedDates.length; i++) {
-      final date = sortedDates[i];
-      final yValue = dateTotals[date]!;
-
-      barGroups.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: yValue,
-              color: Colors.blue,
-              width: 16,
-              borderRadius: BorderRadius.zero,
-            ),
-          ],
-        ),
-      );
-    }
+    if (sortedDates.isEmpty) return const SizedBox.shrink();
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -190,53 +126,115 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              category,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(category, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
-              child: BarChart(
-                 BarChartData(
-                   alignment: BarChartAlignment.spaceAround,
-                   barGroups: barGroups,
-                   titlesData: GraphStyleHelpers.getTitlesData(
-                     context: context,
-                     minY: minY,
-                     maxY: maxY,
-                     yAxisName: 'Aggregated Value',
-                     sortedDates: sortedDates,
-                   ),
-                   borderData: GraphStyleHelpers.getBorderData(),
-                   gridData: GraphStyleHelpers.getGridData(
-                     sortedDates: sortedDates,
-                     minY: minY,
-                     maxY: maxY,
-                   ),                  barTouchData: BarTouchData(
+              child: LineChart(
+                LineChartData(
+                  minX: GraphStyleHelpers.epochDays(sortedDates.first).floorToDouble(),
+                  maxX: GraphStyleHelpers.epochDays(sortedDates.last).ceilToDouble(),
+                  minY: 0,
+                  maxY: maxY,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _buildCategorySpots(sortedDates, dateTotals),
+                      color: GraphStyle.lineColor,
+                      barWidth: GraphStyle.lineWidth,
+                      isCurved: false,
+                      isStepLineChart: true,
+                      lineChartStepData: const LineChartStepData(stepDirection: GraphStyle.stepDirection),
+                      belowBarData: BarAreaData(show: true, color: GraphStyle.areaColor(context)),
+                      dotData: GraphStyle.dotData,
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 48,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.min || value == meta.max) return const SizedBox.shrink();
+                          final interval = GraphStyleHelpers.calculateYAxisInterval(0, maxY);
+                          final rounded = (value / interval).round() * interval;
+                          if ((value - rounded).abs() < interval * 0.01) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Text(value.toInt().toString(), style: Theme.of(context).textTheme.bodySmall),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 36,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.min || value == meta.max) return const SizedBox.shrink();
+                          final v = value.roundToDouble();
+                          if (v != value) return const SizedBox.shrink();
+                          final d = GraphStyleHelpers.dateFromEpochDays(v);
+                          final isMonday = d.weekday == DateTime.monday;
+                          if (isMonday) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(DateFormat('M/d').format(d), style: Theme.of(context).textTheme.bodySmall),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: GraphStyleHelpers.getBorderData(),
+                  gridData: FlGridData(
+                    show: true,
+                    drawHorizontalLine: true,
+                    horizontalInterval: GraphStyleHelpers.calculateYAxisInterval(0, maxY),
+                    getDrawingHorizontalLine: (v) => FlLine(
+                      color: (v % 10 == 0) ? Colors.grey.shade500 : Colors.grey.shade700,
+                      strokeWidth: (v % 10 == 0) ? 1.5 : 1,
+                    ),
+                    drawVerticalLine: true,
+                    verticalInterval: 1,
+                    checkToShowVerticalLine: (v) => v.roundToDouble() % 1 == 0,
+                    getDrawingVerticalLine: (v) {
+                      final d = GraphStyleHelpers.dateFromEpochDays(v);
+                      final isMonday = d.weekday == DateTime.monday;
+                      return FlLine(
+                        color: isMonday ? Colors.grey.shade500 : Colors.grey.shade700,
+                        strokeWidth: isMonday ? 1.5 : 1,
+                      );
+                    },
+                  ),
+                  lineTouchData: LineTouchData(
                     enabled: true,
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final date = sortedDates[group.x];
-                        return BarTooltipItem(
-                          '${DateFormat('M/d').format(date)}\n',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          children: <TextSpan>[
+                    getTouchedSpotIndicator: (bar, spots) => spots
+                        .map((s) => const TouchedSpotIndicatorData(
+                              FlLine(color: Colors.transparent, strokeWidth: 0),
+                              FlDotData(show: false),
+                            ))
+                        .toList(),
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
+                        final d = GraphStyleHelpers.dateFromEpochDays(s.x.floorToDouble());
+                        return LineTooltipItem(
+                          '${DateFormat('M/d').format(d)}\n',
+                          const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          children: [
+                            const TextSpan(text: ''),
                             TextSpan(
-                              text: rod.toY.toStringAsFixed(1),
-                              style: const TextStyle(
-                                color: Colors.yellow,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              text: s.y.toStringAsFixed(1),
+                              style: const TextStyle(color: Colors.yellow, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         );
-                      },
+                      }).toList(),
                     ),
                   ),
                 ),
@@ -246,5 +244,14 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         ),
       ),
     );
+  }
+
+  List<FlSpot> _buildCategorySpots(List<DateTime> sortedDates, Map<DateTime, double> dateTotals) {
+    final spots = <FlSpot>[];
+    for (final d in sortedDates) {
+      final y = dateTotals[d] ?? 0;
+      spots.add(FlSpot(GraphStyleHelpers.epochDays(d), y));
+    }
+    return spots;
   }
 }

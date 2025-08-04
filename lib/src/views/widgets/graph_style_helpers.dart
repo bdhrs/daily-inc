@@ -3,12 +3,35 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+class GraphStyle {
+  static const Color lineColor = Colors.blue;
+  static const double lineWidth = 2;
+  static const double stepDirection = 0.76;
+  static Color areaColor(BuildContext context) =>
+      Colors.blue.withValues(alpha: 0.25);
+  static FlDotData get dotData => const FlDotData(show: false);
+  static FlLine thinGreyLine(bool strong) => FlLine(
+        color: strong ? Colors.grey.shade500 : Colors.grey.shade700,
+        strokeWidth: strong ? 1.5 : 1,
+      );
+}
+
 // Extension to add log10 method to num
 extension on num {
   double log10() => log(this) / log(10);
 }
 
 class GraphStyleHelpers {
+  static double epochDays(DateTime d) {
+    final day = DateTime(d.year, d.month, d.day);
+    return day.millisecondsSinceEpoch / (24 * 60 * 60 * 1000);
+  }
+
+  static DateTime dateFromEpochDays(double v) {
+    final ms = (v * 24 * 60 * 60 * 1000).round();
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
   /// Calculate a reasonable interval for Y-axis labels
   static double calculateYAxisInterval(double minY, double maxY) {
     final range = maxY - minY;
@@ -130,41 +153,39 @@ class GraphStyleHelpers {
     return FlGridData(
       show: true,
       drawHorizontalLine: true,
-      getDrawingHorizontalLine: (_) => const FlLine(color: Colors.white12, strokeWidth: 1),
+      getDrawingHorizontalLine: (_) =>
+          const FlLine(color: Colors.white12, strokeWidth: 1),
       drawVerticalLine: true,
+      verticalInterval:
+          sortedDates != null ? 1 : (24 * 60 * 60 * 1000).toDouble(),
       checkToShowVerticalLine: (v) {
         if (sortedDates != null) {
-          // BarChart: show line for each integer index (one per day)
-          final index = v.toInt();
-          return v == index.toDouble() && index >= 0 && index < sortedDates.length;
+          return v % 1 == 0;
         } else {
-          // LineChart: show lines at daily intervals (24 hour intervals)
           return v % (24 * 60 * 60 * 1000) == 0;
         }
       },
       getDrawingVerticalLine: (value) {
         if (sortedDates != null) {
-          // BarChart logic
           final i = value.toInt();
           if (i >= 0 && i < sortedDates.length) {
             final isMonday = sortedDates[i].weekday == DateTime.monday;
             return FlLine(
-              color: isMonday ? Colors.white70 : Colors.white24,
-              strokeWidth: isMonday ? 3 : 1,
-              dashArray: isMonday ? [5, 3] : null,
+              color: isMonday ? Colors.grey.shade400 : Colors.grey.shade200,
+              strokeWidth: isMonday ? 2 : 1,
+              dashArray: null,
             );
           }
         } else {
-          // LineChart logic
           final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
           final isMonday = date.weekday == DateTime.monday;
           return FlLine(
-            color: isMonday ? Colors.white70 : Colors.white24,
-            strokeWidth: isMonday ? 3 : 1,
-            dashArray: isMonday ? [5, 3] : null,
+            color: isMonday ? Colors.grey.shade400 : Colors.grey.shade200,
+            strokeWidth: isMonday ? 2 : 1,
+            dashArray: null,
           );
         }
-        return const FlLine(color: Colors.white24, strokeWidth: 1);
+        return FlLine(color: Colors.grey.shade200, strokeWidth: 1);
       },
     );
   }
