@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/views/widgets/graph_style_helpers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -48,12 +49,14 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       DateTime? minDate;
       DateTime? maxDate;
       for (final thing in items) {
-        final start = DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
+        final start =
+            DateTime(thing.startDate.year, thing.startDate.month, thing.startDate.day);
         if (minDate == null || start.isBefore(minDate)) {
           minDate = start;
         }
         for (final historyEntry in thing.history) {
-          final date = DateTime(historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
+          final date = DateTime(
+              historyEntry.date.year, historyEntry.date.month, historyEntry.date.day);
           if (minDate == null || date.isBefore(minDate)) {
             minDate = date;
           }
@@ -68,8 +71,15 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         continue;
       }
 
+      // Extend to today
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      final endDate = maxDate.isAfter(todayDate) ? maxDate : todayDate;
+
       final dateTotals = <DateTime, double>{};
-      for (DateTime d = minDate; !d.isAfter(maxDate); d = DateTime(d.year, d.month, d.day + 1)) {
+      for (DateTime d = minDate;
+          !d.isAfter(endDate);
+          d = DateTime(d.year, d.month, d.day + 1)) {
         double total = 0;
         for (final thing in items) {
           final sameDayEntries = thing.history.where((e) {
@@ -154,18 +164,6 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     final List<BarChartGroupData> barGroups = [];
     final sortedDates = dateTotals.keys.toList()..sort();
 
-    // Determine which dates to show labels for (every 3rd date to avoid overcrowding)
-    final Set<DateTime> labelDates = {};
-    if (sortedDates.length > 7) {
-      for (int i = 0; i < sortedDates.length; i += 3) {
-        labelDates.add(sortedDates[i]);
-      }
-      // Always include the last date
-      labelDates.add(sortedDates.last);
-    } else {
-      labelDates.addAll(sortedDates);
-    }
-
     for (int i = 0; i < sortedDates.length; i++) {
       final date = sortedDates[i];
       final yValue = dateTotals[date]!;
@@ -200,62 +198,22 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
             SizedBox(
               height: 300,
               child: BarChart(
-                BarChartData(
-                  barGroups: barGroups,
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        interval:
-                            (maxY - minY) / 5, // Show about 5 labels on Y axis
-                        getTitlesWidget: (value, meta) {
-                          // Only show labels at regular intervals
-                          if (value % meta.appliedInterval == 0) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        // Show labels only for selected dates to avoid overcrowding
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < sortedDates.length) {
-                            final date = sortedDates[index];
-                            // Only show label if this date should have a label
-                            if (labelDates.contains(date)) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  DateFormat('M/d').format(date),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              );
-                            }
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
-                  ),
-                  gridData: const FlGridData(show: true),
-                  barTouchData: BarTouchData(
+                 BarChartData(
+                   alignment: BarChartAlignment.spaceAround,
+                   barGroups: barGroups,
+                   titlesData: GraphStyleHelpers.getTitlesData(
+                     context: context,
+                     minY: minY,
+                     maxY: maxY,
+                     yAxisName: 'Aggregated Value',
+                     sortedDates: sortedDates,
+                   ),
+                   borderData: GraphStyleHelpers.getBorderData(),
+                   gridData: GraphStyleHelpers.getGridData(
+                     sortedDates: sortedDates,
+                     minY: minY,
+                     maxY: maxY,
+                   ),                  barTouchData: BarTouchData(
                     enabled: true,
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
