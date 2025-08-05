@@ -33,6 +33,41 @@ class _TimerViewState extends State<TimerView> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
 
+  double get _todaysTargetMinutes => widget.item.todayValue;
+
+  double get _elapsedMinutes {
+    // Prefer persisted actualValue (partial progress) for today if present,
+    // so top-row reflects previously done time even before starting this session.
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    HistoryEntry? todaysEntry;
+    for (final entry in widget.item.history) {
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
+      if (entryDate == todayDate && !entry.doneToday) {
+        todaysEntry = entry;
+        break;
+      }
+    }
+
+    final persisted = todaysEntry?.actualValue ?? 0.0;
+
+    // Also include this session's elapsed time once the timer starts.
+    final sessionElapsedSeconds = _originalTotalSeconds - _remainingSeconds;
+    final sessionElapsedMinutes = sessionElapsedSeconds / 60.0;
+
+    // If timer hasn't started, show only persisted value; otherwise add both.
+    return _hasStarted ? (persisted + sessionElapsedMinutes) : persisted;
+  }
+
+  String _formatMinutesToMmSs(double minutesValue) {
+    final totalSeconds = (minutesValue * 60).round();
+    final mm = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final ss = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$mm:$ss';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -343,7 +378,7 @@ class _TimerViewState extends State<TimerView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  _formatElapsedTotalTime(),
+                  '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
                   style: TextStyle(
                     fontSize: 16,
                     color: ColorPalette.lightText.withValues(alpha: 0.7),
@@ -376,7 +411,9 @@ class _TimerViewState extends State<TimerView> {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            _formatTime(_remainingSeconds),
+                            _formatMinutesToMmSs(
+                                (_todaysTargetMinutes - _elapsedMinutes)
+                                    .clamp(0.0, double.infinity)),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: fontSize,
