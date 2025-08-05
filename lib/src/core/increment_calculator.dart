@@ -119,12 +119,52 @@ class IncrementCalculator {
     }
   }
 
-  /// Calculate display value (shows actual value if entered today for reps)
+  /// Calculate display value
+  ///
+  /// Minutes (from docs/display_value.md):
+  /// - If not yet started: show today's target value
+  /// - If started and not completed: show time done (elapsed today)
+  /// - If completed: show time done (elapsed today)
+  ///
+  /// Reps:
+  /// - Show today's actual value if entered, otherwise today's target
+  ///
+  /// Check:
+  /// - Delegates to today's target logic
   static double calculateDisplayValue(DailyThing item) {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    // For REPS items, show actual value if entered today
+    // Minutes logic per spec
+    if (item.itemType == ItemType.minutes) {
+      // Find today's entry (if any)
+      final todaysEntry = item.history.firstWhere(
+        (entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate;
+        },
+        orElse: () => HistoryEntry(
+          date: DateTime(0),
+          targetValue: 0,
+          doneToday: false,
+        ),
+      );
+
+      final target = calculateTodayValue(item);
+      final elapsed =
+          todaysEntry.date.year != 0 ? (todaysEntry.actualValue ?? 0.0) : 0.0;
+
+      // Not started: show today's target value
+      if (elapsed <= 0.0) {
+        return target;
+      }
+
+      // Started (and possibly completed): show time done (elapsed)
+      return elapsed;
+    }
+
+    // Reps: show actual value if entered today
     if (item.itemType == ItemType.reps) {
       final todaysEntry = item.history.where((entry) {
         final entryDate =
@@ -137,7 +177,7 @@ class IncrementCalculator {
       }
     }
 
-    // For all item types, show today's target value when no actual progress is recorded
+    // Default: show today's target value
     return calculateTodayValue(item);
   }
 
