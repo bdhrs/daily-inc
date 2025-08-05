@@ -255,26 +255,9 @@ class _TimerViewState extends State<TimerView> {
     }
   }
 
-  String _formatTime(int seconds) {
-    // No logging here as it's a pure formatting function called frequently.
-    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
-    final remainingSeconds = (seconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$remainingSeconds';
-  }
-
-  String _formatElapsedTotalTime() {
-    final elapsedSeconds = _originalTotalSeconds - _remainingSeconds;
-    final elapsedMinutes = (elapsedSeconds ~/ 60).toString().padLeft(2, '0');
-    final elapsedRemainingSeconds =
-        (elapsedSeconds % 60).toString().padLeft(2, '0');
-
-    final totalMinutes =
-        (_originalTotalSeconds ~/ 60).toString().padLeft(2, '0');
-    final totalRemainingSeconds =
-        (_originalTotalSeconds % 60).toString().padLeft(2, '0');
-
-    return '$elapsedMinutes:$elapsedRemainingSeconds / $totalMinutes:$totalRemainingSeconds';
-  }
+  // Unused formatting functions removed:
+  // - _formatTime: redundant with _formatMinutesToMmSs
+  // - _formatElapsedTotalTime: not used in UI
 
   Future<bool?> _showSaveDialog() async {
     return showDialog<bool>(
