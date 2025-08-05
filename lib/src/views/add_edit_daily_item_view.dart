@@ -66,7 +66,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
     _categoryController = TextEditingController(
-        text: existingItem?.category ?? ''); // Initialize category controller
+        text:
+            (existingItem?.category == null || existingItem?.category == 'None')
+                ? ''
+                : existingItem!
+                    .category); // Initialize category controller properly
 
     _incrementController = TextEditingController();
 
@@ -182,7 +186,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         _nameController.text = _nameController.text.trim();
         _categoryController.text = _categoryController.text.trim();
         _nagMessageController.text = _nagMessageController.text.trim();
-        
+
         final startDate = DateFormat(
           'yyyy-MM-dd',
         ).parse(_startDateController.text.trim());
@@ -358,20 +362,22 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                  onChanged: widget.dailyThing == null ? (value) async {
-                    // Update selected type first
-                    _selectedItemType = value!;
-                    // Refresh category suggestions for the new type
-                    await _loadUniqueCategoriesForSelectedType();
-                    // If current category is not valid for this type, clear it
-                    final current = _categoryController.text.trim();
-                    if (current.isNotEmpty &&
-                        !_uniqueCategories.contains(current)) {
-                      _categoryController.text = '';
-                    }
-                    // Trigger rebuild after data and controller updates
-                    setState(() {});
-                  } : null,
+                  onChanged: widget.dailyThing == null
+                      ? (value) async {
+                          // Update selected type first
+                          _selectedItemType = value!;
+                          // Refresh category suggestions for the new type
+                          await _loadUniqueCategoriesForSelectedType();
+                          // If current category is not valid for this type, clear it
+                          final current = _categoryController.text.trim();
+                          if (current.isNotEmpty &&
+                              !_uniqueCategories.contains(current)) {
+                            _categoryController.text = '';
+                          }
+                          // Trigger rebuild after data and controller updates
+                          setState(() {});
+                        }
+                      : null,
                   decoration: const InputDecoration(
                     labelText: 'Type',
                   ),
@@ -399,10 +405,20 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       TextEditingController fieldTextEditingController,
                       FocusNode fieldFocusNode,
                       VoidCallback onFieldSubmitted) {
-                    // Update the local controller when the field changes.
+                    // Sync the field controller with our category controller
+                    if (fieldTextEditingController.text !=
+                        _categoryController.text) {
+                      fieldTextEditingController.text =
+                          _categoryController.text;
+                    }
+
+                    // Update our controller when field changes
                     fieldTextEditingController.addListener(() {
-                      _categoryController.text =
-                          fieldTextEditingController.text;
+                      if (_categoryController.text !=
+                          fieldTextEditingController.text) {
+                        _categoryController.text =
+                            fieldTextEditingController.text;
+                      }
                     });
 
                     return TextFormField(
