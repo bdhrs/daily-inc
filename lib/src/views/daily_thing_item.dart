@@ -100,7 +100,11 @@ class _DailyThingItemState extends State<DailyThingItem> {
 
   @override
   Widget build(BuildContext context) {
-    final isCompletedToday = widget.item.completedForToday;
+    // For CHECK type, visual state should not depend on past history; if due, it's initially not done and takes one tap to mark done.
+    // We still use completedForToday for MINUTES/REPS logic elsewhere.
+    final isCompletedToday = widget.item.itemType == ItemType.check
+        ? widget.item.hasBeenDoneLiterallyToday
+        : widget.item.completedForToday;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(10, 0.5, 10, 0.5),
@@ -171,17 +175,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       widget.showFullscreenTimer(widget.item);
                     }
                   } else if (widget.item.itemType == ItemType.check) {
-                    final today = DateTime(
-                      DateTime.now().year,
-                      DateTime.now().month,
-                      DateTime.now().day,
-                    );
-                    final newValue = widget.item.todayValue == 1.0 ? 0.0 : 1.0;
-                    final newEntry = HistoryEntry(
-                      date: today,
-                      targetValue: newValue,
-                      doneToday: newValue >= 1.0,
-                    );
+                    // Determine current completion based on history.doneToday rather than todayValue to avoid stale reads
+                    final now = DateTime.now();
+                    final today = DateTime(now.year, now.month, now.day);
                     HistoryEntry? existingEntry =
                         widget.item.history.firstWhere(
                       (entry) =>
@@ -192,14 +188,32 @@ class _DailyThingItemState extends State<DailyThingItem> {
                           date: DateTime(0), targetValue: 0, doneToday: false),
                     );
 
+                    final wasDone = existingEntry.date.year != 0
+                        ? existingEntry.doneToday
+                        : false;
+                    final newDone = !wasDone;
+                    final newValue = newDone ? 1.0 : 0.0;
+
+                    final newEntry = HistoryEntry(
+                      date: today,
+                      targetValue: newValue,
+                      doneToday: newDone,
+                    );
+
                     if (existingEntry.date.year != 0) {
                       final index = widget.item.history.indexOf(existingEntry);
                       widget.item.history[index] = newEntry;
                     } else {
                       widget.item.history.add(newEntry);
                     }
+
+                    // Immediately rebuild this tile so UI reflects change on first tap
+                    if (mounted) {
+                      setState(() {});
+                    }
+
+                    // Persist and notify parent; do not block UI feedback on await
                     await widget.dataManager.updateDailyThing(widget.item);
-                    // Trigger parent to refresh immediately so UI reflects the change on first tap
                     widget.onItemChanged?.call();
                     widget.checkAndShowCompletionSnackbar();
                   } else if (widget.item.itemType == ItemType.reps) {
