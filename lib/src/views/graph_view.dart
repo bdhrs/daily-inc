@@ -52,8 +52,10 @@ class _GraphViewState extends State<GraphView> {
         padding: const EdgeInsets.all(24),
         child: LineChart(
           LineChartData(
-            minX: _epochDays(_getAllDatesFromStartToToday().first).floorToDouble(),
-            maxX: _epochDays(_getAllDatesFromStartToToday().last).ceilToDouble(),
+            minX: _epochDays(_getAllDatesFromStartToToday().first)
+                .floorToDouble(),
+            maxX:
+                _epochDays(_getAllDatesFromStartToToday().last).ceilToDouble(),
             minY: _minY,
             maxY: _maxY,
             lineBarsData: [
@@ -63,7 +65,8 @@ class _GraphViewState extends State<GraphView> {
                 barWidth: GraphStyle.lineWidth,
                 isCurved: false,
                 isStepLineChart: true,
-                lineChartStepData: const LineChartStepData(stepDirection: GraphStyle.stepDirection),
+                lineChartStepData: const LineChartStepData(
+                    stepDirection: GraphStyle.stepDirection),
                 belowBarData: BarAreaData(
                     show: true, color: GraphStyle.areaColor(context)),
                 dotData: const FlDotData(show: false),
@@ -97,28 +100,22 @@ class _GraphViewState extends State<GraphView> {
                   showTitles: true,
                   reservedSize: 36,
                   interval: 1,
-                   getTitlesWidget: (value, meta) {
-                    if (value == meta.min || value == meta.max) { return const SizedBox.shrink(); }
-                    if (widget.dailyThing.itemType == ItemType.check) {
-                      final v = value.roundToDouble();
-                      if (v != value) return const SizedBox.shrink();
-                      if (v == 0 || v == 1) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(v.toInt().toString(),
-                              style: Theme.of(context).textTheme.bodySmall),
-                        );
-                      }
+                  getTitlesWidget: (value, meta) {
+                    if (value == meta.min || value == meta.max) {
                       return const SizedBox.shrink();
                     }
-                    final interval =
-                        GraphStyleHelpers.calculateYAxisInterval(_minY, _maxY);
-                    final rounded = (value / interval).round() * interval;
-                    if ((value - rounded).abs() < interval * 0.01) {
+                    // X axis uses "epoch days" (days since Unix epoch) as doubles.
+                    // Render labels only on Mondays as M/d.
+                    final v = value.roundToDouble();
+                    if (v != value) return const SizedBox.shrink();
+                    final d = _dateFromEpochDays(v);
+                    if (d.weekday == DateTime.monday) {
                       return Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(value.toInt().toString(),
-                            style: Theme.of(context).textTheme.bodySmall),
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          DateFormat('M/d').format(d),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       );
                     }
                     return const SizedBox.shrink();
@@ -134,8 +131,10 @@ class _GraphViewState extends State<GraphView> {
             gridData: FlGridData(
               show: true,
               drawHorizontalLine: true,
-              horizontalInterval:
-                   widget.dailyThing.itemType == ItemType.check ? 1 : GraphStyleHelpers.calculateYAxisInterval(_minY, _maxY),              getDrawingHorizontalLine: (v) => FlLine(
+              horizontalInterval: widget.dailyThing.itemType == ItemType.check
+                  ? 1
+                  : GraphStyleHelpers.calculateYAxisInterval(_minY, _maxY),
+              getDrawingHorizontalLine: (v) => FlLine(
                 color:
                     (v % 10 == 0) ? Colors.grey.shade500 : Colors.grey.shade700,
                 strokeWidth: (v % 10 == 0) ? 1.5 : 1,
