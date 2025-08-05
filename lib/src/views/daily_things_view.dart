@@ -435,22 +435,33 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
       if (_hideWhenDone) {
         displayedItems = displayedItems.where((item) {
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+
           // For REPS items, hide when any actual value has been entered today
           if (item.itemType == ItemType.reps) {
-            final today = DateTime.now();
-            final todayDate = DateTime(today.year, today.month, today.day);
-
-            // Check if there's any entry for today with actual value
             final hasActualValueToday = item.history.any((entry) {
               final entryDate =
                   DateTime(entry.date.year, entry.date.month, entry.date.day);
               return entryDate == todayDate && entry.actualValue != null;
             });
-
             return !hasActualValueToday;
           }
 
-          // For MINUTES and CHECK items, maintain existing behavior
+          // For MINUTES items, hide when there is any progress today (partial or completed)
+          if (item.itemType == ItemType.minutes) {
+            final hasProgressToday = item.history.any((entry) {
+              final entryDate =
+                  DateTime(entry.date.year, entry.date.month, entry.date.day);
+              if (entryDate != todayDate) return false;
+              final actual = entry.actualValue ?? 0.0;
+              return actual > 0.0 || entry.doneToday;
+            });
+            if (hasProgressToday) return false;
+            return !item.completedForToday;
+          }
+
+          // For CHECK items, maintain existing behavior
           return !item.completedForToday;
         }).toList();
       }
@@ -575,12 +586,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     if (_hideWhenDone) {
       displayedItems = displayedItems.where((item) {
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+
         // For REPS items, hide when any actual value has been entered today
         if (item.itemType == ItemType.reps) {
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-
-          // Check if there's any entry for today with actual value
           final hasActualValueToday = item.history.any((entry) {
             final entryDate =
                 DateTime(entry.date.year, entry.date.month, entry.date.day);
@@ -590,7 +600,20 @@ class _DailyThingsViewState extends State<DailyThingsView>
           return !hasActualValueToday;
         }
 
-        // For MINUTES and CHECK items, maintain existing behavior
+        // For MINUTES items, hide when there is any progress today (partial or completed)
+        if (item.itemType == ItemType.minutes) {
+          final hasProgressToday = item.history.any((entry) {
+            final entryDate =
+                DateTime(entry.date.year, entry.date.month, entry.date.day);
+            if (entryDate != todayDate) return false;
+            final actual = entry.actualValue ?? 0.0;
+            return actual > 0.0 || entry.doneToday;
+          });
+          if (hasProgressToday) return false; // hide minutes if partial or done
+          return !item.completedForToday;
+        }
+
+        // For CHECK items, maintain existing behavior
         return !item.completedForToday;
       }).toList();
     }
