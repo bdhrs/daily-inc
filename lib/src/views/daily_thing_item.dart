@@ -135,11 +135,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
                 Row(
                   children: [
                     Icon(
-                      isCompletedToday ? Icons.check : Icons.close,
+                      isCompletedToday
+                          ? Icons.check
+                          : (_hasIncompleteProgress(widget.item)
+                              ? Icons.brightness_2_outlined
+                              : Icons.close),
                       color: isCompletedToday
                           ? Theme.of(context).colorScheme.primary
                           : _hasIncompleteProgress(widget.item)
-                              ? ColorPalette.darkerOrange
+                              ? ColorPalette.partialYellow
                               : Theme.of(context).colorScheme.error,
                     ),
                     const SizedBox(width: 12),
@@ -242,7 +246,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             color: widget.item.completedForToday
                                 ? Theme.of(context).colorScheme.primary
                                 : _hasIncompleteProgress(widget.item)
-                                    ? ColorPalette.darkerOrange
+                                    ? ColorPalette.partialYellow
                                     : Theme.of(context).colorScheme.error,
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
@@ -254,18 +258,23 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               ? Icon(
                                   widget.item.completedForToday
                                       ? Icons.check
-                                      : Icons.close,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                      : (widget.item.hasBeenDoneLiterallyToday
+                                          ? Icons.brightness_2_outlined
+                                          : Icons.close),
+                                  color: _hasIncompleteProgress(widget.item)
+                                      ? ColorPalette.onPartialYellow
+                                      : Theme.of(context).colorScheme.onPrimary,
                                   size: 16.0,
                                 )
                               : Text(
                                   _formatValue(widget.item.displayValue,
                                       widget.item.itemType),
                                   style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: _hasIncompleteProgress(widget.item)
+                                          ? ColorPalette.onPartialYellow
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
                                       fontSize: 14),
                                 ),
                         ),

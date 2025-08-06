@@ -14,8 +14,10 @@ class ColorPalette {
   static const Color secondaryText =
       Color(0xFFAAAAAA); // A lighter gray for secondary text
   static const Color warningOrange =
-      Color.fromARGB(255, 196, 118, 0); // orange[200]
-  static const Color darkerOrange =
-      Color(0xFFE65100); // orange[700] - darker orange for half-completed tasks
+      Color.fromARGB(255, 196, 118, 0); // orange[200] - used for undone/error
+  // New: distinct yellow for partially completed tasks
+  static const Color partialYellow = Color(0xFFFFC107); // Amber 500
+  static const Color onPartialYellow =
+      Colors.black; // Ensure readable text/icons on yellow
   static const Color scrollbarThumb = Color(0xFF424242);
 }
