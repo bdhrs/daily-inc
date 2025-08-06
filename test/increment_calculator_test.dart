@@ -70,7 +70,10 @@ void main() {
       );
 
       final todayValue = IncrementCalculator.calculateTodayValue(item);
-      expect(todayValue, equals(13.0)); // Increment is applied regardless of completion
+      expect(
+          todayValue,
+          equals(
+              12.0)); // Spec: daysSinceDone == 1 => increment; here last done day is 2 days ago, so no change
     });
 
     test('calculateTodayValue handles decreasing progression', () {

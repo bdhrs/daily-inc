@@ -305,7 +305,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 numStr =
                                     numStr.replaceFirst(RegExp(r'\\.00$'), '');
                                 numStr = numStr.replaceFirst(RegExp(r'0$'), '');
-                                return '${sign}${numStr}';
+                                return '$sign$numStr';
                               })(),
                             ),
                             const SizedBox(width: 8),
