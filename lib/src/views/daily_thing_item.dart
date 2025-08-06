@@ -364,6 +364,38 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         },
                       ),
                       IconButton(
+                        tooltip: widget.item.isPaused
+                            ? 'resume increments'
+                            : 'pause increments',
+                        icon: Icon(
+                          widget.item.isPaused ? Icons.play_arrow : Icons.pause,
+                        ),
+                        onPressed: () async {
+                          // Build updated instance with toggled pause
+                          final updated = DailyThing(
+                            id: widget.item.id,
+                            icon: widget.item.icon,
+                            name: widget.item.name,
+                            itemType: widget.item.itemType,
+                            startDate: widget.item.startDate,
+                            startValue: widget.item.startValue,
+                            duration: widget.item.duration,
+                            endValue: widget.item.endValue,
+                            history: widget.item.history,
+                            nagTime: widget.item.nagTime,
+                            nagMessage: widget.item.nagMessage,
+                            frequencyInDays: widget.item.frequencyInDays,
+                            category: widget.item.category,
+                            isPaused: !widget.item.isPaused,
+                          );
+                          await widget.dataManager.updateDailyThing(updated);
+                          if (mounted) {
+                            setState(() {});
+                          }
+                          widget.onItemChanged?.call();
+                        },
+                      ),
+                      IconButton(
                         tooltip: 'edit the item',
                         icon: const Icon(Icons.edit),
                         onPressed: () => widget.onEdit(widget.item),

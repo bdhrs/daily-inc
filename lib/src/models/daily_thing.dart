@@ -20,6 +20,7 @@ class DailyThing {
   final String? nagMessage;
   final int frequencyInDays;
   final String category; // New category field
+  final bool isPaused; // Whether increment progression is paused
   double? actualTodayValue; // New property to store actual value entered today
 
   DailyThing({
@@ -36,6 +37,7 @@ class DailyThing {
     this.nagMessage,
     this.frequencyInDays = 1,
     this.category = 'None', // Default category
+    this.isPaused = false,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -122,6 +124,7 @@ class DailyThing {
       'nagMessage': nagMessage,
       'frequencyInDays': frequencyInDays,
       'category': category,
+      'isPaused': isPaused,
     };
   }
 
@@ -165,6 +168,7 @@ class DailyThing {
       frequencyInDays: json['frequencyInDays'] as int? ?? 1,
       category:
           json['category'] as String? ?? 'None', // Backwards compatibility
+      isPaused: json['isPaused'] as bool? ?? false,
     );
   }
 }

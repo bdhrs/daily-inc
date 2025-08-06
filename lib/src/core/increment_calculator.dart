@@ -75,6 +75,11 @@ class IncrementCalculator {
     final double baseTarget =
         lastEntryBeforeToday?.targetValue ?? item.startValue;
 
+    // If item is paused, freeze today's target at baseTarget
+    if ((item as dynamic).isPaused == true) {
+      return baseTarget;
+    }
+
     // Determine days since last doneToday
     final lastDoneDate = getLastCompletedDate(item.history);
     final int daysSinceDone = (lastDoneDate == null)
