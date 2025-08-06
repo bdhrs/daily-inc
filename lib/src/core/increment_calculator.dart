@@ -12,7 +12,7 @@ class IncrementCalculator {
     return (item.endValue - item.startValue) / item.duration;
   }
 
-  /// Get the last completed date from history
+  /// Get the last completed date from history (last day with doneToday == true)
   static DateTime? getLastCompletedDate(List<HistoryEntry> history) {
     final sortedHistory = List<HistoryEntry>.from(history)
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -25,13 +25,22 @@ class IncrementCalculator {
     return null;
   }
 
+  /// Get the date of the last entry (any entry irrespective of doneToday)
+  static DateTime? getLastEntryDate(List<HistoryEntry> history) {
+    if (history.isEmpty) return null;
+    final sortedHistory = List<HistoryEntry>.from(history)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final e = sortedHistory.first;
+    return DateTime(e.date.year, e.date.month, e.date.day);
+  }
+
   /// Calculate days missed since last entry
   static int calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate) {
     final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
     return daysSinceLastEntry - 1; // Subtract 1 to get missed days
   }
 
-  /// Calculate today's target value with proper increment logic
+  /// Calculate today's target value with increment/penalty based on days since last doneToday
   static double calculateTodayValue(DailyThing item) {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -41,7 +50,7 @@ class IncrementCalculator {
     final sortedHistory = List<HistoryEntry>.from(item.history)
       ..sort((a, b) => b.date.compareTo(a.date));
 
-    // Check for today's entry first
+    // If there's an entry for today, return its target (CHECK uses doneToday flag)
     for (final entry in sortedHistory) {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
@@ -49,75 +58,75 @@ class IncrementCalculator {
         if (item.itemType == ItemType.check) {
           return entry.doneToday ? 1.0 : 0.0;
         }
-        // For non-check items, return the target value from today's entry
         return entry.targetValue;
       }
     }
 
-    // No entry for today - find the last relevant entry
-    HistoryEntry? lastEntry;
+    // Identify last entry before today (for base target); if none, use startValue
+    HistoryEntry? lastEntryBeforeToday;
     for (final entry in sortedHistory) {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate.isBefore(todayDate)) {
-        lastEntry = entry;
+        lastEntryBeforeToday = entry;
         break;
       }
     }
+    final double baseTarget =
+        lastEntryBeforeToday?.targetValue ?? item.startValue;
 
-    if (lastEntry == null) {
-      // No history before today - return start value
-      return item.startValue;
+    // Determine days since last doneToday
+    final lastDoneDate = getLastCompletedDate(item.history);
+    final int daysSinceDone = (lastDoneDate == null)
+        ? todayDate
+            .difference(DateTime(
+                item.startDate.year, item.startDate.month, item.startDate.day))
+            .inDays
+        : todayDate.difference(lastDoneDate).inDays;
+
+    // Respect frequency: if not due yet, keep base target
+    if (lastEntryBeforeToday != null) {
+      final lastEntryDate = DateTime(lastEntryBeforeToday.date.year,
+          lastEntryBeforeToday.date.month, lastEntryBeforeToday.date.day);
+      final gapFromLastEntry = todayDate.difference(lastEntryDate).inDays;
+      if (gapFromLastEntry < item.frequencyInDays) {
+        return baseTarget;
+      }
     }
 
-    final lastEntryDate =
-        DateTime(lastEntry.date.year, lastEntry.date.month, lastEntry.date.day);
-    final daysSinceLastEntry = todayDate.difference(lastEntryDate).inDays;
-
-    // Check frequency - if not due yet, don't change value
-    if (daysSinceLastEntry < item.frequencyInDays) {
-      return lastEntry.targetValue;
-    }
-
-    // Apply increment logic with penalty
-    return _applyIncrementWithPenalty(
-        lastEntry, increment, daysSinceLastEntry, item);
-  }
-
-  /// Apply increment with penalty logic
-  static double _applyIncrementWithPenalty(HistoryEntry lastEntry,
-      double increment, int daysSinceLast, DailyThing item) {
-    // Base value is the target value from the last entry
-    double baseValue = lastEntry.targetValue;
-
+    // Apply spec from specs/increment_logic.md (days since doneToday)
     double newValue;
-
-    // Apply penalty logic from logic.md
-    if (daysSinceLast == 1) {
-      // One day missed - apply normal daily increment
-      newValue = baseValue + increment;
-      _logger.info(
-          'Normal increment applied for item "${item.name}": $increment, new target value: $newValue');
-    } else if (daysSinceLast == 2) {
-      // Two days missed - no change to target value
-      newValue = baseValue;
-      _logger.info(
-          'Two days missed for item "${item.name}" - keeping target value at $baseValue');
+    if (daysSinceDone == 0) {
+      // already done today
+      newValue = baseTarget;
+      _logger
+          .info('No change (already done today) for "${item.name}": $newValue');
+    } else if (daysSinceDone == 1) {
+      // increment by increment
+      newValue = baseTarget + increment;
+      _logger.info('Increment (+$increment) for "${item.name}": $newValue');
+    } else if (daysSinceDone == 2) {
+      // no change
+      newValue = baseTarget;
+      _logger
+          .info('No change (2 days since done) for "${item.name}": $newValue');
     } else {
-      // Three or more days missed - apply penalty decrement
-      double penalty = increment * (daysSinceLast - 1);
-      newValue = baseValue - penalty;
+      // 3+ days: decrement by increment * (days - 1)
+      final penalty = increment * (daysSinceDone - 1);
+      newValue = baseTarget - penalty;
       _logger.info(
-          'Penalty applied for item "${item.name}": $daysSinceLast days missed, increment: $increment, penalty: $penalty, new target value: $newValue');
+          'Penalty (${daysSinceDone - 1} * $increment = $penalty) for "${item.name}": $newValue');
     }
 
-    // Clamp to appropriate bounds
+    // Clamp within [startValue, endValue] inclusive
     if (item.startValue < item.endValue) {
       return newValue.clamp(item.startValue, item.endValue);
     } else {
       return newValue.clamp(item.endValue, item.startValue);
     }
   }
+
+  // Note: _applyIncrementWithPenalty is no longer used; logic folded into calculateTodayValue
 
   /// Calculate display value
   ///
