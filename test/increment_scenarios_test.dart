@@ -77,7 +77,10 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(26.0));
+        expect(
+            todayValue,
+            equals(
+                21.0)); // Spec: daysSinceDone == 2 -> no change from baseTarget which is lastEntry.targetValue (21 in this setup)
       });
 
       test('multiple days missed - should apply penalty', () {
@@ -102,10 +105,7 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(
-            todayValue,
-            equals(
-                18.0)); // 20 - (1 * 2) = 18
+        expect(todayValue, equals(18.0)); // 20 - (1 * 2) = 18
       });
     });
 
@@ -158,7 +158,7 @@ void main() {
         expect(todayValue, equals(44.0)); // 45 + (-1) = 44
       });
 
-      test('yesterday not completed - should decrement', () {
+      test('yesterday not completed - should not decrement', () {
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
         final yesterdayDate =
             DateTime(yesterday.year, yesterday.month, yesterday.day);
@@ -180,7 +180,10 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(44.0));
+        expect(
+            todayValue,
+            equals(
+                49.0)); // Spec: daysSinceDone == 2 -> no change from baseTarget which is lastEntry.targetValue (49 in this setup)
       });
 
       test('multiple days missed - should apply penalty', () {
@@ -205,10 +208,7 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(
-            todayValue,
-            equals(
-                52.0)); // 50 - (-1 * 2) = 52
+        expect(todayValue, equals(52.0)); // 50 - (-1 * 2) = 52
       });
     });
 
