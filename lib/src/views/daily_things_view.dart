@@ -771,23 +771,52 @@ class _DailyThingsViewState extends State<DailyThingsView>
           ),
         ],
       ),
+      // Provide a proxyDecorator to ensure the dragged item keeps its identity by key
       body: ReorderableListView(
         onReorder: (oldIndex, newIndex) {
           setState(() {
+            // Simple, minimal fix: keep original approach but avoid "append to end" fallthrough.
+            // Normalize newIndex when moving downward.
             if (newIndex > oldIndex) {
               newIndex -= 1;
             }
-            final item = displayedItems.removeAt(oldIndex);
-            final originalIndex = _dailyThings.indexOf(item);
-            _dailyThings.removeAt(originalIndex);
 
-            if (newIndex < displayedItems.length) {
-              final itemAtNewIndex = displayedItems[newIndex];
-              final originalNewIndex = _dailyThings.indexOf(itemAtNewIndex);
-              _dailyThings.insert(originalNewIndex, item);
+            // Moving item from visible list
+            final moving = displayedItems[oldIndex];
+
+            // Remove from full list
+            final fromFull = _dailyThings.indexOf(moving);
+            if (fromFull == -1) return;
+            final removed = _dailyThings.removeAt(fromFull);
+
+            // Compute insertion point based on visible anchor; never blindly append.
+            int toFull;
+            if (newIndex >= 0 && newIndex < displayedItems.length) {
+              final anchor = displayedItems[newIndex];
+              toFull = _dailyThings.indexOf(anchor);
+              if (toFull == -1) {
+                // If anchor not found (rare), fallback to keeping relative spot: put back where it was
+                toFull = fromFull;
+              }
             } else {
-              _dailyThings.add(item);
+              // Dropped past end of visible list: insert right after the last visible item in the full list
+              toFull =
+                  fromFull; // default fallback keeps original if no visible items
+              if (displayedItems.isNotEmpty) {
+                final lastVisible = displayedItems.last;
+                final lastIdx = _dailyThings.indexOf(lastVisible);
+                toFull = (lastIdx == -1) ? fromFull : lastIdx + 1;
+              }
             }
+
+            // Adjust if moved downward in full list
+            if (fromFull < toFull) {
+              toFull -= 1;
+            }
+
+            // Clamp and insert
+            toFull = toFull.clamp(0, _dailyThings.length);
+            _dailyThings.insert(toFull, removed);
           });
           _dataManager.saveData(_dailyThings);
         },

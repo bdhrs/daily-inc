@@ -9,7 +9,6 @@ void main() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-
     test(
         'when 1 day has passed since last completion, value should increase by increment',
         () {
@@ -25,10 +24,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 15,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
       );
 
@@ -53,10 +49,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 15,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
       );
 
@@ -81,10 +74,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 15,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
       );
 
@@ -104,8 +94,7 @@ void main() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    test(
-        'when 1 day has passed, value should decrease by increment (inverted)',
+    test('when 1 day has passed, value should decrease by increment (inverted)',
         () {
       // Arrange: Last entry was yesterday with a value of 50
       final lastEntryDate = todayDate.subtract(const Duration(days: 1));
@@ -119,10 +108,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 50,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
       );
 
@@ -147,10 +133,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 50,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
       );
 
@@ -176,10 +159,7 @@ void main() {
         itemType: ItemType.minutes,
         frequencyInDays: 1,
         history: [
-          HistoryEntry(
-              date: lastEntryDate,
-              targetValue: 50,
-              doneToday: true)
+          HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
       );
 
