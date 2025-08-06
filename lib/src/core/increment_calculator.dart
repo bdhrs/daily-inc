@@ -118,12 +118,14 @@ class IncrementCalculator {
           'Penalty (${daysSinceDone - 1} * $increment = $penalty) for "${item.name}": $newValue');
     }
 
-    // Clamp within [startValue, endValue] inclusive
-    if (item.startValue < item.endValue) {
-      return newValue.clamp(item.startValue, item.endValue);
-    } else {
-      return newValue.clamp(item.endValue, item.startValue);
-    }
+    // Clamp with start anchored bound per spec
+    // - if start < end: clamp to [startValue, endValue] (never below start)
+    // - if start > end: clamp to [endValue, startValue] (never above start)
+    final double minBound =
+        item.startValue < item.endValue ? item.startValue : item.endValue;
+    final double maxBound =
+        item.startValue > item.endValue ? item.startValue : item.endValue;
+    return newValue.clamp(minBound, maxBound);
   }
 
   // Note: _applyIncrementWithPenalty is no longer used; logic folded into calculateTodayValue

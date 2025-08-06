@@ -11,4 +11,8 @@ if 2
 if 3 or more
     decrement by increment x (days - 1)
 
+today value bounds:
+- if start < end: never go below startValue (clamp to [startValue, endValue])
+- if start > end: never go above startValue (clamp to [endValue, startValue])
+
 increment and decrement are reversed when start value is greater than end value
