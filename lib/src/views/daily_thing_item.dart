@@ -307,16 +307,18 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 numStr = numStr.replaceFirst(RegExp(r'0$'), '');
                                 return '$sign$numStr';
                               })(),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
                             const SizedBox(width: 8),
                           ],
                           Text(
-                            '(${widget.item.category})',
+                            widget.item.category,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              // Match the style of start/end values (default body color/size in this row)
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -329,12 +331,10 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       alignment: Alignment.centerLeft,
                       child: widget.item.category.isNotEmpty
                           ? Text(
-                              '(${widget.item.category})',
+                              widget.item.category,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             )
                           : null,
