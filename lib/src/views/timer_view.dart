@@ -345,6 +345,7 @@ class _TimerViewState extends State<TimerView> {
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
+
     return PopScope(
       canPop: false, // Prevent default back navigation
       onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -357,60 +358,81 @@ class _TimerViewState extends State<TimerView> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Top line 1: item name (small bold)
                 Text(
-                  '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: ColorPalette.lightText.withValues(alpha: 0.7),
+                  widget.item.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: ColorPalette.lightText,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+
+                // Center content expands
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Calculate font size based on the widest possible time "88:88"
-                      // This ensures consistent sizing regardless of actual digits
-                      const maxTimeText = "88:88";
-                      final textPainter = TextPainter(
-                        text: const TextSpan(
-                          text: maxTimeText,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Current time / total time directly above main timer
+                      Text(
+                        '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: ColorPalette.lightText.withValues(alpha: 0.7),
                         ),
-                        textDirection: TextDirection.ltr,
-                      );
-                      textPainter.layout();
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
 
-                      // Calculate font size to fit 90% of available width for the widest case
-                      final fontSize = (constraints.maxWidth * 0.9) /
-                          textPainter.width *
-                          12; // 12 is base font size
+                      // Main timer (unchanged logic)
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            const maxTimeText = "88:88";
+                            final textPainter = TextPainter(
+                              text: const TextSpan(
+                                text: maxTimeText,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              textDirection: TextDirection.ltr,
+                            );
+                            textPainter.layout();
 
-                      return SizedBox(
-                        width: constraints.maxWidth,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            _formatMinutesToMmSs(
-                                (_todaysTargetMinutes - _elapsedMinutes)
-                                    .clamp(0.0, double.infinity)),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: fontSize,
-                              color: ColorPalette
-                                  .lightText, // Apply white to timer text
-                            ),
-                            textAlign: TextAlign.center,
-                            softWrap: false,
-                          ),
+                            final fontSize = (constraints.maxWidth * 0.9) /
+                                textPainter.width *
+                                12;
+
+                            return SizedBox(
+                              width: constraints.maxWidth,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _formatMinutesToMmSs(
+                                      (_todaysTargetMinutes - _elapsedMinutes)
+                                          .clamp(0.0, double.infinity)),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: fontSize,
+                                    color: ColorPalette.lightText,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  softWrap: false,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _toggleTimer,
