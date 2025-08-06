@@ -794,8 +794,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
         children: displayedItems.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
-          return Container(
+          return Padding(
             key: ValueKey(item.id),
+            padding: const EdgeInsets.symmetric(vertical: 3.0),
             child: _buildItemRow(item, index, nextUndoneIndex),
           );
         }).toList(),

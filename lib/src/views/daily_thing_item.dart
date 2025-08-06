@@ -107,9 +107,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
         : widget.item.completedForToday;
 
     return Card(
-      margin: const EdgeInsets.fromLTRB(10, 0.5, 10, 0.5),
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
         child: ExpansionTile(
           // Include today's completion state in the key so Flutter doesn't reuse a stale widget after toggle
           key: ValueKey(
@@ -127,23 +127,35 @@ class _DailyThingItemState extends State<DailyThingItem> {
           collapsedShape:
               const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isCompletedToday ? Icons.check : Icons.close,
-                    color: isCompletedToday
-                        ? Theme.of(context).colorScheme.primary
-                        : _hasIncompleteProgress(widget.item)
-                            ? ColorPalette.darkerOrange
-                            : Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(width: 12),
-                  if (widget.item.icon != null)
+          title: Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 0.0, 0.0, 0.0),
+            child: Row(
+              children: [
+                // Left section
+                Row(
+                  children: [
+                    Icon(
+                      isCompletedToday ? Icons.check : Icons.close,
+                      color: isCompletedToday
+                          ? Theme.of(context).colorScheme.primary
+                          : _hasIncompleteProgress(widget.item)
+                              ? ColorPalette.darkerOrange
+                              : Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: 12),
+                    if (widget.item.icon != null)
+                      Text(
+                        widget.item.icon!,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: widget.allTasksCompleted
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    const SizedBox(width: 8),
                     Text(
-                      widget.item.icon!,
+                      widget.item.name,
                       style: TextStyle(
                         fontSize: 16,
                         color: widget.allTasksCompleted
@@ -151,142 +163,154 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.item.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: widget.allTasksCompleted
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () async {
-                  if (widget.item.itemType == ItemType.minutes) {
-                    if (isCompletedToday) {
-                      setState(() {
-                        _isExpanded = !_isExpanded;
-                      });
-                      widget.onExpansionChanged(_isExpanded);
-                    } else {
-                      widget.showFullscreenTimer(widget.item);
-                    }
-                  } else if (widget.item.itemType == ItemType.check) {
-                    // Determine current completion based on history.doneToday rather than todayValue to avoid stale reads
-                    final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    HistoryEntry? existingEntry =
-                        widget.item.history.firstWhere(
-                      (entry) =>
-                          entry.date.year == today.year &&
-                          entry.date.month == today.month &&
-                          entry.date.day == today.day,
-                      orElse: () => HistoryEntry(
-                          date: DateTime(0), targetValue: 0, doneToday: false),
-                    );
-
-                    final wasDone = existingEntry.date.year != 0
-                        ? existingEntry.doneToday
-                        : false;
-                    final newDone = !wasDone;
-                    final newValue = newDone ? 1.0 : 0.0;
-
-                    final newEntry = HistoryEntry(
-                      date: today,
-                      targetValue: newValue,
-                      doneToday: newDone,
-                    );
-
-                    if (existingEntry.date.year != 0) {
-                      final index = widget.item.history.indexOf(existingEntry);
-                      widget.item.history[index] = newEntry;
-                    } else {
-                      widget.item.history.add(newEntry);
-                    }
-
-                    // Immediately rebuild this tile so UI reflects change on first tap
-                    if (mounted) {
-                      setState(() {});
-                    }
-
-                    // Persist and notify parent; do not block UI feedback on await
-                    await widget.dataManager.updateDailyThing(widget.item);
-                    widget.onItemChanged?.call();
-                    widget.checkAndShowCompletionSnackbar();
-                  } else if (widget.item.itemType == ItemType.reps) {
-                    widget.showRepsInputDialog(widget.item);
-                  }
-                },
-                child: SizedBox(
-                  width: 80.0,
-                  height: 34.0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: widget.item.completedForToday
-                          ? Theme.of(context).colorScheme.primary
-                          : _hasIncompleteProgress(widget.item)
-                              ? ColorPalette.darkerOrange
-                              : Theme.of(context).colorScheme.error,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    alignment: Alignment.center,
-                    child: widget.item.itemType == ItemType.check
-                        ? Icon(
-                            widget.item.completedForToday
-                                ? Icons.check
-                                : Icons.close,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 16.0,
-                          )
-                        : Text(
-                            _formatValue(
-                                widget.item.displayValue, widget.item.itemType),
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 14),
-                          ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
+                const Spacer(),
+                // Right-aligned timer chip
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        if (widget.item.itemType == ItemType.minutes) {
+                          if (isCompletedToday) {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                            widget.onExpansionChanged(_isExpanded);
+                          } else {
+                            widget.showFullscreenTimer(widget.item);
+                          }
+                        } else if (widget.item.itemType == ItemType.check) {
+                          // Determine current completion based on history.doneToday rather than todayValue to avoid stale reads
+                          final now = DateTime.now();
+                          final today = DateTime(now.year, now.month, now.day);
+                          HistoryEntry? existingEntry =
+                              widget.item.history.firstWhere(
+                            (entry) =>
+                                entry.date.year == today.year &&
+                                entry.date.month == today.month &&
+                                entry.date.day == today.day,
+                            orElse: () => HistoryEntry(
+                                date: DateTime(0),
+                                targetValue: 0,
+                                doneToday: false),
+                          );
+
+                          final wasDone = existingEntry.date.year != 0
+                              ? existingEntry.doneToday
+                              : false;
+                          final newDone = !wasDone;
+                          final newValue = newDone ? 1.0 : 0.0;
+
+                          final newEntry = HistoryEntry(
+                            date: today,
+                            targetValue: newValue,
+                            doneToday: newDone,
+                          );
+
+                          if (existingEntry.date.year != 0) {
+                            final index =
+                                widget.item.history.indexOf(existingEntry);
+                            widget.item.history[index] = newEntry;
+                          } else {
+                            widget.item.history.add(newEntry);
+                          }
+
+                          // Immediately rebuild this tile so UI reflects change on first tap
+                          if (mounted) {
+                            setState(() {});
+                          }
+
+                          // Persist and notify parent; do not block UI feedback on await
+                          await widget.dataManager
+                              .updateDailyThing(widget.item);
+                          widget.onItemChanged?.call();
+                          widget.checkAndShowCompletionSnackbar();
+                        } else if (widget.item.itemType == ItemType.reps) {
+                          widget.showRepsInputDialog(widget.item);
+                        }
+                      },
+                      child: SizedBox(
+                        width: 72.0,
+                        height: 34.0,
+                        child: Container(
+                          margin: EdgeInsets.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: widget.item.completedForToday
+                                ? Theme.of(context).colorScheme.primary
+                                : _hasIncompleteProgress(widget.item)
+                                    ? ColorPalette.darkerOrange
+                                    : Theme.of(context).colorScheme.error,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                                color: Colors.transparent,
+                                width: 0), // ensure no extra visual inset
+                          ),
+                          alignment: Alignment.center,
+                          child: widget.item.itemType == ItemType.check
+                              ? Icon(
+                                  widget.item.completedForToday
+                                      ? Icons.check
+                                      : Icons.close,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  size: 16.0,
+                                )
+                              : Text(
+                                  _formatValue(widget.item.displayValue,
+                                      widget.item.itemType),
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                      fontSize: 14),
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 0),
+                  ],
+                )
+              ],
+            ),
           ),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (widget.item.itemType != ItemType.check)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 32.0),
-                    child: Row(
-                      children: [
-                        Text(_formatValue(
-                            widget.item.startValue, widget.item.itemType)),
-                        const Icon(Icons.trending_flat),
-                        Text(_formatValue(
-                            widget.item.endValue, widget.item.itemType)),
-                        const SizedBox(width: 16),
-                        Text(
-                          '(${widget.item.category})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    constraints: const BoxConstraints(minHeight: 48.0),
-                    padding: const EdgeInsets.only(left: 32.0),
-                    alignment: Alignment.centerLeft,
-                    child: widget.item.category.isNotEmpty
-                        ? Text(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12.0, 0.0, 20.0, 0.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (widget.item.itemType != ItemType.check)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 0.0),
+                      child: Row(
+                        children: [
+                          Text(_formatValue(
+                              widget.item.startValue, widget.item.itemType)),
+                          const Icon(Icons.trending_flat),
+                          Text(_formatValue(
+                              widget.item.endValue, widget.item.itemType)),
+                          if (widget.item.itemType != ItemType.check) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              (() {
+                                final inc = widget.item.increment;
+                                final sign = inc < 0 ? '-' : '+';
+                                final absVal = inc.abs();
+                                // Show up to 2 decimals, but trim trailing zeros and dot
+                                String numStr = absVal.toStringAsFixed(2);
+                                numStr =
+                                    numStr.replaceFirst(RegExp(r'\\.00$'), '');
+                                numStr = numStr.replaceFirst(RegExp(r'0$'), '');
+                                return '${sign}${numStr}';
+                              })(),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
                             '(${widget.item.category})',
                             style: TextStyle(
                               fontSize: 12,
@@ -294,42 +318,61 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   .colorScheme
                                   .onSurfaceVariant,
                             ),
-                          )
-                        : null,
-                  ),
-                Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'see daily stats',
-                      icon: const Icon(Icons.auto_graph),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                GraphView(dailyThing: widget.item),
                           ),
-                        );
-                      },
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      constraints: const BoxConstraints(minHeight: 48.0),
+                      padding: const EdgeInsets.only(left: 0.0),
+                      alignment: Alignment.centerLeft,
+                      child: widget.item.category.isNotEmpty
+                          ? Text(
+                              '(${widget.item.category})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            )
+                          : null,
                     ),
-                    IconButton(
-                      tooltip: 'edit the item',
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => widget.onEdit(widget.item),
-                    ),
-                    IconButton(
-                      tooltip: 'duplicate the item',
-                      icon: const Icon(Icons.content_copy),
-                      onPressed: () => widget.onDuplicate(widget.item),
-                    ),
-                    IconButton(
-                      tooltip: 'delete the item',
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => widget.onDelete(widget.item),
-                    ),
-                  ],
-                ),
-              ],
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'see daily stats',
+                        icon: const Icon(Icons.auto_graph),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  GraphView(dailyThing: widget.item),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        tooltip: 'edit the item',
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => widget.onEdit(widget.item),
+                      ),
+                      IconButton(
+                        tooltip: 'duplicate the item',
+                        icon: const Icon(Icons.content_copy),
+                        onPressed: () => widget.onDuplicate(widget.item),
+                      ),
+                      IconButton(
+                        tooltip: 'delete the item',
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => widget.onDelete(widget.item),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
