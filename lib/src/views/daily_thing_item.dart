@@ -109,7 +109,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
         child: ExpansionTile(
           // Include today's completion state in the key so Flutter doesn't reuse a stale widget after toggle
           key: ValueKey(
@@ -295,7 +295,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 0.0, 16.0, 0.0),
+              padding: const EdgeInsets.fromLTRB(8.0, 2.0, 8.0, 2.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -443,7 +443,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         icon: const Icon(Icons.auto_graph),
                         iconSize: 20,
                         visualDensity:
-                            const VisualDensity(horizontal: -2, vertical: -2),
+                            const VisualDensity(horizontal: -3, vertical: -3),
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -463,7 +463,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             : Icons.pause),
                         iconSize: 20,
                         visualDensity:
-                            const VisualDensity(horizontal: -2, vertical: -2),
+                            const VisualDensity(horizontal: -3, vertical: -3),
                         onPressed: () async {
                           final updated = DailyThing(
                             id: widget.item.id,
@@ -493,7 +493,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         icon: const Icon(Icons.edit),
                         iconSize: 20,
                         visualDensity:
-                            const VisualDensity(horizontal: -2, vertical: -2),
+                            const VisualDensity(horizontal: -3, vertical: -3),
                         onPressed: () => widget.onEdit(widget.item),
                       ),
                       IconButton(
@@ -501,7 +501,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         icon: const Icon(Icons.content_copy),
                         iconSize: 20,
                         visualDensity:
-                            const VisualDensity(horizontal: -2, vertical: -2),
+                            const VisualDensity(horizontal: -3, vertical: -3),
                         onPressed: () => widget.onDuplicate(widget.item),
                       ),
                       IconButton(
@@ -509,7 +509,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         icon: const Icon(Icons.delete),
                         iconSize: 20,
                         visualDensity:
-                            const VisualDensity(horizontal: -2, vertical: -2),
+                            const VisualDensity(horizontal: -3, vertical: -3),
                         onPressed: () => widget.onDelete(widget.item),
                       ),
                     ],
