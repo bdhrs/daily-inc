@@ -324,7 +324,13 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     // Wrap with Pulse animation if this is the next undone item
     if (index == nextUndoneIndex) {
+      // Derive the exact Card radius from theme when available
+      final ShapeBorder? cardShape = Theme.of(context).cardTheme.shape;
+      final BorderRadiusGeometry? radius =
+          cardShape is RoundedRectangleBorder ? cardShape.borderRadius : null;
+
       return Pulse(
+        borderRadius: radius,
         child: dailyThingItem,
       );
     }

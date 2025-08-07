@@ -7,6 +7,7 @@ class Pulse extends StatefulWidget {
   final double borderWidth;
   final Duration duration;
   final bool enableShadow;
+  final BorderRadiusGeometry? borderRadius;
 
   const Pulse({
     super.key,
@@ -15,6 +16,7 @@ class Pulse extends StatefulWidget {
     this.borderWidth = 2.0,
     this.duration = const Duration(milliseconds: 1000),
     this.enableShadow = true,
+    this.borderRadius,
   });
 
   @override
@@ -64,25 +66,39 @@ class _PulseState extends State<Pulse> with SingleTickerProviderStateMixin {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: widget.pulseColor.withValues(alpha: _colorAnimation.value),
-              width: widget.borderWidth,
-            ),
-            borderRadius: BorderRadius.circular(8.0),
-            boxShadow: widget.enableShadow
-                ? [
-                    BoxShadow(
-                      color: Colors.black
-                          .withValues(alpha: _shadowAnimation.value),
-                      blurRadius: 8.0,
-                      spreadRadius: 2.0,
-                    ),
-                  ]
-                : null,
+        // Use ShapeDecoration with a RoundedRectangleBorder to mirror Material/Card rendering precisely.
+        final shape = RoundedRectangleBorder(
+          borderRadius: widget.borderRadius ??
+              const BorderRadius.all(Radius.circular(8.0)),
+          side: BorderSide(
+            color: widget.pulseColor.withValues(alpha: _colorAnimation.value),
+            width: widget.borderWidth,
           ),
-          child: child,
+        );
+
+        return Material(
+          // Transparent material to ensure shape painting fidelity with Material widgets
+          type: MaterialType.transparency,
+          shape: shape,
+          child: Ink(
+            decoration: ShapeDecoration(
+              shape: shape.copyWith(), // ensure same shape for fill clipping
+              shadows: widget.enableShadow
+                  ? [
+                      BoxShadow(
+                        color: Colors.black
+                            .withValues(alpha: _shadowAnimation.value),
+                        blurRadius: 8.0,
+                        spreadRadius: 2.0,
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: ClipPath(
+              clipper: ShapeBorderClipper(shape: shape),
+              child: child,
+            ),
+          ),
         );
       },
       child: widget.child,
