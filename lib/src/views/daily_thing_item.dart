@@ -299,53 +299,72 @@ class _DailyThingItemState extends State<DailyThingItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Line 2: left group (start→end, increment) + right icon cluster
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Left group: start→end and increment always on the second line
-                      Expanded(
-                        child: Row(
-                          children: [
-                            // start → end
-                            Flexible(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _formatValue(widget.item.startValue,
-                                        widget.item.itemType),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
+                  // Layout rule:
+                  // - CHECK items: category on line 2; NO third line.
+                  // - Non-CHECK items: metrics row on line 2; category on line 3.
+
+                  // Line 2 for CHECK: category only
+                  if (widget.item.itemType == ItemType.check) ...[
+                    if ((widget.item.category).isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.item.category,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                      ),
+                    ],
+                  ] else ...[
+                    // Line 2 for non-CHECK: start→end, increment, and right icon cluster
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Left group: start→end and increment on the second line
+                        Expanded(
+                          child: Row(
+                            children: [
+                              // start → end
+                              Flexible(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatValue(widget.item.startValue,
+                                          widget.item.itemType),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      softWrap: false,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.trending_flat, size: 18),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _formatValue(widget.item.endValue,
-                                        widget.item.itemType),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.trending_flat, size: 18),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatValue(widget.item.endValue,
+                                          widget.item.itemType),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      softWrap: false,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            // increment (for non-check types)
-                            if (widget.item.itemType != ItemType.check) ...[
+                              // increment (non-check only)
                               const SizedBox(width: 8),
                               Text(
                                 (() {
@@ -368,105 +387,105 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 softWrap: false,
                               ),
                             ],
+                          ),
+                        ),
+                        // Right cluster: icon buttons stay on line 2
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'see daily stats',
+                              icon: const Icon(Icons.auto_graph),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        GraphView(dailyThing: widget.item),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              tooltip: widget.item.isPaused
+                                  ? 'resume increments'
+                                  : 'pause increments',
+                              icon: Icon(widget.item.isPaused
+                                  ? Icons.play_arrow
+                                  : Icons.pause),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () async {
+                                final updated = DailyThing(
+                                  id: widget.item.id,
+                                  icon: widget.item.icon,
+                                  name: widget.item.name,
+                                  itemType: widget.item.itemType,
+                                  startDate: widget.item.startDate,
+                                  startValue: widget.item.startValue,
+                                  duration: widget.item.duration,
+                                  endValue: widget.item.endValue,
+                                  history: widget.item.history,
+                                  nagTime: widget.item.nagTime,
+                                  nagMessage: widget.item.nagMessage,
+                                  frequencyInDays: widget.item.frequencyInDays,
+                                  category: widget.item.category,
+                                  isPaused: !widget.item.isPaused,
+                                );
+                                await widget.dataManager
+                                    .updateDailyThing(updated);
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                                widget.onItemChanged?.call();
+                              },
+                            ),
+                            IconButton(
+                              tooltip: 'edit the item',
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onEdit(widget.item),
+                            ),
+                            IconButton(
+                              tooltip: 'duplicate the item',
+                              icon: const Icon(Icons.content_copy),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onDuplicate(widget.item),
+                            ),
+                            IconButton(
+                              tooltip: 'delete the item',
+                              icon: const Icon(Icons.delete),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onDelete(widget.item),
+                            ),
                           ],
                         ),
-                      ),
-                      // Right cluster: icon buttons stay on line 2
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip: 'see daily stats',
-                            icon: const Icon(Icons.auto_graph),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      GraphView(dailyThing: widget.item),
-                                ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            tooltip: widget.item.isPaused
-                                ? 'resume increments'
-                                : 'pause increments',
-                            icon: Icon(widget.item.isPaused
-                                ? Icons.play_arrow
-                                : Icons.pause),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () async {
-                              final updated = DailyThing(
-                                id: widget.item.id,
-                                icon: widget.item.icon,
-                                name: widget.item.name,
-                                itemType: widget.item.itemType,
-                                startDate: widget.item.startDate,
-                                startValue: widget.item.startValue,
-                                duration: widget.item.duration,
-                                endValue: widget.item.endValue,
-                                history: widget.item.history,
-                                nagTime: widget.item.nagTime,
-                                nagMessage: widget.item.nagMessage,
-                                frequencyInDays: widget.item.frequencyInDays,
-                                category: widget.item.category,
-                                isPaused: !widget.item.isPaused,
-                              );
-                              await widget.dataManager
-                                  .updateDailyThing(updated);
-                              if (mounted) {
-                                setState(() {});
-                              }
-                              widget.onItemChanged?.call();
-                            },
-                          ),
-                          IconButton(
-                            tooltip: 'edit the item',
-                            icon: const Icon(Icons.edit),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () => widget.onEdit(widget.item),
-                          ),
-                          IconButton(
-                            tooltip: 'duplicate the item',
-                            icon: const Icon(Icons.content_copy),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () => widget.onDuplicate(widget.item),
-                          ),
-                          IconButton(
-                            tooltip: 'delete the item',
-                            icon: const Icon(Icons.delete),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () => widget.onDelete(widget.item),
-                          ),
-                        ],
+                      ],
+                    ),
+                    // Line 3 for non-CHECK: category
+                    if ((widget.item.category).isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.item.category,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ],
-                  ),
-                  // Line 3: category always on its own line, full width
-                  if ((widget.item.category).isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.item.category,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                    ),
                   ],
                 ],
               ),
