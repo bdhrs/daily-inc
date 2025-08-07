@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -12,9 +10,10 @@ import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/help_view.dart';
 import 'package:daily_inc/src/views/category_graph_view.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
+import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:daily_inc/src/theme/color_palette.dart';
+import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
 import 'package:logging/logging.dart';
 
 class DailyThingsView extends StatefulWidget {
@@ -156,36 +155,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
   void _deleteDailyThing(DailyThing item) async {
     _log.info('Attempting to delete daily thing: ${item.name}');
-    final bool? shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Delete'),
-          content: Text(
-              'Are you sure you want to delete "${item.name}"? This cannot be undone.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel',
-                  style: TextStyle(color: ColorPalette.warningOrange)),
-              onPressed: () {
-                _log.info('Delete cancelled.');
-                Navigator.of(context).pop(false);
-              },
-            ),
-            TextButton(
-              child: const Text('Delete',
-                  style: TextStyle(color: ColorPalette.warningOrange)),
-              onPressed: () {
-                _log.info('Delete confirmed.');
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
+    final bool shouldDelete = await confirmDeleteDialog(context, item.name);
 
-    if (shouldDelete == true) {
+    if (shouldDelete) {
       _log.info('Deleting item.');
       await _dataManager.deleteDailyThing(item);
 
@@ -353,42 +325,13 @@ class _DailyThingsViewState extends State<DailyThingsView>
   Future<void> _saveHistoryToFile() async {
     _log.info('Attempting to save history to file.');
     try {
-      _log.info('Preparing history data for saving.');
       final jsonData = {
         'dailyThings': _dailyThings.map((thing) => thing.toJson()).toList(),
         'savedAt': DateTime.now().toIso8601String(),
       };
-      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-      final bytes = utf8.encode(jsonString);
-
-      _log.info('Opening file picker to save file.');
-      final String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save History Data',
-        fileName: 'daily_inc_history.json',
-        allowedExtensions: ['json'],
-        type: FileType.custom,
-        bytes: bytes,
-      );
-
-      // On Android & iOS, outputFile will be null on success. On desktop, it will be the path.
-      // On any platform, if the user cancels, it's null. There's an ambiguity here
-      // on mobile platforms, but we'll show success if no error is thrown.
-      if (outputFile != null || Platform.isAndroid || Platform.isIOS) {
-        if (mounted) {
-          _log.info('History saved successfully.');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'History saved successfully',
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        _log.info('Save file operation cancelled.');
+      final ok = await saveJsonToFile(context: context, json: jsonData);
+      if (!ok) {
+        _log.info('Save file operation cancelled or failed.');
       }
     } catch (e, s) {
       _log.severe('Failed to save history', e, s);
@@ -404,83 +347,23 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   int _getNextUndoneIndex(List<DailyThing> items) {
-    for (int i = 0; i < items.length; i++) {
-      final item = items[i];
-      if (item.itemType == ItemType.check && !item.completedForToday) {
-        return i;
-      } else if (item.itemType == ItemType.reps) {
-        final today = DateTime.now();
-        final todayDate = DateTime(today.year, today.month, today.day);
-        final hasActualValueToday = item.history.any((entry) {
-          final entryDate =
-              DateTime(entry.date.year, entry.date.month, entry.date.day);
-          return entryDate == todayDate && entry.actualValue != null;
-        });
-        if (!hasActualValueToday) {
-          return i;
-        }
-      } else if (item.itemType == ItemType.minutes) {
-        if (!item.completedForToday) {
-          return i;
-        }
-      }
-    }
-    return -1; // All items are done
+    return getNextUndoneIndex(items);
   }
 
   void _expandAllVisibleItems() {
     _log.info('Toggling expansion of all visible items');
     setState(() {
-      // Get the list of displayed items (same filtering as in build method)
-      List<DailyThing> displayedItems = _showOnlyDueItems
-          ? _dailyThings
-              .where(
-                  (item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
-              .toList()
-          : _dailyThings;
+      final displayedItems = filterDisplayedItems(
+        allItems: _dailyThings,
+        showOnlyDueItems: _showOnlyDueItems,
+        hideWhenDone: _hideWhenDone,
+      );
 
-      if (_hideWhenDone) {
-        displayedItems = displayedItems.where((item) {
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-
-          // For REPS items, hide when any actual value has been entered today
-          if (item.itemType == ItemType.reps) {
-            final hasActualValueToday = item.history.any((entry) {
-              final entryDate =
-                  DateTime(entry.date.year, entry.date.month, entry.date.day);
-              return entryDate == todayDate && entry.actualValue != null;
-            });
-            return !hasActualValueToday;
-          }
-
-          // For MINUTES items, hide when there is any progress today (partial or completed)
-          if (item.itemType == ItemType.minutes) {
-            final hasProgressToday = item.history.any((entry) {
-              final entryDate =
-                  DateTime(entry.date.year, entry.date.month, entry.date.day);
-              if (entryDate != todayDate) return false;
-              final actual = entry.actualValue ?? 0.0;
-              return actual > 0.0 || entry.doneToday;
-            });
-            if (hasProgressToday) return false;
-            return !item.completedForToday;
-          }
-
-          // For CHECK items, maintain existing behavior
-          return !item.completedForToday;
-        }).toList();
-      }
-
-      // Check if all visible items are currently expanded
-      bool allExpanded =
-          displayedItems.every((item) => _isExpanded[item.id] ?? false);
-
-      // Toggle expansion state for all visible items
-      _allExpanded = !allExpanded;
-      for (final item in displayedItems) {
-        _isExpanded[item.id] = _allExpanded;
-      }
+      _allExpanded = toggleExpansionForVisibleItems(
+        visibleItems: displayedItems,
+        isExpanded: _isExpanded,
+        currentAllExpanded: _allExpanded,
+      );
 
       _log.info('Setting all visible items to expanded: $_allExpanded');
     });
@@ -781,48 +664,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
       body: ReorderableListView(
         onReorder: (oldIndex, newIndex) {
           setState(() {
-            // Simple, minimal fix: keep original approach but avoid "append to end" fallthrough.
-            // Normalize newIndex when moving downward.
-            if (newIndex > oldIndex) {
-              newIndex -= 1;
-            }
-
-            // Moving item from visible list
-            final moving = displayedItems[oldIndex];
-
-            // Remove from full list
-            final fromFull = _dailyThings.indexOf(moving);
-            if (fromFull == -1) return;
-            final removed = _dailyThings.removeAt(fromFull);
-
-            // Compute insertion point based on visible anchor; never blindly append.
-            int toFull;
-            if (newIndex >= 0 && newIndex < displayedItems.length) {
-              final anchor = displayedItems[newIndex];
-              toFull = _dailyThings.indexOf(anchor);
-              if (toFull == -1) {
-                // If anchor not found (rare), fallback to keeping relative spot: put back where it was
-                toFull = fromFull;
-              }
-            } else {
-              // Dropped past end of visible list: insert right after the last visible item in the full list
-              toFull =
-                  fromFull; // default fallback keeps original if no visible items
-              if (displayedItems.isNotEmpty) {
-                final lastVisible = displayedItems.last;
-                final lastIdx = _dailyThings.indexOf(lastVisible);
-                toFull = (lastIdx == -1) ? fromFull : lastIdx + 1;
-              }
-            }
-
-            // Adjust if moved downward in full list
-            if (fromFull < toFull) {
-              toFull -= 1;
-            }
-
-            // Clamp and insert
-            toFull = toFull.clamp(0, _dailyThings.length);
-            _dailyThings.insert(toFull, removed);
+            _dailyThings = reorderDailyThings(
+              fullList: _dailyThings,
+              displayedItems: displayedItems,
+              oldIndex: oldIndex,
+              newIndex: newIndex,
+            );
           });
           _dataManager.saveData(_dailyThings);
         },
