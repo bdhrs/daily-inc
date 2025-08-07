@@ -303,21 +303,110 @@ class _DailyThingItemState extends State<DailyThingItem> {
                   // - CHECK items: category on line 2; NO third line.
                   // - Non-CHECK items: metrics row on line 2; category on line 3.
 
-                  // Line 2 for CHECK: category only
+                  // Line 2 for CHECK: category + right-side icon cluster
                   if (widget.item.itemType == ItemType.check) ...[
-                    if ((widget.item.category).isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.item.category,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Left: category (if any)
+                        Expanded(
+                          child: (widget.item.category).isNotEmpty
+                              ? Text(
+                                  widget.item.category,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true,
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: true,
-                      ),
-                    ],
+                        // Right: same icon cluster used on the non-CHECK second line
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'see daily stats',
+                              icon: const Icon(Icons.auto_graph),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        GraphView(dailyThing: widget.item),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              tooltip: widget.item.isPaused
+                                  ? 'resume increments'
+                                  : 'pause increments',
+                              icon: Icon(widget.item.isPaused
+                                  ? Icons.play_arrow
+                                  : Icons.pause),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () async {
+                                final updated = DailyThing(
+                                  id: widget.item.id,
+                                  icon: widget.item.icon,
+                                  name: widget.item.name,
+                                  itemType: widget.item.itemType,
+                                  startDate: widget.item.startDate,
+                                  startValue: widget.item.startValue,
+                                  duration: widget.item.duration,
+                                  endValue: widget.item.endValue,
+                                  history: widget.item.history,
+                                  nagTime: widget.item.nagTime,
+                                  nagMessage: widget.item.nagMessage,
+                                  frequencyInDays: widget.item.frequencyInDays,
+                                  category: widget.item.category,
+                                  isPaused: !widget.item.isPaused,
+                                );
+                                await widget.dataManager
+                                    .updateDailyThing(updated);
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                                widget.onItemChanged?.call();
+                              },
+                            ),
+                            IconButton(
+                              tooltip: 'edit the item',
+                              icon: const Icon(Icons.edit),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onEdit(widget.item),
+                            ),
+                            IconButton(
+                              tooltip: 'duplicate the item',
+                              icon: const Icon(Icons.content_copy),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onDuplicate(widget.item),
+                            ),
+                            IconButton(
+                              tooltip: 'delete the item',
+                              icon: const Icon(Icons.delete),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () => widget.onDelete(widget.item),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ] else ...[
                     // Line 2 for non-CHECK: start→end, increment, and right icon cluster
                     Row(
