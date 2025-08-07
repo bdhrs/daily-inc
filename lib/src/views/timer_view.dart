@@ -205,6 +205,9 @@ class _TimerViewState extends State<TimerView> {
       history: updatedHistory,
       nagTime: widget.item.nagTime,
       nagMessage: widget.item.nagMessage,
+      frequencyInDays: widget.item.frequencyInDays,
+      category: widget.item.category,
+      isPaused: widget.item.isPaused,
     );
     _log.info('Created updated DailyThing.');
 
@@ -335,6 +338,9 @@ class _TimerViewState extends State<TimerView> {
       history: updatedHistory,
       nagTime: widget.item.nagTime,
       nagMessage: widget.item.nagMessage,
+      frequencyInDays: widget.item.frequencyInDays,
+      category: widget.item.category,
+      isPaused: widget.item.isPaused,
     );
 
     await widget.dataManager.updateDailyThing(updatedItem);
