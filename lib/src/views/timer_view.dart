@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
@@ -67,6 +68,22 @@ class _TimerViewState extends State<TimerView> {
     final mm = (totalSeconds ~/ 60).toString().padLeft(2, '0');
     final ss = (totalSeconds % 60).toString().padLeft(2, '0');
     return '$mm:$ss';
+  }
+
+  String _formatValue(double value, ItemType itemType) {
+    if (itemType == ItemType.minutes) {
+      if (value.truncateToDouble() == value) {
+        return '${value.toInt()}m';
+      } else {
+        final minutes = value.truncate();
+        final seconds = ((value - minutes) * 60).round();
+        return '$minutes:${seconds.toString().padLeft(2, '0')}';
+      }
+    } else if (itemType == ItemType.reps) {
+      return '${value.round()}x';
+    } else {
+      return value >= 1 ? '✅' : '❌';
+    }
   }
 
   @override
@@ -386,6 +403,11 @@ class _TimerViewState extends State<TimerView> {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 8),
+
+                // New Row for Start/End/Increment
+                _buildGoalRow(context),
+
                 const SizedBox(height: 12),
 
                 // Center content expands
@@ -393,55 +415,56 @@ class _TimerViewState extends State<TimerView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Current time / total time directly above main timer
-                      Text(
-                        '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: ColorPalette.lightText.withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Main timer (unchanged logic)
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            const maxTimeText = "88:88";
-                            final textPainter = TextPainter(
-                              text: const TextSpan(
-                                text: maxTimeText,
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              textDirection: TextDirection.ltr,
-                            );
-                            textPainter.layout();
-
-                            final fontSize = (constraints.maxWidth * 0.9) /
-                                textPainter.width *
-                                12;
-
-                            return SizedBox(
-                              width: constraints.maxWidth,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  _formatMinutesToMmSs(
-                                      (_todaysTargetMinutes - _elapsedMinutes)
-                                          .clamp(0.0, double.infinity)),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: fontSize,
-                                    color: ColorPalette.lightText,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  softWrap: false,
+                      // Group 2: The two timers
+                      Column(
+                        children: [
+                          Text(
+                            '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color:
+                                  ColorPalette.lightText.withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              const maxTimeText = "88:88";
+                              final textPainter = TextPainter(
+                                text: const TextSpan(
+                                  text: maxTimeText,
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                                textDirection: TextDirection.ltr,
+                              );
+                              textPainter.layout();
+
+                              final fontSize = (constraints.maxWidth * 0.9) /
+                                  textPainter.width *
+                                  12;
+
+                              return SizedBox(
+                                width: constraints.maxWidth,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _formatMinutesToMmSs(
+                                        (_todaysTargetMinutes - _elapsedMinutes)
+                                            .clamp(0.0, double.infinity)),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: fontSize,
+                                      color: ColorPalette.lightText,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    softWrap: false,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -483,5 +506,64 @@ class _TimerViewState extends State<TimerView> {
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
     }
+  }
+
+  Widget _buildGoalRow(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // start → end
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatValue(widget.item.startValue, widget.item.itemType),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                softWrap: false,
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.trending_flat, size: 18),
+              const SizedBox(width: 4),
+              Text(
+                _formatValue(widget.item.endValue, widget.item.itemType),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                softWrap: false,
+              ),
+            ],
+          ),
+        ),
+        // increment
+        const SizedBox(width: 8),
+        Text(
+          (() {
+            final inc = widget.item.increment;
+            final sign = inc < 0 ? '-' : '+';
+            final absVal = inc.abs();
+            String numStr = absVal.toStringAsFixed(2);
+            numStr = numStr.replaceFirst(RegExp(r'\.00$'), '');
+            numStr = numStr.replaceFirst(RegExp(r'0$'), '');
+            return '$sign$numStr';
+          })(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontSize: 13,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          softWrap: false,
+        ),
+      ],
+    );
   }
 }
