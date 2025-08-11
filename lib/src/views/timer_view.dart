@@ -31,6 +31,9 @@ class _TimerViewState extends State<TimerView> {
   bool _isPaused = true;
   bool _hasStarted = false;
   Timer? _timer;
+  bool _isOvertime = false;
+  int _overtimeSeconds = 0;
+  double _totalTimeCompleted = 0.0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
@@ -159,11 +162,29 @@ class _TimerViewState extends State<TimerView> {
         _log.info('Timer started, enabling wakelock.');
         _hasStarted = true; // Mark that timer has been started
         WakelockPlus.enable();
-        _runCountdown();
+        if (_isOvertime) {
+          _runOvertime();
+        } else {
+          _runCountdown();
+        }
       } else {
         _log.info('Timer paused, disabling wakelock.');
+        _timer?.cancel();
         WakelockPlus.disable();
       }
+    });
+  }
+
+  void _runOvertime() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isPaused) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _overtimeSeconds++;
+        _totalTimeCompleted = (_originalTotalSeconds + _overtimeSeconds) / 60.0;
+      });
     });
   }
 
@@ -193,69 +214,31 @@ class _TimerViewState extends State<TimerView> {
     WakelockPlus.disable();
     _log.info('Wakelock disabled.');
 
-    // Update the history
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    // For timer-based items, we consider the target value as completed
-    // since they completed the full timer duration
-    final newEntry = HistoryEntry(
-      date: todayDate,
-      targetValue: widget.item.todayValue, // Save target value
-      doneToday: true, // Timer completion implies meeting the target
-      actualValue: widget.item
-          .todayValue, // Set actual_value to today's target for MINUTES items
-      comment: _commentController.text,
-    );
-    _log.info('Created new history entry for today.');
-
-    final updatedHistory = widget.item.history
-        .where((entry) => entry.date != todayDate)
-        .toList()
-      ..add(newEntry);
-
-    final updatedItem = DailyThing(
-      id: widget.item.id,
-      icon: widget.item.icon,
-      name: widget.item.name,
-      itemType: widget.item.itemType,
-      startDate: widget.item.startDate,
-      startValue: widget.item.startValue,
-      duration: widget.item.duration,
-      endValue: widget.item.endValue,
-      history: updatedHistory,
-      nagTime: widget.item.nagTime,
-      nagMessage: widget.item.nagMessage,
-      category: widget.item.category,
-      isPaused: widget.item.isPaused,
-      intervalType: widget.item.intervalType,
-      intervalValue: widget.item.intervalValue,
-      intervalWeekdays: widget.item.intervalWeekdays,
-    );
-    _log.info('Created updated DailyThing.');
-
-    await widget.dataManager.updateDailyThing(updatedItem);
-    _log.info('Updated daily thing in data manager.');
-    if (!mounted) {
-      _log.warning('Widget not mounted, returning.');
-      return; // Ensure the widget is still mounted before using context
-    }
-    widget.onExitCallback();
-    Navigator.of(context).pop();
-    _log.info('Exited timer view.');
+    setState(() {
+      _isOvertime = true;
+      _totalTimeCompleted = _originalTotalSeconds / 60.0;
+      _isPaused = true;
+    });
   }
 
   Future<void> _exitTimerDisplay() async {
     _log.info('exitTimerDisplay called');
     _log.info(
-        'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _originalTotalSeconds=$_originalTotalSeconds');
+        'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _originalTotalSeconds=$_originalTotalSeconds, _isOvertime=$_isOvertime');
 
     // Stop the timer immediately when exiting
     _timer?.cancel();
     _log.info('Timer stopped');
     WakelockPlus.disable();
 
-    // Check if timer has started but not completed
-    if (_hasStarted &&
+    if (_isOvertime) {
+      final shouldSave = await _showSaveDialog(isOvertime: true);
+      if (shouldSave == true) {
+        await _saveTotalProgress();
+      } else if (shouldSave == null) {
+        return; // User cancelled
+      }
+    } else if (_hasStarted &&
         _remainingSeconds > 0 &&
         _remainingSeconds < _originalTotalSeconds) {
       _log.info('Showing save dialog for partial progress');
@@ -284,15 +267,17 @@ class _TimerViewState extends State<TimerView> {
   // - _formatTime: redundant with _formatMinutesToMmSs
   // - _formatElapsedTotalTime: not used in UI
 
-  Future<bool?> _showSaveDialog() async {
+  Future<bool?> _showSaveDialog({bool isOvertime = false}) async {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Save Progress?'),
-          content: const Text(
-            'You have incomplete progress. Would you like to save your current time?',
+          title: Text(isOvertime ? 'Save Total Time?' : 'Save Progress?'),
+          content: Text(
+            isOvertime
+                ? 'You have finished your goal and completed extra time. Would you like to save the total time?'
+                : 'You have incomplete progress. Would you like to save your current time?',
           ),
           actions: [
             TextButton(
@@ -373,6 +358,50 @@ class _TimerViewState extends State<TimerView> {
         'Saved partial progress: $sessionMinutes minutes (total: $accumulatedMinutes)');
   }
 
+  Future<void> _saveTotalProgress() async {
+    _log.info('Saving total progress');
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    final newEntry = HistoryEntry(
+      date: todayDate,
+      targetValue: widget.item.todayValue,
+      doneToday: true,
+      actualValue: _totalTimeCompleted,
+      comment: _commentController.text,
+    );
+
+    final updatedHistory = widget.item.history
+        .where((entry) => entry.date != todayDate)
+        .toList()
+      ..add(newEntry);
+
+    final updatedItem = _createUpdatedItem(updatedHistory);
+    await widget.dataManager.updateDailyThing(updatedItem);
+    _log.info('Saved total progress: $_totalTimeCompleted minutes');
+  }
+
+  DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
+    return DailyThing(
+      id: widget.item.id,
+      icon: widget.item.icon,
+      name: widget.item.name,
+      itemType: widget.item.itemType,
+      startDate: widget.item.startDate,
+      startValue: widget.item.startValue,
+      duration: widget.item.duration,
+      endValue: widget.item.endValue,
+      history: updatedHistory,
+      nagTime: widget.item.nagTime,
+      nagMessage: widget.item.nagMessage,
+      category: widget.item.category,
+      isPaused: widget.item.isPaused,
+      intervalType: widget.item.intervalType,
+      intervalValue: widget.item.intervalValue,
+      intervalWeekdays: widget.item.intervalWeekdays,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
@@ -416,56 +445,81 @@ class _TimerViewState extends State<TimerView> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Group 2: The two timers
-                      Column(
-                        children: [
-                          Text(
-                            '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color:
-                                  ColorPalette.lightText.withValues(alpha: 0.7),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 4),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              const maxTimeText = "88:88";
-                              final textPainter = TextPainter(
-                                text: const TextSpan(
-                                  text: maxTimeText,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                textDirection: TextDirection.ltr,
-                              );
-                              textPainter.layout();
-
-                              final fontSize = (constraints.maxWidth * 0.9) /
-                                  textPainter.width *
-                                  12;
-
-                              return SizedBox(
-                                width: constraints.maxWidth,
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _formatMinutesToMmSs(
-                                        (_todaysTargetMinutes - _elapsedMinutes)
-                                            .clamp(0.0, double.infinity)),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: fontSize,
-                                      color: ColorPalette.lightText,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    softWrap: false,
+                      _isOvertime
+                          ? Column(
+                              children: [
+                                Text(
+                                  'Total Time:',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: ColorPalette.lightText
+                                        .withAlpha((255 * 0.7).round()),
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatMinutesToMmSs(_totalTimeCompleted),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 60,
+                                    color: ColorPalette.lightText,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                Text(
+                                  '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: ColorPalette.lightText
+                                        .withAlpha((255 * 0.7).round()),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    const maxTimeText = "88:88";
+                                    final textPainter = TextPainter(
+                                      text: const TextSpan(
+                                        text: maxTimeText,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      textDirection: TextDirection.ltr,
+                                    );
+                                    textPainter.layout();
+
+                                    final fontSize =
+                                        (constraints.maxWidth * 0.9) /
+                                            textPainter.width *
+                                            12;
+
+                                    return SizedBox(
+                                      width: constraints.maxWidth,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          _formatMinutesToMmSs(
+                                              (_todaysTargetMinutes -
+                                                      _elapsedMinutes)
+                                                  .clamp(0.0, double.infinity)),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: fontSize,
+                                            color: ColorPalette.lightText,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          softWrap: false,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                     ],
                   ),
                 ),
@@ -482,7 +536,11 @@ class _TimerViewState extends State<TimerView> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _toggleTimer,
-                  child: Text(_isPaused ? 'Start' : 'Pause'),
+                  child: Text(
+                    _isOvertime
+                        ? (_isPaused ? 'Continue' : 'Pause')
+                        : (_isPaused ? 'Start' : 'Pause'),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
