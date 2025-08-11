@@ -4,7 +4,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main and merge dev
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge dev into main
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git merge origin/dev --no-ff -m "Merge dev into main for release"
+          git push origin main
+
   build-android:
+    needs: sync-main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -93,6 +111,7 @@ jobs:
           path: ${{ steps.rename_apk.outputs.APK_PATH }}
 
   build-linux:
+    needs: sync-main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -202,7 +221,7 @@ jobs:
           path: daily-inc.AppImage
 
   create-release:
-    needs: [build-android, build-linux, build-appimage]
+    needs: [build-android, build-appimage]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -234,3 +253,21 @@ jobs:
           files: |
             artifacts/appimage/*
             artifacts/android/*
+
+  sync-dev:
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout dev and merge main
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Merge main into dev
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git merge origin/main --no-ff -m "Sync main back to dev after release"
+          git push origin dev
