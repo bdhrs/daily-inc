@@ -4,13 +4,12 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:logging/logging.dart';
 
-class RepsInputDialog extends StatelessWidget {
+class RepsInputDialog extends StatefulWidget {
   final DailyThing item;
   final DataManager dataManager;
   final VoidCallback onSuccess;
-  final _log = Logger('RepsInputDialog');
 
-  RepsInputDialog({
+  const RepsInputDialog({
     super.key,
     required this.item,
     required this.dataManager,
@@ -18,22 +17,47 @@ class RepsInputDialog extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController repsController = TextEditingController();
+  State<RepsInputDialog> createState() => _RepsInputDialogState();
+}
 
+class _RepsInputDialogState extends State<RepsInputDialog> {
+  final _repsController = TextEditingController();
+  final _commentController = TextEditingController();
+  final _log = Logger('RepsInputDialog');
+
+  @override
+  void dispose() {
+    _repsController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AlertDialog(
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('how many ${item.name.toLowerCase()}?'),
+          Text('how many ${widget.item.name.toLowerCase()}?'),
           TextField(
-            controller: repsController,
+            controller: _repsController,
             keyboardType: TextInputType.number,
             autofocus: true,
             onSubmitted: (value) => _handleSubmit(
               context,
-              repsController.text,
-              onSuccess,
+              _repsController.text,
+              _commentController.text,
+              widget.onSuccess,
+            ),
+          ),
+          TextField(
+            controller: _commentController,
+            decoration: const InputDecoration(labelText: 'Comment'),
+            onSubmitted: (value) => _handleSubmit(
+              context,
+              _repsController.text,
+              _commentController.text,
+              widget.onSuccess,
             ),
           ),
         ],
@@ -49,8 +73,9 @@ class RepsInputDialog extends StatelessWidget {
         TextButton(
           onPressed: () => _handleSubmit(
             context,
-            repsController.text,
-            onSuccess,
+            _repsController.text,
+            _commentController.text,
+            widget.onSuccess,
           ),
           child: const Text('Submit'),
         ),
@@ -60,11 +85,12 @@ class RepsInputDialog extends StatelessWidget {
 
   void _handleSubmit(
     BuildContext context,
-    String input,
+    String repsInput,
+    String commentInput,
     VoidCallback onSuccess,
   ) async {
-    _log.info('Reps submitted: $input');
-    final int? reps = int.tryParse(input);
+    _log.info('Reps submitted: $repsInput, Comment: $commentInput');
+    final int? reps = int.tryParse(repsInput);
 
     if (reps != null && reps >= 0) {
       final today = DateTime(
@@ -73,16 +99,17 @@ class RepsInputDialog extends StatelessWidget {
         DateTime.now().day,
       );
       final actualValue = reps.toDouble();
-      item.actualTodayValue =
+      widget.item.actualTodayValue =
           actualValue; // Update actualTodayValue with actual value
       final newEntry = HistoryEntry(
         date: today,
-        targetValue: item.todayValue,
-        doneToday: item.isDone(actualValue),
+        targetValue: widget.item.todayValue,
+        doneToday: widget.item.isDone(actualValue),
         actualValue: actualValue,
+        comment: commentInput,
       );
 
-      final existingEntryIndex = item.history.indexWhere(
+      final existingEntryIndex = widget.item.history.indexWhere(
         (entry) =>
             entry.date.year == today.year &&
             entry.date.month == today.month &&
@@ -90,12 +117,12 @@ class RepsInputDialog extends StatelessWidget {
       );
 
       if (existingEntryIndex != -1) {
-        item.history[existingEntryIndex] = newEntry;
+        widget.item.history[existingEntryIndex] = newEntry;
       } else {
-        item.history.add(newEntry);
+        widget.item.history.add(newEntry);
       }
 
-      await dataManager.updateDailyThing(item);
+      await widget.dataManager.updateDailyThing(widget.item);
       if (context.mounted) {
         Navigator.of(context).pop();
         onSuccess();
