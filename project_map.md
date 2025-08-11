@@ -65,6 +65,9 @@ This document provides a map of the project, listing the location of all functio
   - `toJson()` [`lib/src/models/history_entry.dart:18`](lib/src/models/history_entry.dart:18): Converts the entry to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/history_entry.dart:27`](lib/src/models/history_entry.dart:27): Parses a JSON map into an entry with safe fallbacks.
 
+## lib/src/models/interval_type.dart
+- `IntervalType` enum [`lib/src/models/interval_type.dart:1`](lib/src/models/interval_type.dart:1): Defines whether an item repeats by a number of days or on specific weekdays.
+
 ## lib/src/models/item_type.dart
 - `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, or check.
 
@@ -80,6 +83,12 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
+
+## lib/src/views/category_graph_view.dart
+- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category.
+
+## lib/src/views/help_view.dart
+- `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.
   - Properties `dataManager`, `dailyThing`, `onSubmitCallback` [`lib/src/views/add_edit_daily_item_view.dart:11`](lib/src/views/add_edit_daily_item_view.dart:11): Inputs for saving and callbacks.
 - `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:26`](lib/src/views/add_edit_daily_item_view.dart:26): Handles form state and input controllers.
   - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
@@ -222,3 +231,23 @@ This document provides a map of the project, listing the location of all functio
   - `_savePartialProgress()` / `_saveTotalProgress()` [`lib/src/views/timer_view.dart:297`](lib/src/views/timer_view.dart:297): Saves partial or total progress to history.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:406`](lib/src/views/timer_view.dart:406): Shows the timer UI and controls, with different views for timer and overtime.
   - `_buildGoalRow(BuildContext context)` [`lib/src/views/timer_view.dart:569`](lib/src/views/timer_view.dart:569): Displays the start/end/increment values.
+
+## lib/src/views/widgets/daily_things_helpers.dart
+- `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
+- `showThemedSnackBar(...)` [`lib/src/views/widgets/daily_things_helpers.dart:36`](lib/src/views/widgets/daily_things_helpers.dart:36): Shows a themed snackbar.
+- `confirmDeleteDialog(BuildContext context, String name)` [`lib/src/views/widgets/daily_things_helpers.dart:52`](lib/src/views/widgets/daily_things_helpers.dart:52): Shows a confirmation dialog before deleting an item.
+- `saveJsonToFile(...)` [`lib/src/views/widgets/daily_things_helpers.dart:83`](lib/src/views/widgets/daily_things_helpers.dart:83): Saves a JSON file to disk.
+
+## lib/src/views/widgets/graph_style_helpers.dart
+- `GraphStyle` class [`lib/src/views/widgets/graph_style_helpers.dart:6`](lib/src/views/widgets/graph_style_helpers.dart:6): Provides styling constants for graphs.
+- `GraphStyleHelpers` class [`lib/src/views/widgets/graph_style_helpers.dart:24`](lib/src/views/widgets/graph_style_helpers.dart:24): Provides helper functions for graph styling.
+
+## lib/src/views/widgets/pulse.dart
+- `Pulse` class [`lib/src/views/widgets/pulse.dart:4`](lib/src/views/widgets/pulse.dart:4): A widget that creates a pulsing effect around its child.
+
+## lib/src/views/widgets/reorder_helpers.dart
+- `reorderDailyThings(...)` [`lib/src/views/widgets/reorder_helpers.dart:16`](lib/src/views/widgets/reorder_helpers.dart:16): Reorders the list of daily things.
+
+## lib/src/views/widgets/visibility_and_expand_helpers.dart
+- `filterDisplayedItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:6`](lib/src/views/widgets/visibility_and_expand_helpers.dart:6): Filters the list of daily things to be displayed.
+- `toggleExpansionForVisibleItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:52`](lib/src/views/widgets/visibility_and_expand_helpers.dart:52): Toggles the expansion state of visible items.
