@@ -19,11 +19,13 @@ class _GraphViewState extends State<GraphView> {
   double _minY = 0;
   double _maxY = 0;
   final _log = Logger('GraphView');
+  List<FlSpot> _spots = [];
 
   @override
   void initState() {
     super.initState();
     _log.info('initState called for item: ${widget.dailyThing.name}');
+    _spots = _buildSpots();
     _calculateRanges();
   }
 
@@ -33,8 +35,8 @@ class _GraphViewState extends State<GraphView> {
       _minY = 0;
       _maxY = 1.2;
     } else {
-      final spots = _buildSpots();
-      final maxValue = spots.isEmpty ? 0.0 : spots.map((s) => s.y).reduce(max);
+      final maxValue =
+          _spots.isEmpty ? 0.0 : _spots.map((s) => s.y).reduce(max);
       _minY = 0;
       _maxY = maxValue == 0 ? 1 : maxValue * 1.1;
     }
@@ -60,7 +62,7 @@ class _GraphViewState extends State<GraphView> {
             maxY: _maxY,
             lineBarsData: [
               LineChartBarData(
-                spots: _buildSpots(),
+                spots: _spots,
                 color: GraphStyle.lineColor,
                 barWidth: GraphStyle.lineWidth,
                 isCurved: false,
@@ -161,25 +163,63 @@ class _GraphViewState extends State<GraphView> {
                   .toList(),
               handleBuiltInTouches: true,
               touchTooltipData: LineTouchTooltipData(
-                getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
-                  final d = _dateFromEpochDays(s.x.floorToDouble());
-                  return LineTooltipItem(
-                    '${DateFormat('M/d').format(d)}\n',
-                    const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14),
-                    children: [
-                      TextSpan(
-                        text: s.y.toStringAsFixed(1),
-                        style: const TextStyle(
-                            color: Colors.yellow,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                maxContentWidth: 200,
+                fitInsideHorizontally: true,
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots
+                      .map((spotData) {
+                        final spotIndex = spotData.spotIndex;
+                        if (spotIndex >= _spots.length) return null;
+
+                        final spot = _spots[spotIndex];
+                        final d = _dateFromEpochDays(spot.x);
+                        final dateKey = DateTime(d.year, d.month, d.day);
+
+                        dynamic entry;
+                        try {
+                          entry = widget.dailyThing.history.firstWhere((e) =>
+                              DateTime(e.date.year, e.date.month, e.date.day) ==
+                              dateKey);
+                        } catch (e) {
+                          entry = null;
+                        }
+
+                        final children = <TextSpan>[
+                          TextSpan(
+                            text: spot.y.toStringAsFixed(1),
+                            style: const TextStyle(
+                                color: Colors.yellow,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ];
+
+                        if (entry != null &&
+                            entry.comment != null &&
+                            entry.comment!.isNotEmpty) {
+                          children.add(
+                            TextSpan(
+                              text: '\n${entry.comment}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.normal),
+                            ),
+                          );
+                        }
+
+                        return LineTooltipItem(
+                          '${DateFormat('M/d').format(d)}\n',
+                          const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
+                          children: children,
+                        );
+                      })
+                      .whereType<LineTooltipItem>()
+                      .toList();
+                },
               ),
             ),
           ),

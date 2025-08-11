@@ -32,6 +32,7 @@ class _TimerViewState extends State<TimerView> {
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
+  final _commentController = TextEditingController();
 
   double get _todaysTargetMinutes => widget.item.todayValue;
 
@@ -128,6 +129,7 @@ class _TimerViewState extends State<TimerView> {
   void dispose() {
     _log.info('dispose called');
     _timer?.cancel();
+    _commentController.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -185,6 +187,7 @@ class _TimerViewState extends State<TimerView> {
       doneToday: true, // Timer completion implies meeting the target
       actualValue: widget.item
           .todayValue, // Set actual_value to today's target for MINUTES items
+      comment: _commentController.text,
     );
     _log.info('Created new history entry for today.');
 
@@ -321,6 +324,7 @@ class _TimerViewState extends State<TimerView> {
       targetValue: widget.item.todayValue,
       doneToday: false, // Mark as incomplete
       actualValue: accumulatedMinutes,
+      comment: _commentController.text,
     );
 
     final updatedHistory = widget.item.history
@@ -443,6 +447,15 @@ class _TimerViewState extends State<TimerView> {
                   ),
                 ),
 
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _commentController,
+                  decoration: const InputDecoration(
+                    labelText: 'Comment',
+                    hintText: 'Add an optional comment...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _toggleTimer,
