@@ -216,8 +216,9 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): Full-screen countdown for minutes tasks with a bell.
   - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
-- `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Handles counting down, pause/resume, and completion.
-  - `_toggleTimer()` / `_runCountdown()` / `_onTimerComplete()` [`lib/src/views/timer_view.dart:50`](lib/src/views/timer_view.dart:50): Starts/stops timer, ticks each second, and marks done with sound.
-  - `_exitTimerDisplay()` / `_formatTime(int)` [`lib/src/views/timer_view.dart:135`](lib/src/views/timer_view.dart:135): Leaves the screen and formats mm:ss.
-  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Shows the timer UI and controls.
-  - `_buildGoalRow(BuildContext context)` [`lib/src/views/timer_view.dart:488`](lib/src/views/timer_view.dart:488): Displays the start/end/increment values.
+- `_TimerViewState` class [`lib/src/views/timer_view.dart:28`](lib/src/views/timer_view.dart:28): Handles counting down, pause/resume, and completion.
+  - `_toggleTimer()` / `_runCountdown()` / `_onTimerComplete()` / `_runOvertime()` [`lib/src/views/timer_view.dart:157`](lib/src/views/timer_view.dart:157): Starts/stops timer, ticks each second, and marks done with sound, including overtime.
+  - `_exitTimerDisplay()` / `_formatTime(int)` [`lib/src/views/timer_view.dart:224`](lib/src/views/timer_view.dart:224): Leaves the screen and formats mm:ss, now handles saving total time.
+  - `_savePartialProgress()` / `_saveTotalProgress()` [`lib/src/views/timer_view.dart:297`](lib/src/views/timer_view.dart:297): Saves partial or total progress to history.
+  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:406`](lib/src/views/timer_view.dart:406): Shows the timer UI and controls, with different views for timer and overtime.
+  - `_buildGoalRow(BuildContext context)` [`lib/src/views/timer_view.dart:569`](lib/src/views/timer_view.dart:569): Displays the start/end/increment values.
