@@ -1,6 +1,7 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('IncrementCalculator');
@@ -40,6 +41,48 @@ class IncrementCalculator {
     return daysSinceLastEntry - 1; // Subtract 1 to get missed days
   }
 
+  /// Determine if a task is due on a given date
+  static bool isDue(DailyThing item, DateTime date) {
+    final lastDone = getLastCompletedDate(item.history);
+
+    if (lastDone == null) {
+      // If never done, it's due if the start date is today or in the past
+      return !date.isBefore(item.startDate);
+    }
+
+    // Check for missed days carry-over
+    DateTime checkDate = DateTime(lastDone.year, lastDone.month, lastDone.day)
+        .add(const Duration(days: 1));
+    while (checkDate.isBefore(date) || checkDate.isAtSameMomentAs(date)) {
+      bool wasDue = false;
+      if (item.intervalType == IntervalType.byDays) {
+        if (checkDate.difference(lastDone).inDays >= item.intervalValue) {
+          wasDue = true;
+        }
+      } else {
+        // byWeekdays
+        if (item.intervalWeekdays.contains(checkDate.weekday)) {
+          wasDue = true;
+        }
+      }
+
+      if (wasDue) {
+        // Check if it was done on that day
+        final entryOnDay = item.history.where((e) {
+          final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
+          return entryDate.isAtSameMomentAs(checkDate);
+        }).toList();
+
+        if (entryOnDay.isEmpty || !entryOnDay.first.doneToday) {
+          return true; // Carried over from a missed day
+        }
+      }
+      checkDate = checkDate.add(const Duration(days: 1));
+    }
+
+    return false;
+  }
+
   /// Calculate today's target value with increment/penalty based on days since last doneToday
   static double calculateTodayValue(DailyThing item) {
     final today = DateTime.now();
@@ -76,7 +119,12 @@ class IncrementCalculator {
         lastEntryBeforeToday?.targetValue ?? item.startValue;
 
     // If item is paused, freeze today's target at baseTarget
-    if ((item as dynamic).isPaused == true) {
+    if (item.isPaused) {
+      return baseTarget;
+    }
+
+    // If not due today, return the base target
+    if (!isDue(item, todayDate)) {
       return baseTarget;
     }
 
@@ -88,16 +136,6 @@ class IncrementCalculator {
                 item.startDate.year, item.startDate.month, item.startDate.day))
             .inDays
         : todayDate.difference(lastDoneDate).inDays;
-
-    // Respect frequency: if not due yet, keep base target
-    if (lastEntryBeforeToday != null) {
-      final lastEntryDate = DateTime(lastEntryBeforeToday.date.year,
-          lastEntryBeforeToday.date.month, lastEntryBeforeToday.date.day);
-      final gapFromLastEntry = todayDate.difference(lastEntryDate).inDays;
-      if (gapFromLastEntry < item.frequencyInDays) {
-        return baseTarget;
-      }
-    }
 
     // Apply spec from specs/increment_logic.md (days since doneToday)
     double newValue;

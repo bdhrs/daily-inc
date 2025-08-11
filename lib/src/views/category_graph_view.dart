@@ -33,7 +33,9 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
 
     final Map<String, List<DailyThing>> itemsByCategory = {};
     for (final thing in widget.dailyThings) {
-      itemsByCategory.putIfAbsent(thing.category, () => []).add(thing);
+      if (thing.category.isNotEmpty) {
+        itemsByCategory.putIfAbsent(thing.category, () => []).add(thing);
+      }
     }
 
     for (final entry in itemsByCategory.entries) {

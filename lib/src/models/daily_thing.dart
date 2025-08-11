@@ -1,5 +1,6 @@
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
@@ -18,10 +19,12 @@ class DailyThing {
   final List<HistoryEntry> history;
   final DateTime? nagTime;
   final String? nagMessage;
-  final int frequencyInDays;
   final String category; // New category field
   final bool isPaused; // Whether increment progression is paused
   double? actualTodayValue; // New property to store actual value entered today
+  final IntervalType intervalType;
+  final int intervalValue;
+  final List<int> intervalWeekdays;
 
   DailyThing({
     String? id,
@@ -35,9 +38,11 @@ class DailyThing {
     this.history = const [],
     this.nagTime,
     this.nagMessage,
-    this.frequencyInDays = 1,
-    this.category = 'None', // Default category
+    this.category = 'None',
     this.isPaused = false,
+    this.intervalType = IntervalType.byDays,
+    this.intervalValue = 1,
+    this.intervalWeekdays = const [],
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -74,8 +79,12 @@ class DailyThing {
       return !todayDate.isBefore(startDate);
     }
 
-    final difference = todayDate.difference(lastDone).inDays;
-    return difference >= frequencyInDays;
+    if (intervalType == IntervalType.byDays) {
+      final difference = todayDate.difference(lastDone).inDays;
+      return difference >= intervalValue;
+    } else {
+      return intervalWeekdays.contains(todayDate.weekday);
+    }
   }
 
   bool get completedForToday {
@@ -122,9 +131,11 @@ class DailyThing {
       'history': history.map((entry) => entry.toJson()).toList(),
       'nagTime': nagTime?.toIso8601String(),
       'nagMessage': nagMessage,
-      'frequencyInDays': frequencyInDays,
       'category': category,
       'isPaused': isPaused,
+      'intervalType': intervalType.toString().split('.').last,
+      'intervalValue': intervalValue,
+      'intervalWeekdays': intervalWeekdays,
     };
   }
 
@@ -165,10 +176,18 @@ class DailyThing {
           ? null
           : DateTime.parse(json['nagTime'] as String),
       nagMessage: json['nagMessage'] as String?,
-      frequencyInDays: json['frequencyInDays'] as int? ?? 1,
       category:
           json['category'] as String? ?? 'None', // Backwards compatibility
       isPaused: json['isPaused'] as bool? ?? false,
+      intervalType: json['intervalType'] == null
+          ? IntervalType.byDays
+          : IntervalType.values.firstWhere(
+              (e) => e.toString().split('.').last == json['intervalType']),
+      intervalValue:
+          json['intervalValue'] as int? ?? json['frequencyInDays'] as int? ?? 1,
+      intervalWeekdays: json['intervalWeekdays'] == null
+          ? []
+          : List<int>.from(json['intervalWeekdays']),
     );
   }
 }

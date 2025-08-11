@@ -3,6 +3,8 @@ import 'package:daily_inc/src/data/history_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
+import 'package:daily_inc/src/views/widgets/interval_selection_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -31,7 +33,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _startValueController;
   late TextEditingController _durationController;
   late TextEditingController _endValueController;
-  late TextEditingController _frequencyController;
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
   late TextEditingController _categoryController; // New category controller
@@ -39,6 +40,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
   final _log = Logger('AddEditDailyItemView');
+
+  // New state variables for the unified interval widget
+  IntervalType _selectedIntervalType = IntervalType.byDays;
+  int _intervalValue = 1;
+  List<int> _selectedWeekdays = [];
   List<String> _uniqueCategories = [];
 
   bool _didChangeDependencies = false;
@@ -61,8 +67,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         TextEditingController(text: existingItem?.duration.toString() ?? '30');
     _endValueController =
         TextEditingController(text: existingItem?.endValue.toString());
-    _frequencyController = TextEditingController(
-        text: existingItem?.frequencyInDays.toString() ?? '1');
     _nagTimeController = TextEditingController();
     _nagMessageController = TextEditingController();
     _categoryController = TextEditingController(
@@ -92,6 +96,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     if (existingItem != null) {
       _log.info('Editing existing item: ${existingItem.name}');
       _selectedItemType = existingItem.itemType;
+      _selectedIntervalType = existingItem.intervalType;
+      _intervalValue = existingItem.intervalValue;
+      _selectedWeekdays = existingItem.intervalWeekdays;
       if (existingItem.nagTime != null) {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
       }
@@ -128,7 +135,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _startValueController.dispose();
     _durationController.dispose();
     _endValueController.dispose();
-    _frequencyController.dispose();
     _nagTimeController.dispose();
     _nagMessageController.dispose();
     _categoryController.dispose(); // Dispose category controller
@@ -248,6 +254,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           }
         }
 
+        // Handle interval logic
+        var finalIntervalType = _selectedIntervalType;
+        var finalIntervalValue = _intervalValue;
+        var finalIntervalWeekdays = _selectedWeekdays;
+
+        if (_selectedIntervalType == IntervalType.byWeekdays) {
+          if (finalIntervalWeekdays.isEmpty) {
+            // No weekdays selected, revert to default
+            finalIntervalType = IntervalType.byDays;
+            finalIntervalValue = 1;
+          }
+        }
+
         final newItem = DailyThing(
           id: widget.dailyThing?.id,
           icon: _iconController.text,
@@ -262,10 +281,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           nagMessage: _nagMessageController.text.isEmpty
               ? null
               : _nagMessageController.text,
-          frequencyInDays: int.parse(_frequencyController.text.trim()),
           category: _categoryController.text.isEmpty
               ? 'None'
               : _categoryController.text,
+          intervalType: finalIntervalType,
+          intervalValue: finalIntervalValue,
+          intervalWeekdays: finalIntervalWeekdays,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -432,23 +453,17 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     );
                   },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _frequencyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Frequency (days)',
-                    hintText: '1',
-                    prefixIcon: Icon(Icons.repeat),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a frequency';
-                    }
-                    if (int.tryParse(value) == null || int.parse(value) < 1) {
-                      return 'Please enter a valid number greater than 0';
-                    }
-                    return null;
+                const SizedBox(height: 24),
+                IntervalSelectionWidget(
+                  initialIntervalType: _selectedIntervalType,
+                  initialIntervalValue: _intervalValue,
+                  initialWeekdays: _selectedWeekdays,
+                  onChanged: (type, value, weekdays) {
+                    setState(() {
+                      _selectedIntervalType = type;
+                      _intervalValue = value ?? 1;
+                      _selectedWeekdays = weekdays ?? [];
+                    });
                   },
                 ),
                 const SizedBox(height: 24),
