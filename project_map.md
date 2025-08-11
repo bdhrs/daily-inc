@@ -220,3 +220,4 @@ This document provides a map of the project, listing the location of all functio
   - `_toggleTimer()` / `_runCountdown()` / `_onTimerComplete()` [`lib/src/views/timer_view.dart:50`](lib/src/views/timer_view.dart:50): Starts/stops timer, ticks each second, and marks done with sound.
   - `_exitTimerDisplay()` / `_formatTime(int)` [`lib/src/views/timer_view.dart:135`](lib/src/views/timer_view.dart:135): Leaves the screen and formats mm:ss.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Shows the timer UI and controls.
+  - `_buildGoalRow(BuildContext context)` [`lib/src/views/timer_view.dart:488`](lib/src/views/timer_view.dart:488): Displays the start/end/increment values.

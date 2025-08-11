@@ -31,7 +31,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
   final Map<String, GlobalKey> _expansionTileKeys = {};
   final _log = Logger('DailyThingsView');
   bool _hasShownCompletionSnackbar = false;
-  bool _allTasksCompleted = false;
   bool _showOnlyDueItems = true;
   bool _hideWhenDone = false;
   bool _motivationCheckedThisBuild = false;
@@ -87,7 +86,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
     } else {
       _log.warning('No items to load.');
       setState(() {
-        _allTasksCompleted = false;
         _hasShownCompletionSnackbar = false;
       });
     }
@@ -390,7 +388,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
       );
       setState(() {
         _hasShownCompletionSnackbar = true;
-        _allTasksCompleted = true;
       });
       // ignore: use_build_context_synchronously
       showDialog<void>(
@@ -408,7 +405,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
     } else if (!allCompleted) {
       setState(() {
         _hasShownCompletionSnackbar = false;
-        _allTasksCompleted = false;
       });
     }
   }
