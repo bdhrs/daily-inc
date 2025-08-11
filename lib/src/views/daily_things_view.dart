@@ -271,14 +271,15 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
-  Widget _buildItemRow(DailyThing item, int index, int nextUndoneIndex) {
+  Widget _buildItemRow(
+      DailyThing item, int index, int nextUndoneIndex, bool allTasksCompleted) {
     // Initialize expansion state if not already set - always start closed
     _isExpanded.putIfAbsent(item.id, () => false);
 
     final dailyThingItem = DailyThingItem(
       item: item,
       dataManager: _dataManager,
-      allTasksCompleted: _allTasksCompleted,
+      allTasksCompleted: allTasksCompleted,
       onEdit: _editDailyThing,
       onDelete: _deleteDailyThing,
       onDuplicate: _duplicateItem,
@@ -467,14 +468,21 @@ class _DailyThingsViewState extends State<DailyThingsView>
       _maybeShowMotivation();
     }
     _log.info('build called');
-    List<DailyThing> displayedItems = _showOnlyDueItems
+    // First, determine all items that are due today. This list is used to calculate the "all done" status.
+    final List<DailyThing> dueItems = _showOnlyDueItems
         ? _dailyThings
             .where((item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
             .toList()
         : _dailyThings;
 
+    // The "all completed" status should be based on all due items, regardless of visibility.
+    final allTasksCompleted =
+        dueItems.isNotEmpty && dueItems.every((item) => item.completedForToday);
+
+    // Now, create the list of items to actually display, applying the "hide when done" filter.
+    List<DailyThing> displayedItems = dueItems;
     if (_hideWhenDone) {
-      displayedItems = displayedItems.where((item) {
+      displayedItems = dueItems.where((item) {
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
 
@@ -512,7 +520,14 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Inc'),
+        title: Text(
+          'Daily Inc',
+          style: TextStyle(
+            color: allTasksCompleted
+                ? Theme.of(context).colorScheme.primary
+                : null,
+          ),
+        ),
         actions: [
           // Essential actions that should always be visible
           IconButton(
@@ -520,6 +535,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
                 _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
             icon: Icon(
               _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
+              color: allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
             ),
             onPressed: () async {
               final newValue = !_hideWhenDone;
@@ -533,14 +551,19 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
           IconButton(
             tooltip: _allExpanded ? 'Collapse all items' : 'Expand all items',
-            icon: Icon(_allExpanded ? Icons.expand_less : Icons.expand_more),
+            icon: Icon(
+              _allExpanded ? Icons.expand_less : Icons.expand_more,
+              color: allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
             onPressed: _expandAllVisibleItems,
           ),
           IconButton(
             tooltip: 'Add an item',
             icon: Icon(
               Icons.add,
-              color: _allTasksCompleted
+              color: allTasksCompleted
                   ? Theme.of(context).colorScheme.primary
                   : null,
             ),
@@ -549,7 +572,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
           // All other actions in a single overflow menu to prevent title cropping
           PopupMenuButton<String>(
             tooltip: 'More options',
-            icon: const Icon(Icons.more_vert),
+            icon: Icon(
+              Icons.more_vert,
+              color: allTasksCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
             onSelected: (value) {
               switch (value) {
                 case 'toggle_due':
@@ -679,7 +707,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
           return Padding(
             key: ValueKey(item.id),
             padding: const EdgeInsets.symmetric(vertical: 3.0),
-            child: _buildItemRow(item, index, nextUndoneIndex),
+            child:
+                _buildItemRow(item, index, nextUndoneIndex, allTasksCompleted),
           );
         }).toList(),
       ),
