@@ -102,9 +102,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
   Widget build(BuildContext context) {
     // For CHECK type, visual state should not depend on past history; if due, it's initially not done and takes one tap to mark done.
     // We still use completedForToday for MINUTES/REPS logic elsewhere.
-    final isCompletedToday = widget.item.itemType == ItemType.check
-        ? widget.item.hasBeenDoneLiterallyToday
-        : widget.item.completedForToday;
+    final isCompletedToday = widget.item.completedForToday;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -145,7 +143,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             ? Theme.of(context).colorScheme.primary
                             : _hasIncompleteProgress(widget.item)
                                 ? ColorPalette.partialYellow
-                                : Theme.of(context).colorScheme.error,
+                                : widget.allTasksCompleted
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(width: 12),
                       if (widget.item.icon != null)
@@ -371,7 +371,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   isPaused: !widget.item.isPaused,
                                   intervalType: widget.item.intervalType,
                                   intervalValue: widget.item.intervalValue,
-                                  intervalWeekdays: widget.item.intervalWeekdays,
+                                  intervalWeekdays:
+                                      widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);
@@ -527,7 +528,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   isPaused: !widget.item.isPaused,
                                   intervalType: widget.item.intervalType,
                                   intervalValue: widget.item.intervalValue,
-                                  intervalWeekdays: widget.item.intervalWeekdays,
+                                  intervalWeekdays:
+                                      widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);
