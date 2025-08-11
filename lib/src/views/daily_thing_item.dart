@@ -367,9 +367,11 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   history: widget.item.history,
                                   nagTime: widget.item.nagTime,
                                   nagMessage: widget.item.nagMessage,
-                                  frequencyInDays: widget.item.frequencyInDays,
                                   category: widget.item.category,
                                   isPaused: !widget.item.isPaused,
+                                  intervalType: widget.item.intervalType,
+                                  intervalValue: widget.item.intervalValue,
+                                  intervalWeekdays: widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);
@@ -521,9 +523,11 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   history: widget.item.history,
                                   nagTime: widget.item.nagTime,
                                   nagMessage: widget.item.nagMessage,
-                                  frequencyInDays: widget.item.frequencyInDays,
                                   category: widget.item.category,
                                   isPaused: !widget.item.isPaused,
+                                  intervalType: widget.item.intervalType,
+                                  intervalValue: widget.item.intervalValue,
+                                  intervalWeekdays: widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);

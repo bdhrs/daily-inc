@@ -150,9 +150,13 @@ This document provides a map of the project, listing the location of all functio
   - `_formatValue(double value, ItemType itemType)` method: [`lib/src/views/daily_thing_item.dart:60`](lib/src/views/daily_thing_item.dart:60)
   - `_hasIncompleteProgress(DailyThing item)` method: [`lib/src/views/daily_thing_item.dart:76`](lib/src/views/daily_thing_item.dart:76)
   - `build(BuildContext context)` method: [`lib/src/views/daily_thing_item.dart:100`](lib/src/views/daily_thing_item.dart:100)
-
-## lib/src/views/daily_things_view.dart
-- `DailyThingsView` class: [`lib/src/views/daily_things_view.dart:15`](lib/src/views/daily_things_view.dart:15)
+  
+  ## lib/src/views/widgets/interval_selection_widget.dart
+  - `IntervalSelectionWidget` class [`lib/src/views/widgets/interval_selection_widget.dart:4`](lib/src/views/widgets/interval_selection_widget.dart:4): A unified widget for selecting intervals (by days or weekdays).
+  - `_IntervalSelectionWidgetState` class [`lib/src/views/widgets/interval_selection_widget.dart:19`](lib/src/views/widgets/interval_selection_widget.dart:19): Manages the state for the interval selection widget.
+  
+  ## lib/src/views/daily_things_view.dart
+  - `DailyThingsView` class: [`lib/src/views/daily_things_view.dart:15`](lib/src/views/daily_things_view.dart:15)
 - `_DailyThingsViewState` class: [`lib/src/views/daily_things_view.dart:22`](lib/src/views/daily_things_view.dart:22)
   - `_dataManager` variable: [`lib/src/views/daily_things_view.dart:23`](lib/src/views/daily_things_view.dart:23)
   - `_dailyThings` variable: [`lib/src/views/daily_things_view.dart:24`](lib/src/views/daily_things_view.dart:24)

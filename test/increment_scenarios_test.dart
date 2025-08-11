@@ -475,7 +475,7 @@ void main() {
           startValue: 10,
           duration: 10,
           endValue: 20,
-          frequencyInDays: 2, // Every 2 days
+          intervalValue: 2, // Every 2 days
           history: [
             HistoryEntry(
               date: yesterdayDate,
@@ -501,7 +501,7 @@ void main() {
           startValue: 10,
           duration: 10,
           endValue: 20,
-          frequencyInDays: 2, // Every 2 days
+          intervalValue: 2, // Every 2 days
           history: [
             HistoryEntry(
               date: twoDaysAgoDate,

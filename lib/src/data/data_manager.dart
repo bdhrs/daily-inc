@@ -61,7 +61,10 @@ class DataManager {
               nagTime: thing.nagTime,
               nagMessage: thing.nagMessage,
               category: thing.category,
-              frequencyInDays: thing.frequencyInDays,
+              isPaused: thing.isPaused,
+              intervalType: thing.intervalType,
+              intervalValue: thing.intervalValue,
+              intervalWeekdays: thing.intervalWeekdays,
             ));
           } else {
             fixedThings.add(thing);

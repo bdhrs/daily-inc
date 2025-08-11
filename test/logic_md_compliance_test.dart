@@ -22,7 +22,7 @@ void main() {
         endValue: 20,
         duration: 10,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
@@ -47,7 +47,7 @@ void main() {
         endValue: 20,
         duration: 10,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
@@ -72,7 +72,7 @@ void main() {
         endValue: 20,
         duration: 10,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 15, doneToday: true)
         ],
@@ -106,7 +106,7 @@ void main() {
         endValue: 30,
         duration: 30,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
@@ -131,7 +131,7 @@ void main() {
         endValue: 30,
         duration: 30,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
@@ -157,7 +157,7 @@ void main() {
         endValue: 30,
         duration: 30,
         itemType: ItemType.minutes,
-        frequencyInDays: 1,
+        intervalValue: 1,
         history: [
           HistoryEntry(date: lastEntryDate, targetValue: 50, doneToday: true)
         ],
