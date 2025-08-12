@@ -263,6 +263,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       );
       if (acknowledged == true) {
         await _dataManager.setLastMotivationShownDate(ymd);
+        _refreshDisplay();
       }
     } catch (e, s) {
       _log.severe('Error showing motivation dialog', e, s);
