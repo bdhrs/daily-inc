@@ -3,7 +3,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
@@ -37,12 +36,11 @@ class _TimerViewState extends State<TimerView> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
 
   double get _todaysTargetMinutes => widget.item.todayValue;
 
-  double get _elapsedMinutes {
-    // Prefer persisted actualValue (partial progress) for today if present,
-    // so top-row reflects previously done time even before starting this session.
+  double get _currentElapsedTimeInMinutes {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
@@ -56,14 +54,21 @@ class _TimerViewState extends State<TimerView> {
       }
     }
 
-    final persisted = todaysEntry?.actualValue ?? 0.0;
+    final persistedMinutes = todaysEntry?.actualValue ?? 0.0;
 
-    // Also include this session's elapsed time once the timer starts.
-    final sessionElapsedSeconds = _originalTotalSeconds - _remainingSeconds;
-    final sessionElapsedMinutes = sessionElapsedSeconds / 60.0;
+    if (_isOvertime) {
+      final baseMinutes = _originalTotalSeconds / 60.0;
+      final overtimeMinutes = _overtimeSeconds / 60.0;
+      return persistedMinutes + baseMinutes + overtimeMinutes;
+    }
 
-    // If timer hasn't started, show only persisted value; otherwise add both.
-    return _hasStarted ? (persisted + sessionElapsedMinutes) : persisted;
+    if (_hasStarted) {
+      final sessionElapsedSeconds = _originalTotalSeconds - _remainingSeconds;
+      final sessionElapsedMinutes = sessionElapsedSeconds / 60.0;
+      return persistedMinutes + sessionElapsedMinutes;
+    }
+
+    return persistedMinutes;
   }
 
   String _formatMinutesToMmSs(double minutesValue) {
@@ -71,22 +76,6 @@ class _TimerViewState extends State<TimerView> {
     final mm = (totalSeconds ~/ 60).toString().padLeft(2, '0');
     final ss = (totalSeconds % 60).toString().padLeft(2, '0');
     return '$mm:$ss';
-  }
-
-  String _formatValue(double value, ItemType itemType) {
-    if (itemType == ItemType.minutes) {
-      if (value.truncateToDouble() == value) {
-        return '${value.toInt()}m';
-      } else {
-        final minutes = value.truncate();
-        final seconds = ((value - minutes) * 60).round();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}';
-      }
-    } else if (itemType == ItemType.reps) {
-      return '${value.round()}x';
-    } else {
-      return value >= 1 ? '✅' : '❌';
-    }
   }
 
   @override
@@ -143,6 +132,9 @@ class _TimerViewState extends State<TimerView> {
     }
     _originalTotalSeconds = _remainingSeconds;
     _log.info('--- TIMER INITIALIZATION END ---');
+    _commentFocusNode.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -150,6 +142,7 @@ class _TimerViewState extends State<TimerView> {
     _log.info('dispose called');
     _timer?.cancel();
     _commentController.dispose();
+    _commentFocusNode.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -160,8 +153,13 @@ class _TimerViewState extends State<TimerView> {
       _isPaused = !_isPaused;
       if (!_isPaused) {
         _log.info('Timer started, enabling wakelock.');
-        _hasStarted = true; // Mark that timer has been started
+        _hasStarted = true;
         WakelockPlus.enable();
+        final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
+        if (isFinished) {
+          _isOvertime = true;
+        }
+
         if (_isOvertime) {
           _runOvertime();
         } else {
@@ -183,7 +181,7 @@ class _TimerViewState extends State<TimerView> {
       }
       setState(() {
         _overtimeSeconds++;
-        _totalTimeCompleted = (_originalTotalSeconds + _overtimeSeconds) / 60.0;
+        _totalTimeCompleted = _currentElapsedTimeInMinutes;
       });
     });
   }
@@ -207,16 +205,12 @@ class _TimerViewState extends State<TimerView> {
 
   void _onTimerComplete() async {
     _log.info('onTimerComplete called');
-
-    // Play notification with sound and vibration (works even with screen off)
     await _playTimerCompleteNotification();
-
     WakelockPlus.disable();
     _log.info('Wakelock disabled.');
 
     setState(() {
-      _isOvertime = true;
-      _totalTimeCompleted = _originalTotalSeconds / 60.0;
+      _totalTimeCompleted = _currentElapsedTimeInMinutes;
       _isPaused = true;
     });
   }
@@ -226,18 +220,12 @@ class _TimerViewState extends State<TimerView> {
     _log.info(
         'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _originalTotalSeconds=$_originalTotalSeconds, _isOvertime=$_isOvertime');
 
-    // Stop the timer immediately when exiting
     _timer?.cancel();
     _log.info('Timer stopped');
     WakelockPlus.disable();
 
     if (_isOvertime) {
-      final shouldSave = await _showSaveDialog(isOvertime: true);
-      if (shouldSave == true) {
-        await _saveTotalProgress();
-      } else if (shouldSave == null) {
-        return; // User cancelled
-      }
+      await _saveTotalProgress();
     } else if (_hasStarted &&
         _remainingSeconds > 0 &&
         _remainingSeconds < _originalTotalSeconds) {
@@ -247,7 +235,7 @@ class _TimerViewState extends State<TimerView> {
 
       if (shouldSave == null) {
         _log.info('User cancelled dialog, not exiting');
-        return; // User cancelled dialog
+        return;
       }
 
       if (shouldSave) {
@@ -262,10 +250,6 @@ class _TimerViewState extends State<TimerView> {
       Navigator.of(context).pop();
     }
   }
-
-  // Unused formatting functions removed:
-  // - _formatTime: redundant with _formatMinutesToMmSs
-  // - _formatElapsedTotalTime: not used in UI
 
   Future<bool?> _showSaveDialog({bool isOvertime = false}) async {
     return showDialog<bool>(
@@ -300,13 +284,11 @@ class _TimerViewState extends State<TimerView> {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    // Calculate actual minutes completed in this session
     final secondsCompleted = _originalTotalSeconds - _remainingSeconds;
     final sessionMinutes = secondsCompleted / 60.0;
     _log.info(
         'Session completed: ${secondsCompleted}s = ${sessionMinutes.toStringAsFixed(2)}min');
 
-    // Find existing partial progress for today
     HistoryEntry? existingEntry;
     for (final entry in widget.item.history) {
       final entryDate =
@@ -317,14 +299,13 @@ class _TimerViewState extends State<TimerView> {
       }
     }
 
-    // Calculate accumulated minutes
     final accumulatedMinutes =
         (existingEntry?.actualValue ?? 0.0) + sessionMinutes;
 
     final newEntry = HistoryEntry(
       date: todayDate,
       targetValue: widget.item.todayValue,
-      doneToday: false, // Mark as incomplete
+      doneToday: false,
       actualValue: accumulatedMinutes,
       comment: _commentController.text,
     );
@@ -334,25 +315,7 @@ class _TimerViewState extends State<TimerView> {
         .toList()
       ..add(newEntry);
 
-    final updatedItem = DailyThing(
-      id: widget.item.id,
-      icon: widget.item.icon,
-      name: widget.item.name,
-      itemType: widget.item.itemType,
-      startDate: widget.item.startDate,
-      startValue: widget.item.startValue,
-      duration: widget.item.duration,
-      endValue: widget.item.endValue,
-      history: updatedHistory,
-      nagTime: widget.item.nagTime,
-      nagMessage: widget.item.nagMessage,
-      category: widget.item.category,
-      isPaused: widget.item.isPaused,
-      intervalType: widget.item.intervalType,
-      intervalValue: widget.item.intervalValue,
-      intervalWeekdays: widget.item.intervalWeekdays,
-    );
-
+    final updatedItem = _createUpdatedItem(updatedHistory);
     await widget.dataManager.updateDailyThing(updatedItem);
     _log.info(
         'Saved partial progress: $sessionMinutes minutes (total: $accumulatedMinutes)');
@@ -407,9 +370,9 @@ class _TimerViewState extends State<TimerView> {
     _log.info('build called');
 
     return PopScope(
-      canPop: false, // Prevent default back navigation
+      canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) return; // Already handled
+        if (didPop) return;
         _log.info('System back button pressed');
         await _exitTimerDisplay();
       },
@@ -420,132 +383,45 @@ class _TimerViewState extends State<TimerView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top line 1: item name (small bold)
+                _buildTopInfoRow(context),
+                const SizedBox(height: 4),
                 Text(
-                  widget.item.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: ColorPalette.lightText,
+                  _isOvertime
+                      ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
+                      : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color:
+                        ColorPalette.lightText.withAlpha((255 * 0.7).round()),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-
-                // New Row for Start/End/Increment
-                _buildGoalRow(context),
-
-                const SizedBox(height: 12),
-
-                // Center content expands
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Group 2: The two timers
-                      _isOvertime
-                          ? Column(
-                              children: [
-                                Text(
-                                  'Total Time:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: ColorPalette.lightText
-                                        .withAlpha((255 * 0.7).round()),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _formatMinutesToMmSs(_totalTimeCompleted),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 60,
-                                    color: ColorPalette.lightText,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                Text(
-                                  '${_formatMinutesToMmSs(_elapsedMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: ColorPalette.lightText
-                                        .withAlpha((255 * 0.7).round()),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 4),
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    const maxTimeText = "88:88";
-                                    final textPainter = TextPainter(
-                                      text: const TextSpan(
-                                        text: maxTimeText,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      textDirection: TextDirection.ltr,
-                                    );
-                                    textPainter.layout();
-
-                                    final fontSize =
-                                        (constraints.maxWidth * 0.9) /
-                                            textPainter.width *
-                                            12;
-
-                                    return SizedBox(
-                                      width: constraints.maxWidth,
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          _formatMinutesToMmSs(
-                                              (_todaysTargetMinutes -
-                                                      _elapsedMinutes)
-                                                  .clamp(0.0, double.infinity)),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: fontSize,
-                                            color: ColorPalette.lightText,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          softWrap: false,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                    ],
-                  ),
+                  child: _isOvertime
+                      ? _buildOvertimeView()
+                      : _buildCountdownView(),
                 ),
-
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _commentController,
-                  decoration: const InputDecoration(
-                    labelText: 'Comment',
-                    hintText: 'Add an optional comment...',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _toggleTimer,
-                  child: Text(
-                    _isOvertime
-                        ? (_isPaused ? 'Continue' : 'Pause')
-                        : (_isPaused ? 'Start' : 'Pause'),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _exitTimerDisplay,
-                  child: const Text('Exit'),
+                const SizedBox(height: 8),
+                _buildCommentField(),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _toggleTimer,
+                        child: Text(
+                          _getButtonText(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _exitTimerDisplay,
+                        child: const Text('Exit'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -555,71 +431,126 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
+  String _getButtonText() {
+    if (_remainingSeconds <= 0 && !_isOvertime) {
+      return 'Continue';
+    }
+    if (_isOvertime) {
+      return _isPaused ? 'Continue' : 'Pause';
+    }
+    return _isPaused ? 'Start' : 'Pause';
+  }
+
+  Widget _buildCountdownView() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Text(
+              _formatMinutesToMmSs(
+                  (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
+                      .clamp(0.0, double.infinity)),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: ColorPalette.lightText,
+              ),
+              textAlign: TextAlign.center,
+              softWrap: false,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOvertimeView() {
+    return LayoutBuilder(builder: (context, constraints) {
+      return SizedBox(
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: Text(
+            _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: ColorPalette.lightText,
+            ),
+            textAlign: TextAlign.center,
+            softWrap: false,
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildCommentField() {
+    if (!_commentFocusNode.hasFocus && _commentController.text.isEmpty) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            FocusScope.of(context).requestFocus(_commentFocusNode);
+          });
+        },
+        child: Text(
+          'add a comment',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withAlpha((255 * 0.6).round()),
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
+    return TextField(
+      controller: _commentController,
+      focusNode: _commentFocusNode,
+      textAlign: TextAlign.center,
+      style: const TextStyle(fontSize: 14),
+      decoration: const InputDecoration(
+        hintText: 'add a comment',
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+      ),
+    );
+  }
+
   Future<void> _playTimerCompleteNotification() async {
     _log.info('Playing timer complete notification');
 
     try {
-      // Try to play the bell sound first (for when app is in foreground)
       await _audioPlayer.play(AssetSource('bell.mp3'));
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
     }
   }
 
-  Widget _buildGoalRow(BuildContext context) {
+  Widget _buildTopInfoRow(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // start → end
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatValue(widget.item.startValue, widget.item.itemType),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                softWrap: false,
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.trending_flat, size: 18),
-              const SizedBox(width: 4),
-              Text(
-                _formatValue(widget.item.endValue, widget.item.itemType),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                softWrap: false,
-              ),
-            ],
+        Expanded(
+          child: Text(
+            widget.item.name,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: ColorPalette.lightText,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
-        ),
-        // increment
-        const SizedBox(width: 8),
-        Text(
-          (() {
-            final inc = widget.item.increment;
-            final sign = inc < 0 ? '-' : '+';
-            final absVal = inc.abs();
-            String numStr = absVal.toStringAsFixed(2);
-            numStr = numStr.replaceFirst(RegExp(r'\.00$'), '');
-            numStr = numStr.replaceFirst(RegExp(r'0$'), '');
-            return '$sign$numStr';
-          })(),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            fontSize: 13,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-          softWrap: false,
         ),
       ],
     );
