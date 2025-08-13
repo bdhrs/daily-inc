@@ -103,7 +103,22 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
+      - name: Setup Android Signing
+        id: setup_signing
+        env:
+          KEY_JKS: ${{ secrets.KEY_JKS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          ALIAS_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "$KEY_JKS" | base64 --decode > android/app/release.keystore
+          echo "storeFile=release.keystore" > android/key.properties
+          echo "storePassword=$KEY_PASSWORD" >> android/key.properties
+          echo "keyPassword=$ALIAS_PASSWORD" >> android/key.properties
+          echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+
       - name: Build Android APK
+        if: steps.setup_signing.outcome == 'success'
         run: |
           flutter build apk --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
