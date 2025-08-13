@@ -17,3 +17,6 @@
 # Project Map
 - A map of the project can be found in `project_map.md`. 
 - Keep this file updated as changes get made
+
+# Competition
+- After completing any task, give a one line, lowercase, simple git commit message. DO NOT COMMIT, allow the user to handle that. 
