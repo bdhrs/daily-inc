@@ -1,0 +1,142 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'The type of release to create.'
+        required: true
+        default: 'patch'
+        type: 'choice'
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  merge_dev:
+    if: github.event.inputs.release_type == 'major' || github.event.inputs.release_type == 'minor'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main and merge dev
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge dev into main
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git merge origin/dev --no-ff -m "Merge dev into main for release"
+          git push origin main
+
+  bump_version:
+    needs: [merge_dev]
+    if: always() # Run even if merge_dev is skipped
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      VERSION: ${{ steps.versioning.outputs.NEW_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          echo "Current version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: versioning
+        run: |
+          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+          if [ "${{ github.event.inputs.release_type }}" == "major" ]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [ "${{ github.event.inputs.release_type }}" == "minor" ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update pubspec.yaml and commit
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.versioning.outputs.NEW_VERSION }}+${{ github.run_number }}/" pubspec.yaml
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "Bump version to v${{ steps.versioning.outputs.NEW_VERSION }}"
+          git push
+  build_and_release:
+    needs: bump_version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build Android APK
+        run: |
+          flutter build apk --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
+
+      - name: Build Linux (AppImage)
+        run: |
+          sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          flutter build linux --release
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ./appimagetool build/linux/x64/release/bundle daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release v${{ needs.bump_version.outputs.VERSION }}
+          tag_name: v${{ needs.bump_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
+            daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+
+  sync_back_to_dev:
+    needs: build_and_release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout dev and merge main
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Merge main into dev
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git merge origin/main --no-ff -m "Sync main back to dev after release"
+          git push origin dev
