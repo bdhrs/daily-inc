@@ -21,16 +21,53 @@ jobs:
           git merge origin/dev --no-ff -m "Merge dev into main for release"
           git push origin main
 
-  build-android:
+  bump-version:
     needs: sync-main
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      VERSION: ${{ steps.set_version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Get version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          echo "Current version from pubspec: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set and bump version
+        id: set_version
+        run: |
+          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR_VERSION=$(( $(echo $CURRENT_VERSION | cut -d. -f2) + 1 ))
+          PATCH_VERSION=0
+          NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION"
+          echo "Release build. New version: $NEW_VERSION"
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update pubspec.yaml for release and commit
+        run: |
+          NEW_VERSION="${{ steps.set_version.outputs.VERSION }}"
+          sed -i "s/^version: .*/version: $NEW_VERSION+${{ github.run_number }}/" pubspec.yaml
+          echo "Updated pubspec.yaml with version $NEW_VERSION+${{ github.run_number }}"
+          
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "bump version to v${{ steps.set_version.outputs.VERSION }}"
+          git push
+
+  build-android:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/cache@v4
         with:
           path: |
@@ -46,38 +83,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Get version from pubspec.yaml
-        id: get_version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "Current version from pubspec: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Set and bump version
-        id: set_version
-        run: |
-          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
-          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR_VERSION=$(( $(echo $CURRENT_VERSION | cut -d. -f2) + 1 ))
-          PATCH_VERSION=0
-          NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION"
-          echo "Release build. New version: $NEW_VERSION"
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update pubspec.yaml for release and commit
-        run: |
-          NEW_VERSION="${{ steps.set_version.outputs.VERSION }}"
-          # Update pubspec.yaml. The +build_number will be github.run_number
-          sed -i "s/^version: .*/version: $NEW_VERSION+${{ github.run_number }}/" pubspec.yaml
-          echo "Updated pubspec.yaml with version $NEW_VERSION+${{ github.run_number }}"
-          
-          # Commit and push
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add pubspec.yaml
-          git commit -m "bump version to v${{ steps.set_version.outputs.VERSION }}"
-          git push
-
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
@@ -90,14 +95,14 @@ jobs:
           cd ../..
       
       - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.set_version.outputs.VERSION }} --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-name=${{ needs.bump-version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
       
       - name: Rename APK
         id: rename_apk
         run: |
-          VERSION_NAME="${{ steps.set_version.outputs.VERSION }}"
+          VERSION_NAME="${{ needs.bump-version.outputs.VERSION }}"
           BUILD_NUMBER="${{ github.run_number }}"
           APK_NAME="daily-inc-v$VERSION_NAME+$BUILD_NUMBER.apk"
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$APK_NAME
@@ -111,13 +116,10 @@ jobs:
           path: ${{ steps.rename_apk.outputs.APK_PATH }}
 
   build-linux:
-    needs: sync-main
+    needs: bump-version
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/cache@v4
         with:
           path: |
@@ -129,38 +131,6 @@ jobs:
         with:
           channel: 'stable'
           cache: true
-
-      - name: Get version from pubspec.yaml
-        id: get_version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "Current version from pubspec: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Set and bump version
-        id: set_version
-        run: |
-          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
-          MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR_VERSION=$(( $(echo $CURRENT_VERSION | cut -d. -f2) + 1 ))
-          PATCH_VERSION=0
-          NEW_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION"
-          echo "Release build. New version: $NEW_VERSION"
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update pubspec.yaml for release and commit
-        run: |
-          NEW_VERSION="${{ steps.set_version.outputs.VERSION }}"
-          # Update pubspec.yaml. The +build_number will be github.run_number
-          sed -i "s/^version: .*/version: $NEW_VERSION+${{ github.run_number }}/" pubspec.yaml
-          echo "Updated pubspec.yaml with version $NEW_VERSION+${{ github.run_number }}"
-          
-          # Commit and push
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add pubspec.yaml
-          git commit -m "bump version to v${{ steps.set_version.outputs.VERSION }}"
-          git push
 
       - run: flutter pub get
       - run: flutter analyze
@@ -180,11 +150,8 @@ jobs:
   build-appimage:
     runs-on: ubuntu-latest
     needs: build-linux
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/download-artifact@v4
         with:
           name: linux-build
@@ -221,7 +188,7 @@ jobs:
           path: daily-inc.AppImage
 
   create-release:
-    needs: [build-android, build-appimage]
+    needs: [build-android, build-appimage, bump-version]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -237,17 +204,11 @@ jobs:
           name: android-apk
           path: artifacts/android
 
-      - name: Get version
-        id: get_version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release v${{ steps.get_version.outputs.VERSION }}+${{ github.run_number }}
-          tag_name: v${{ steps.get_version.outputs.VERSION }}+${{ github.run_number }}
+          name: Release v${{ needs.bump-version.outputs.VERSION }}+${{ github.run_number }}
+          tag_name: v${{ needs.bump-version.outputs.VERSION }}+${{ github.run_number }}
           draft: true
           prerelease: false
           files: |
