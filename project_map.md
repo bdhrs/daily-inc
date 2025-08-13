@@ -225,17 +225,17 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.
   - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
-- `_TimerViewState` class [`lib/src/views/timer_view.dart:28`](lib/src/views/timer_view.dart:28): Manages all timer states: countdown, paused, finished, and overtime.
-  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:46`](lib/src/views/timer_view.dart:46): Calculates the total time elapsed, including persisted history and the current session.
-  - `_toggleTimer()` [`lib/src/views/timer_view.dart:181`](lib/src/views/timer_view.dart:181): Starts, pauses, or continues the timer. Triggers overtime mode only when 'Continue' is pressed.
-  - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:200`](lib/src/views/timer_view.dart:200): Main timer loops for countdown and overtime, run by `_toggleTimer`.
-  - `_onTimerComplete()` [`lib/src/views/timer_view.dart:222`](lib/src/views/timer_view.dart:222): Plays a sound and pauses the timer at zero, waiting for user to 'Continue' or 'Exit'.
-  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:234`](lib/src/views/timer_view.dart:234): Handles exiting the screen, saving partial time with a dialog or total time automatically on overtime.
-  - `_savePartialProgress()` / `_saveTotalProgress()` [`lib/src/views/timer_view.dart:297`](lib/src/views/timer_view.dart:297): Saves partial or total progress to history.
-  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:406`](lib/src/views/timer_view.dart:406): Renders the main UI with a responsive timer, info text, comment field, and controls.
-  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:483`](lib/src/views/timer_view.dart:483): Builds the main timer display, using `LayoutBuilder` and `FittedBox` to maximize its size.
-  - `_buildCommentField()` [`lib/src/views/timer_view.dart:531`](lib/src/views/timer_view.dart:531): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
-  - `_getButtonText()` [`lib/src/views/timer_view.dart:579`](lib/src/views/timer_view.dart:579): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
+- `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
+  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:43`](lib/src/views/timer_view.dart:43): Calculates the total time elapsed, including persisted history and the current session.
+  - `_toggleTimer()` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Starts, pauses, or continues the timer. Triggers overtime mode only when 'Continue' is pressed.
+  - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:189`](lib/src/views/timer_view.dart:189): Main timer loops for countdown and overtime, run by `_toggleTimer`.
+  - `_onTimerComplete()` [`lib/src/views/timer_view.dart:206`](lib/src/views/timer_view.dart:206): Plays a sound, pauses the timer, and automatically saves the completed progress.
+  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:218`](lib/src/views/timer_view.dart:218): Handles exiting the screen, showing a dialog for partial progress or updating the final overtime value.
+  - `_saveProgress()` [`lib/src/views/timer_view.dart:281`](lib/src/views/timer_view.dart:281): A unified method to save or update today's history entry, preventing duplicates.
+  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:368`](lib/src/views/timer_view.dart:368): Renders the main UI with a responsive timer, info text, comment field, and controls.
+  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:444`](lib/src/views/timer_view.dart:444): Builds the main timer display, using `LayoutBuilder` and `FittedBox` to maximize its size.
+  - `_buildCommentField()` [`lib/src/views/timer_view.dart:490`](lib/src/views/timer_view.dart:490): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
+  - `_getButtonText()` [`lib/src/views/timer_view.dart:434`](lib/src/views/timer_view.dart:434): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
 
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
