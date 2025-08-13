@@ -9,9 +9,10 @@ on:
         default: 'patch'
         type: 'choice'
         options:
-          - patch
-          - minor
           - major
+          - minor
+          - patch
+          
 
 jobs:
   merge_dev:
@@ -89,6 +90,7 @@ jobs:
           git push
   build_and_release:
     needs: bump_version
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -157,6 +159,7 @@ jobs:
 
   sync_back_to_dev:
     needs: build_and_release
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
