@@ -9,9 +9,10 @@ on:
         default: 'patch'
         type: 'choice'
         options:
-          - patch
-          - minor
           - major
+          - minor
+          - patch
+          
 
 jobs:
   merge_dev:
@@ -43,7 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Sync with remote
+        run: git pull origin main
 
       - name: Get version from pubspec.yaml
         id: get_version
@@ -85,6 +90,7 @@ jobs:
           git push
   build_and_release:
     needs: bump_version
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -99,32 +105,61 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
+      - name: Setup Android Signing
+        id: setup_signing
+        env:
+          KEY_JKS: ${{ secrets.KEY_JKS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          ALIAS_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "$KEY_JKS" | base64 --decode > android/app/release.keystore
+          echo "storeFile=release.keystore" > android/key.properties
+          echo "storePassword=$KEY_PASSWORD" >> android/key.properties
+          echo "keyPassword=$ALIAS_PASSWORD" >> android/key.properties
+          echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+
       - name: Build Android APK
+        if: steps.setup_signing.outcome == 'success'
         run: |
           flutter build apk --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
 
-      - name: Build Linux (AppImage)
+      
+
+      - name: Generate Changelog
+        id: changelog
         run: |
-          sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-          flutter build linux --release
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-          chmod +x appimagetool
-          ./appimagetool build/linux/x64/release/bundle daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          # Generate changelog from commits since the latest tag
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD)
+          # Make the changelog safe to use in JSON/multiline strings
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release v${{ needs.bump_version.outputs.VERSION }}
           tag_name: v${{ needs.bump_version.outputs.VERSION }}
+          body: |
+            **Changelog**
+            ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
           files: |
             build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
-            daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+            
 
   sync_back_to_dev:
     needs: build_and_release
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
