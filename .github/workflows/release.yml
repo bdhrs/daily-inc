@@ -123,13 +123,7 @@ jobs:
           flutter build apk --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
 
-      - name: Build Linux (AppImage)
-        run: |
-          sudo apt-get update && sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-          flutter build linux --release
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-          chmod +x appimagetool
-          ./appimagetool build/linux/x64/release/bundle daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+      
 
       - name: Generate Changelog
         id: changelog
@@ -159,7 +153,7 @@ jobs:
           prerelease: false
           files: |
             build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
-            daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
+            
 
   sync_back_to_dev:
     needs: build_and_release

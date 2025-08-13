@@ -19,6 +19,7 @@ AppDir:
       - libappindicator3-1
       - libayatana-appindicator3-1
       - libdbusmenu-gtk3-4
+      - libfuse2
   runtime:
     env:
       PATH: /usr/bin:/bin
