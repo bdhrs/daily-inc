@@ -1,16 +1,15 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val localProperties = java.util.Properties()
+import java.util.Properties
+
+val localProperties = Properties()
 val localPropertiesFile = rootProject.file("../local.properties")
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { stream ->
-        localProperties.load(stream)
-    }
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 val flutterVersionCode: String? = localProperties.getProperty("flutter.versionCode")
@@ -32,10 +31,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.daily_inc"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = (flutterVersionCode ?: "1").toInt()
@@ -44,7 +40,6 @@ android {
 
     signingConfigs {
         create("release") {
-            // Use a unique keystore for release builds to avoid installation conflicts
             storeFile = file("release.keystore")
             storePassword = "daily_inc_release"
             keyAlias = "daily_inc_key"
@@ -54,7 +49,6 @@ android {
 
     buildTypes {
         release {
-            // Use the release signing configuration
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
