@@ -116,11 +116,30 @@ jobs:
           chmod +x appimagetool
           ./appimagetool build/linux/x64/release/bundle daily-inc-v${{ needs.bump_version.outputs.VERSION }}.AppImage
 
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          # Generate changelog from commits since the latest tag
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD)
+          # Make the changelog safe to use in JSON/multiline strings
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release v${{ needs.bump_version.outputs.VERSION }}
           tag_name: v${{ needs.bump_version.outputs.VERSION }}
+          body: |
+            **Changelog**
+            ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
           files: |
