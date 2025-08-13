@@ -213,6 +213,8 @@ class _TimerViewState extends State<TimerView> {
       _totalTimeCompleted = _currentElapsedTimeInMinutes;
       _isPaused = true;
     });
+
+    await _saveProgress();
   }
 
   Future<void> _exitTimerDisplay() async {
@@ -224,25 +226,29 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Timer stopped');
     WakelockPlus.disable();
 
+    // If exiting during overtime, the 'done' state is already saved.
+    // We just need to update with the final overtime value.
     if (_isOvertime) {
-      await _saveTotalProgress();
-    } else if (_hasStarted &&
+      await _saveProgress();
+    }
+    // If we have partial progress, show a confirmation dialog.
+    else if (_hasStarted &&
         _remainingSeconds > 0 &&
         _remainingSeconds < _originalTotalSeconds) {
-      _log.info('Showing save dialog for partial progress');
       final shouldSave = await _showSaveDialog();
-      _log.info('Save dialog result: $shouldSave');
-
-      if (shouldSave == null) {
-        _log.info('User cancelled dialog, not exiting');
-        return;
+      if (shouldSave == true) {
+        await _saveProgress();
+      } else if (shouldSave == null) {
+        return; // User cancelled, so don't exit.
       }
-
-      if (shouldSave) {
-        await _savePartialProgress();
-      }
-    } else {
-      _log.info('Save dialog conditions not met, exiting without prompt');
+    }
+    // If the timer finished but isn't in overtime yet, save it.
+    else if (_hasStarted && _remainingSeconds <= 0 && !_isOvertime) {
+      await _saveProgress();
+    }
+    // Otherwise, no progress needs to be saved.
+    else {
+      _log.info('No save condition met, exiting.');
     }
 
     widget.onExitCallback();
@@ -278,70 +284,31 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
-  Future<void> _savePartialProgress() async {
-    _log.info('Saving partial progress');
+  Future<void> _saveProgress() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final isDone = _currentElapsedTimeInMinutes >= _todaysTargetMinutes;
 
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    final secondsCompleted = _originalTotalSeconds - _remainingSeconds;
-    final sessionMinutes = secondsCompleted / 60.0;
     _log.info(
-        'Session completed: ${secondsCompleted}s = ${sessionMinutes.toStringAsFixed(2)}min');
-
-    HistoryEntry? existingEntry;
-    for (final entry in widget.item.history) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate == todayDate && !entry.doneToday) {
-        existingEntry = entry;
-        break;
-      }
-    }
-
-    final accumulatedMinutes =
-        (existingEntry?.actualValue ?? 0.0) + sessionMinutes;
+        'Saving progress. Done: $isDone, Time: ${_currentElapsedTimeInMinutes.toStringAsFixed(2)} min');
 
     final newEntry = HistoryEntry(
-      date: todayDate,
+      date: today,
       targetValue: widget.item.todayValue,
-      doneToday: false,
-      actualValue: accumulatedMinutes,
+      doneToday: isDone,
+      actualValue: _currentElapsedTimeInMinutes,
       comment: _commentController.text,
     );
 
+    // Remove any existing entry for today to prevent duplicates.
+    // This ensures we are always UPSERTING the day's progress.
     final updatedHistory = widget.item.history
-        .where((entry) => entry.date != todayDate || entry.doneToday)
+        .where((entry) => !DateUtils.isSameDay(entry.date, today))
         .toList()
       ..add(newEntry);
 
     final updatedItem = _createUpdatedItem(updatedHistory);
     await widget.dataManager.updateDailyThing(updatedItem);
-    _log.info(
-        'Saved partial progress: $sessionMinutes minutes (total: $accumulatedMinutes)');
-  }
-
-  Future<void> _saveTotalProgress() async {
-    _log.info('Saving total progress');
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    final newEntry = HistoryEntry(
-      date: todayDate,
-      targetValue: widget.item.todayValue,
-      doneToday: true,
-      actualValue: _totalTimeCompleted,
-      comment: _commentController.text,
-    );
-
-    final updatedHistory = widget.item.history
-        .where((entry) => entry.date != todayDate)
-        .toList()
-      ..add(newEntry);
-
-    final updatedItem = _createUpdatedItem(updatedHistory);
-    await widget.dataManager.updateDailyThing(updatedItem);
-    _log.info('Saved total progress: $_totalTimeCompleted minutes');
+    _log.info('Progress saved successfully.');
   }
 
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
