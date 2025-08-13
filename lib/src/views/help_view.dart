@@ -237,7 +237,7 @@ class HelpView extends StatelessWidget {
             onEdit: (_) {},
             onDelete: (_) {},
             onDuplicate: (_) {},
-            showFullscreenTimer: (_) {},
+            showFullscreenTimer: (item, {startInOvertime = false}) {},
             showRepsInputDialog: (_) {},
             checkAndShowCompletionSnackbar: () {},
             isExpanded: true, // Keep it expanded for the help view

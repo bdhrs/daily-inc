@@ -12,7 +12,7 @@ class DailyThingItem extends StatefulWidget {
   final Function(DailyThing) onEdit;
   final Function(DailyThing) onDelete;
   final Function(DailyThing) onDuplicate;
-  final Function(DailyThing) showFullscreenTimer;
+  final Function(DailyThing, {bool startInOvertime}) showFullscreenTimer;
   final Function(DailyThing) showRepsInputDialog;
   final Function checkAndShowCompletionSnackbar;
   final bool isExpanded;
@@ -41,24 +41,6 @@ class DailyThingItem extends StatefulWidget {
 }
 
 class _DailyThingItemState extends State<DailyThingItem> {
-  late bool _isExpanded;
-
-  @override
-  void initState() {
-    super.initState();
-    _isExpanded = widget.isExpanded;
-  }
-
-  @override
-  void didUpdateWidget(DailyThingItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isExpanded != widget.isExpanded) {
-      setState(() {
-        _isExpanded = widget.isExpanded;
-      });
-    }
-  }
-
   String _formatValue(double value, ItemType itemType) {
     if (itemType == ItemType.minutes) {
       if (value.truncateToDouble() == value) {
@@ -113,12 +95,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
           key: ValueKey(
               '${widget.item.id}_${widget.isExpanded}_${widget.item.completedForToday}'),
           initiallyExpanded: widget.isExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _isExpanded = expanded;
-            });
-            widget.onExpansionChanged(expanded);
-          },
+          onExpansionChanged: widget.onExpansionChanged,
           trailing: const SizedBox.shrink(),
           tilePadding: EdgeInsets.zero,
           childrenPadding: EdgeInsets.zero,
@@ -186,10 +163,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       onTap: () async {
                         if (widget.item.itemType == ItemType.minutes) {
                           if (isCompletedToday) {
-                            setState(() {
-                              _isExpanded = !_isExpanded;
-                            });
-                            widget.onExpansionChanged(_isExpanded);
+                            widget.showFullscreenTimer(widget.item,
+                                startInOvertime: true);
                           } else {
                             widget.showFullscreenTimer(widget.item);
                           }

@@ -12,12 +12,14 @@ class TimerView extends StatefulWidget {
   final DailyThing item;
   final DataManager dataManager;
   final VoidCallback onExitCallback;
+  final bool startInOvertime;
 
   const TimerView({
     super.key,
     required this.item,
     required this.dataManager,
     required this.onExitCallback,
+    this.startInOvertime = false,
   });
 
   @override
@@ -26,13 +28,11 @@ class TimerView extends StatefulWidget {
 
 class _TimerViewState extends State<TimerView> {
   late int _remainingSeconds;
-  late int _originalTotalSeconds;
   bool _isPaused = true;
   bool _hasStarted = false;
   Timer? _timer;
   bool _isOvertime = false;
   int _overtimeSeconds = 0;
-  double _totalTimeCompleted = 0.0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
@@ -48,7 +48,7 @@ class _TimerViewState extends State<TimerView> {
     for (final entry in widget.item.history) {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate == todayDate && !entry.doneToday) {
+      if (entryDate == todayDate) {
         todaysEntry = entry;
         break;
       }
@@ -57,15 +57,16 @@ class _TimerViewState extends State<TimerView> {
     final persistedMinutes = todaysEntry?.actualValue ?? 0.0;
 
     if (_isOvertime) {
-      final baseMinutes = _originalTotalSeconds / 60.0;
+      final targetMinutes = _todaysTargetMinutes;
       final overtimeMinutes = _overtimeSeconds / 60.0;
-      return persistedMinutes + baseMinutes + overtimeMinutes;
+      return targetMinutes + overtimeMinutes;
     }
 
     if (_hasStarted) {
-      final sessionElapsedSeconds = _originalTotalSeconds - _remainingSeconds;
-      final sessionElapsedMinutes = sessionElapsedSeconds / 60.0;
-      return persistedMinutes + sessionElapsedMinutes;
+      final elapsedSeconds =
+          (_todaysTargetMinutes * 60).round() - _remainingSeconds;
+      final sessionElapsedMinutes = elapsedSeconds / 60.0;
+      return sessionElapsedMinutes;
     }
 
     return persistedMinutes;
@@ -81,6 +82,11 @@ class _TimerViewState extends State<TimerView> {
   @override
   void initState() {
     super.initState();
+    if (widget.startInOvertime) {
+      _isOvertime = true;
+      _isPaused = true;
+      _hasStarted = true;
+    }
     _log.info('--- TIMER INITIALIZATION START ---');
     _log.info('Item Name: ${widget.item.name}');
     _log.info('Item Type: ${widget.item.itemType}');
@@ -98,39 +104,34 @@ class _TimerViewState extends State<TimerView> {
       final entryDate = DateUtils.dateOnly(entry.date);
       _log.info(
           'Checking history: date=$entryDate, actual=${entry.actualValue}, done=${entry.doneToday}, target=${entry.targetValue}');
-      if (entryDate == todayDate &&
-          entry.actualValue != null &&
-          !entry.doneToday) {
+      if (entryDate == todayDate) {
+        // Find any entry for today, regardless of completion state.
+        // This is crucial for correctly resuming overtime.
         todayEntry = entry;
-        _log.info('Found matching entry for today.');
+        _log.info(
+            'Found entry for today (done: ${entry.doneToday}, actual: ${entry.actualValue}).');
         break;
       }
     }
 
     if (todayEntry != null) {
-      _log.info('Partial progress found for today.');
       final dailyTarget = widget.item.todayValue;
-      final completedMinutes = todayEntry.actualValue!;
-      final remainingMinutes = dailyTarget - completedMinutes;
-
-      _log.info('--- Calculation Details ---');
-      _log.info('Daily Target (from item.todayValue): $dailyTarget min');
-      _log.info('Completed (from entry.actualValue): $completedMinutes min');
-      _log.info('Calculated Remaining: $remainingMinutes min');
-
-      final safeRemainingMinutes = remainingMinutes.clamp(0.0, double.infinity);
-      _remainingSeconds = (safeRemainingMinutes * 60).round();
-
-      _log.info('Clamped Remaining: $safeRemainingMinutes min');
-      _log.info('Final Remaining Seconds: $_remainingSeconds');
+      final completedMinutes = todayEntry.actualValue ?? 0.0;
+      if (widget.startInOvertime || completedMinutes >= dailyTarget) {
+        _isOvertime = true;
+        _isPaused = true;
+        _hasStarted = true;
+        final overtimeMinutes = completedMinutes - dailyTarget;
+        _overtimeSeconds =
+            (overtimeMinutes > 0) ? (overtimeMinutes * 60).round() : 0;
+        _remainingSeconds = 0;
+      } else {
+        final remainingMinutes = dailyTarget - completedMinutes;
+        _remainingSeconds = (remainingMinutes * 60).round();
+      }
     } else {
-      _log.info('No partial progress found. Using full daily target.');
-      final dailyTarget = widget.item.todayValue;
-      _remainingSeconds = (dailyTarget * 60).round();
-      _log.info('Daily Target: $dailyTarget min');
-      _log.info('Final Remaining Seconds: $_remainingSeconds');
+      _remainingSeconds = (widget.item.todayValue * 60).round();
     }
-    _originalTotalSeconds = _remainingSeconds;
     _log.info('--- TIMER INITIALIZATION END ---');
     _commentFocusNode.addListener(() {
       setState(() {});
@@ -181,7 +182,6 @@ class _TimerViewState extends State<TimerView> {
       }
       setState(() {
         _overtimeSeconds++;
-        _totalTimeCompleted = _currentElapsedTimeInMinutes;
       });
     });
   }
@@ -210,7 +210,6 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Wakelock disabled.');
 
     setState(() {
-      _totalTimeCompleted = _currentElapsedTimeInMinutes;
       _isPaused = true;
     });
 
@@ -220,7 +219,7 @@ class _TimerViewState extends State<TimerView> {
   Future<void> _exitTimerDisplay() async {
     _log.info('exitTimerDisplay called');
     _log.info(
-        'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _originalTotalSeconds=$_originalTotalSeconds, _isOvertime=$_isOvertime');
+        'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _isOvertime=$_isOvertime');
 
     _timer?.cancel();
     _log.info('Timer stopped');
@@ -232,9 +231,7 @@ class _TimerViewState extends State<TimerView> {
       await _saveProgress();
     }
     // If we have partial progress, show a confirmation dialog.
-    else if (_hasStarted &&
-        _remainingSeconds > 0 &&
-        _remainingSeconds < _originalTotalSeconds) {
+    else if (_hasStarted && _remainingSeconds > 0) {
       final shouldSave = await _showSaveDialog();
       if (shouldSave == true) {
         await _saveProgress();
@@ -300,7 +297,7 @@ class _TimerViewState extends State<TimerView> {
     );
 
     // Remove any existing entry for today to prevent duplicates.
-    // This ensures we are always UPSERTING the day's progress.
+    // This ensures we are always updating or creating the day's progress.
     final updatedHistory = widget.item.history
         .where((entry) => !DateUtils.isSameDay(entry.date, today))
         .toList()
@@ -455,37 +452,26 @@ class _TimerViewState extends State<TimerView> {
   }
 
   Widget _buildCommentField() {
-    if (!_commentFocusNode.hasFocus && _commentController.text.isEmpty) {
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            FocusScope.of(context).requestFocus(_commentFocusNode);
-          });
-        },
-        child: Text(
-          'add a comment',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withAlpha((255 * 0.6).round()),
-            fontSize: 14,
-          ),
-        ),
-      );
-    }
-    return TextField(
-      controller: _commentController,
-      focusNode: _commentFocusNode,
-      textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 14),
-      decoration: const InputDecoration(
-        hintText: 'add a comment',
-        isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).requestFocus(_commentFocusNode);
+      },
+      child: TextField(
+        controller: _commentController,
+        focusNode: _commentFocusNode,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'add a comment',
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border:
+              _commentFocusNode.hasFocus || _commentController.text.isNotEmpty
+                  ? const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    )
+                  : InputBorder.none,
         ),
       ),
     );
