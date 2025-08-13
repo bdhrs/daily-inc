@@ -115,6 +115,11 @@ class _TimerViewState extends State<TimerView> {
     }
 
     if (todayEntry != null) {
+      // Load existing comment
+      if (todayEntry.comment != null && todayEntry.comment!.isNotEmpty) {
+        _commentController.text = todayEntry.comment!;
+      }
+
       final dailyTarget = widget.item.todayValue;
       final completedMinutes = todayEntry.actualValue ?? 0.0;
       if (widget.startInOvertime || completedMinutes >= dailyTarget) {
@@ -235,6 +240,8 @@ class _TimerViewState extends State<TimerView> {
       final shouldSave = await _showSaveDialog();
       if (shouldSave == true) {
         await _saveProgress();
+      } else if (shouldSave == false) {
+        await _saveCommentOnly();
       } else if (shouldSave == null) {
         return; // User cancelled, so don't exit.
       }
@@ -245,6 +252,7 @@ class _TimerViewState extends State<TimerView> {
     }
     // Otherwise, no progress needs to be saved.
     else {
+      await _saveCommentOnly();
       _log.info('No save condition met, exiting.');
     }
 
@@ -306,6 +314,56 @@ class _TimerViewState extends State<TimerView> {
     final updatedItem = _createUpdatedItem(updatedHistory);
     await widget.dataManager.updateDailyThing(updatedItem);
     _log.info('Progress saved successfully.');
+  }
+
+  Future<void> _saveCommentOnly() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    HistoryEntry? todayEntry;
+    int todayEntryIndex = -1;
+
+    for (int i = 0; i < widget.item.history.length; i++) {
+      if (DateUtils.isSameDay(widget.item.history[i].date, today)) {
+        todayEntry = widget.item.history[i];
+        todayEntryIndex = i;
+        break;
+      }
+    }
+
+    final currentComment = _commentController.text;
+
+    // If the comment is the same, no need to save.
+    if (todayEntry != null && todayEntry.comment == currentComment) {
+      return;
+    }
+
+    // If the comment is empty and there's no existing entry, no need to save.
+    if (todayEntry == null && currentComment.isEmpty) {
+      return;
+    }
+
+    final updatedHistory = List<HistoryEntry>.from(widget.item.history);
+
+    if (todayEntry != null) {
+      // Update existing entry
+      final updatedEntry = todayEntry.copyWith(comment: currentComment);
+      updatedHistory[todayEntryIndex] = updatedEntry;
+    } else {
+      // Add new entry if comment is not empty
+      if (currentComment.isNotEmpty) {
+        final newEntry = HistoryEntry(
+          date: today,
+          targetValue: widget.item.todayValue,
+          doneToday: false,
+          actualValue: 0,
+          comment: currentComment,
+        );
+        updatedHistory.add(newEntry);
+      }
+    }
+
+    final updatedItem = _createUpdatedItem(updatedHistory);
+    await widget.dataManager.updateDailyThing(updatedItem);
+    _log.info('Comment saved successfully.');
   }
 
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {

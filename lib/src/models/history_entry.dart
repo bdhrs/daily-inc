@@ -86,4 +86,20 @@ class HistoryEntry {
       );
     }
   }
+
+  HistoryEntry copyWith({
+    DateTime? date,
+    double? targetValue,
+    bool? doneToday,
+    double? actualValue,
+    String? comment,
+  }) {
+    return HistoryEntry(
+      date: date ?? this.date,
+      targetValue: targetValue ?? this.targetValue,
+      doneToday: doneToday ?? this.doneToday,
+      actualValue: actualValue ?? this.actualValue,
+      comment: comment ?? this.comment,
+    );
+  }
 }
