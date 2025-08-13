@@ -5,6 +5,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("../local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream ->
+        localProperties.load(stream)
+    }
+}
+
+val flutterVersionCode: String? = localProperties.getProperty("flutter.versionCode")
+val flutterVersionName: String? = localProperties.getProperty("flutter.versionName")
+
 android {
     namespace = "com.example.daily_inc"
     compileSdk = flutter.compileSdkVersion
@@ -27,9 +38,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Note: versionCode and versionName will be overridden by flutter build command
-        versionCode = 1
-        versionName = "0.1.1"
+        versionCode = (flutterVersionCode ?: "1").toInt()
+        versionName = flutterVersionName ?: "0.1.1"
     }
 
     signingConfigs {
