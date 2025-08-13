@@ -223,7 +223,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
-  void _showFullscreenTimer(DailyThing item) {
+  void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
     _log.info('Showing fullscreen timer for: ${item.name}');
     Navigator.push(
       context,
@@ -232,6 +232,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           item: item,
           dataManager: _dataManager,
           onExitCallback: _refreshDisplay,
+          startInOvertime: startInOvertime,
         ),
       ),
     ).then((_) {
