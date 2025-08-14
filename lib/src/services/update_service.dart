@@ -47,15 +47,15 @@ class UpdateService {
           latestRelease['tag_name'].toString().replaceFirst('v', '');
       final currentVersionStr = await getCurrentAppVersion();
 
-      _log.info(
-          'Latest version: $latestVersionStr, Current version: $currentVersionStr');
+      _log.info('Current app version: $currentVersionStr');
+      _log.info('Latest GitHub release version: $latestVersionStr');
 
       final latestVersion = Version.parse(latestVersionStr);
       final currentVersion = Version.parse(currentVersionStr);
 
-      final isUpdateAvailable = latestVersion > currentVersion;
-      _log.info('Update available: $isUpdateAvailable');
-      return isUpdateAvailable;
+      final isNewer = latestVersion > currentVersion;
+      _log.info('Is newer version available? $isNewer');
+      return isNewer;
     } catch (e, st) {
       _log.severe('Error checking for update', e, st);
       return false;
@@ -70,8 +70,10 @@ class UpdateService {
 
     final assets = release['assets'] as List<dynamic>?;
     if (assets == null || assets.isEmpty) {
+      _log.warning('No assets found in the latest release.');
       return null;
     }
+    _log.info('Found assets: ${assets.map((a) => a['name']).join(', ')}');
 
     try {
       final androidAsset = assets.firstWhere(
@@ -80,9 +82,11 @@ class UpdateService {
           return name != null && name.toLowerCase().endsWith('.apk');
         },
       );
-      return androidAsset['browser_download_url'] as String?;
+      final downloadUrl = androidAsset['browser_download_url'] as String?;
+      _log.info('Selected download URL: $downloadUrl');
+      return downloadUrl;
     } catch (e) {
-      _log.info('No Android .apk asset found in the latest release.');
+      _log.warning('No Android .apk asset found in the latest release.');
       return null;
     }
   }

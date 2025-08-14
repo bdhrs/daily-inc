@@ -49,13 +49,14 @@ class _DailyThingsViewState extends State<DailyThingsView>
       _loadData();
     });
     _updateService.isUpdateAvailable().then((isAvailable) {
+      _log.info('Update check completed. Result: $isAvailable');
       if (isAvailable && mounted) {
-        _log.info('Update is available.');
+        _log.info('Update is available. Setting state to show indicator.');
         setState(() {
           _updateAvailable = true;
         });
       } else {
-        _log.info('No update available.');
+        _log.info('No update available or view is not mounted.');
       }
     });
   }
