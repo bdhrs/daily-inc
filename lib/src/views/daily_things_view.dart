@@ -14,6 +14,7 @@ import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
+import 'package:daily_inc/src/services/update_service.dart';
 import 'package:logging/logging.dart';
 
 class DailyThingsView extends StatefulWidget {
@@ -25,6 +26,7 @@ class DailyThingsView extends StatefulWidget {
 
 class _DailyThingsViewState extends State<DailyThingsView>
     with WidgetsBindingObserver {
+  final UpdateService _updateService = UpdateService();
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
@@ -35,6 +37,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _hideWhenDone = false;
   bool _motivationCheckedThisBuild = false;
   bool _allExpanded = false;
+  bool _updateAvailable = false;
 
   @override
   void initState() {
@@ -44,6 +47,16 @@ class _DailyThingsViewState extends State<DailyThingsView>
     // Load settings first to ensure they're available for first build
     _loadHideWhenDoneSetting().then((_) {
       _loadData();
+    });
+    _updateService.isUpdateAvailable().then((isAvailable) {
+      if (isAvailable && mounted) {
+        _log.info('Update is available.');
+        setState(() {
+          _updateAvailable = true;
+        });
+      } else {
+        _log.info('No update available.');
+      }
     });
   }
 
@@ -527,6 +540,83 @@ class _DailyThingsViewState extends State<DailyThingsView>
           ),
         ),
         actions: [
+          if (_updateAvailable)
+            Pulse(
+              pulseColor: Theme.of(context).primaryColor,
+              child: IconButton(
+                tooltip: 'Update available',
+                icon: const Icon(Icons.download),
+                onPressed: () async {
+                  final url = await _updateService.getDownloadUrl();
+                  if (url != null) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Download started...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    final filePath = await _updateService.downloadUpdate(url);
+                    if (filePath != null) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Download finished!'),
+                            duration: const Duration(seconds: 5),
+                            action: SnackBarAction(
+                              label: 'Install',
+                              onPressed: () async {
+                                try {
+                                  await _updateService.installUpdate(filePath);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Installation started...'),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text('Installation failed: $e'),
+                                        backgroundColor:
+                                            Theme.of(context).colorScheme.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Download failed.'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not get download URL.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
           // Essential actions that should always be visible
           IconButton(
             tooltip:
