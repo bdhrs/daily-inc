@@ -7,7 +7,7 @@ plugins {
 import java.util.Properties
 
 val localProperties = Properties()
-val localPropertiesFile = rootProject.file("../local.properties")
+val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
@@ -35,7 +35,7 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = (flutterVersionCode ?: "1").toInt()
-        versionName = flutterVersionName ?: "0.1.1"
+        versionName = flutterVersionName ?: "1.0.0"
     }
 
     signingConfigs {
