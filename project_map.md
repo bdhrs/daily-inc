@@ -71,6 +71,15 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/models/item_type.dart
 - `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, or check.
 
+## lib/src/services/update_service.dart
+- `UpdateService` class [`lib/src/services/update_service.dart:14`](lib/src/services/update_service.dart:14): Handles app update checks, downloads, and installation.
+  - `getLatestRelease()` [`lib/src/services/update_service.dart:11`](lib/src/services/update_service.dart:11): Fetches release details from the GitHub API.
+  - `getCurrentAppVersion()` [`lib/src/services/update_service.dart:28`](lib/src/services/update_service.dart:28): Retrieves the current installed app version.
+  - `isUpdateAvailable()` [`lib/src/services/update_service.dart:33`](lib/src/services/update_service.dart:33): Checks if a newer version is available on GitHub.
+  - `getDownloadUrl()` [`lib/src/services/update_service.dart:61`](lib/src/services/update_service.dart:61): Figures out the correct asset download URL for the platform.
+  - `downloadUpdate()` [`lib/src/services/update_service.dart:78`](lib/src/services/update_service.dart:78): Returns release URL but does not actually download the update (not implemented).
+  - `installUpdate()` [`lib/src/services/update_service.dart:93`](lib/src/services/update_service.dart:93): Stub method that does not actually install updates (not implemented).
+
 ## lib/src/theme/app_theme.dart
 - `AppTheme` class [`lib/src/theme/app_theme.dart:5`](lib/src/theme/app_theme.dart:5): Central place for the app’s dark theme look and feel.
   - `darkTheme` getter [`lib/src/theme/app_theme.dart:6`](lib/src/theme/app_theme.dart:6): Provides colors, fonts, and styles for dark mode.
@@ -83,13 +92,6 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
-
-## lib/src/views/category_graph_view.dart
-- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category.
-
-## lib/src/views/help_view.dart
-- `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.
-  - Properties `dataManager`, `dailyThing`, `onSubmitCallback` [`lib/src/views/add_edit_daily_item_view.dart:11`](lib/src/views/add_edit_daily_item_view.dart:11): Inputs for saving and callbacks.
 - `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:26`](lib/src/views/add_edit_daily_item_view.dart:26): Handles form state and input controllers.
   - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
   - Selections: `_selectedItemType`, `_selectedNagTime`, `_uniqueCategories` [`lib/src/views/add_edit_daily_item_view.dart:39`](lib/src/views/add_edit_daily_item_view.dart:39): Track current type/time and category options.
@@ -101,6 +103,9 @@ This document provides a map of the project, listing the location of all functio
   - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
   - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.
+
+## lib/src/views/category_graph_view.dart
+- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category.
 
 ## lib/src/views/daily_thing_item.dart
 - `DailyThingItem` class [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9): A single task row with controls and quick actions.
@@ -121,7 +126,8 @@ This document provides a map of the project, listing the location of all functio
   - `_showOnlyDueItems`, `_hideWhenDone` [`lib/src/views/daily_things_view.dart:36`](lib/src/views/daily_things_view.dart:36): Controls filtering and hiding.
   - `_motivationCheckedThisBuild` [`lib/src/views/daily_things_view.dart:38`](lib/src/views/daily_things_view.dart:38): Ensures motivation dialog is shown once per day.
   - `_allExpanded` [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39): Tracks expand/collapse all state.
-  - `initState()` / `dispose()` [`lib/src/views/daily_things_view.dart:42`](lib/src/views/daily_things_view.dart:42): Lifecycle to subscribe/unsubscribe and kick off loading.
+  - `_updateAvailable` [`lib/src/views/daily_things_view.dart:40`]: Tracks if a new update is available.
+  - `initState()` / `dispose()` [`lib/src/views/daily_things_view.dart:42`](lib/src/views/daily_things_view.dart:42): Lifecycle to subscribe/unsubscribe, kick off loading, and check for updates.
   - `_loadHideWhenDoneSetting()` / `_refreshHideWhenDoneSetting()` [`lib/src/views/daily_things_view.dart:52`](lib/src/views/daily_things_view.dart:52): Reads and updates the “hide done” preference.
   - `_loadData()` [`lib/src/views/daily_things_view.dart:78`](lib/src/views/daily_things_view.dart:78): Loads items and checks if everything is done.
   - `_refreshDisplay()` [`lib/src/views/daily_things_view.dart:97`](lib/src/views/daily_things_view.dart:97): Forces a rebuild and reloads items.
@@ -132,67 +138,14 @@ This document provides a map of the project, listing the location of all functio
   - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:256`](lib/src/views/daily_things_view.dart:256): Opens the minutes timer in full screen.
   - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:335`](lib/src/views/daily_things_view.dart:335): Prompts to enter reps and saves them.
   - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:347`](lib/src/views/daily_things_view.dart:347): Exports all items/history to JSON.
+  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:355`]: Checks for updates and shows a pulsing icon.
+  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:372`]: Manages the multi-step update process with user feedback.
   - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:400`](lib/src/views/daily_things_view.dart:400): Finds the next not-done item’s index.
   - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:426`](lib/src/views/daily_things_view.dart:426): Toggles expansion for filtered items.
   - `_checkAndShowCompletionSnackbar()` [`lib/src/views/daily_things_view.dart:486`](lib/src/views/daily_things_view.dart:486): Shows a message when all tasks are done.
   - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:526`](lib/src/views/daily_things_view.dart:526): Imports tasks from a JSON file and saves them.
   - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:568`](lib/src/views/daily_things_view.dart:568): Re-triggers motivation when app resumes.
-  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:575`](lib/src/views/daily_things_view.dart:575): Builds filters, menus, and the reorderable task list.
-
-## lib/src/views/daily_thing_item.dart
-- `DailyThingItem` class: [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9) - StatefulWidget for managing individual daily thing items
-  - `item` property: [`lib/src/views/daily_thing_item.dart:10`](lib/src/views/daily_thing_item.dart:10)
-  - `dataManager` property: [`lib/src/views/daily_thing_item.dart:11`](lib/src/views/daily_thing_item.dart:11)
-  - `onEdit` property: [`lib/src/views/daily_thing_item.dart:12`](lib/src/views/daily_thing_item.dart:12)
-  - `onDelete` property: [`lib/src/views/daily_thing_item.dart:13`](lib/src/views/daily_thing_item.dart:13)
-  - `onDuplicate` property: [`lib/src/views/daily_thing_item.dart:14`](lib/src/views/daily_thing_item.dart:14)
-  - `showFullscreenTimer` property: [`lib/src/views/daily_thing_item.dart:15`](lib/src/views/daily_thing_item.dart:15)
-  - `showRepsInputDialog` property: [`lib/src/views/daily_thing_item.dart:16`](lib/src/views/daily_thing_item.dart:16)
-  - `checkAndShowCompletionSnackbar` property: [`lib/src/views/daily_thing_item.dart:17`](lib/src/views/daily_thing_item.dart:17)
-  - `isExpanded` property: [`lib/src/views/daily_thing_item.dart:18`](lib/src/views/daily_thing_item.dart:18)
-  - `onExpansionChanged` property: [`lib/src/views/daily_thing_item.dart:19`](lib/src/views/daily_thing_item.dart:19)
-  - `allTasksCompleted` property: [`lib/src/views/daily_thing_item.dart:20`](lib/src/views/daily_thing_item.dart:20)
-- `_DailyThingItemState` class: [`lib/src/views/daily_thing_item.dart:41`](lib/src/views/daily_thing_item.dart:41) - State class for managing expansion state
-  - `_isExpanded` variable: [`lib/src/views/daily_thing_item.dart:42`](lib/src/views/daily_thing_item.dart:42)
-  - `initState()` method: [`lib/src/views/daily_thing_item.dart:44`](lib/src/views/daily_thing_item.dart:44)
-  - `didUpdateWidget(DailyThingItem oldWidget)` method: [`lib/src/views/daily_thing_item.dart:50`](lib/src/views/daily_thing_item.dart:50)
-  - `_formatValue(double value, ItemType itemType)` method: [`lib/src/views/daily_thing_item.dart:60`](lib/src/views/daily_thing_item.dart:60)
-  - `_hasIncompleteProgress(DailyThing item)` method: [`lib/src/views/daily_thing_item.dart:76`](lib/src/views/daily_thing_item.dart:76)
-  - `build(BuildContext context)` method: [`lib/src/views/daily_thing_item.dart:100`](lib/src/views/daily_thing_item.dart:100)
-  
-  ## lib/src/views/widgets/interval_selection_widget.dart
-  - `IntervalSelectionWidget` class [`lib/src/views/widgets/interval_selection_widget.dart:4`](lib/src/views/widgets/interval_selection_widget.dart:4): A unified widget for selecting intervals (by days or weekdays).
-  - `_IntervalSelectionWidgetState` class [`lib/src/views/widgets/interval_selection_widget.dart:19`](lib/src/views/widgets/interval_selection_widget.dart:19): Manages the state for the interval selection widget.
-  
-  ## lib/src/views/daily_things_view.dart
-  - `DailyThingsView` class: [`lib/src/views/daily_things_view.dart:15`](lib/src/views/daily_things_view.dart:15)
-- `_DailyThingsViewState` class: [`lib/src/views/daily_things_view.dart:22`](lib/src/views/daily_things_view.dart:22)
-  - `_dataManager` variable: [`lib/src/views/daily_things_view.dart:23`](lib/src/views/daily_things_view.dart:23)
-  - `_dailyThings` variable: [`lib/src/views/daily_things_view.dart:24`](lib/src/views/daily_things_view.dart:24)
-  - `_isExpanded` variable: [`lib/src/views/daily_things_view.dart:25`](lib/src/views/daily_things_view.dart:25)
-  - `_expansionTileKeys` variable: [`lib/src/views/daily_things_view.dart:26`](lib/src/views/daily_things_view.dart:26)
-  - `_log` variable: [`lib/src/views/daily_things_view.dart:27`](lib/src/views/daily_things_view.dart:27)
-  - `_hasShownCompletionSnackbar` variable: [`lib/src/views/daily_things_view.dart:29`](lib/src/views/daily_things_view.dart:29)
-  - `_allTasksCompleted` variable: [`lib/src/views/daily_things_view.dart:30`](lib/src/views/daily_things_view.dart:30)
-  - `_showOnlyDueItems` variable: [`lib/src/views/daily_things_view.dart:31`](lib/src/views/daily_things_view.dart:31)
-  - `_hideWhenDone` variable: [`lib/src/views/daily_things_view.dart:32`](lib/src/views/daily_things_view.dart:32)
-  - `_motivationCheckedThisBuild` variable: [`lib/src/views/daily_things_view.dart:33`](lib/src/views/daily_things_view.dart:33)
-  - `_allExpanded` variable: [`lib/src/views/daily_things_view.dart:34`](lib/src/views/daily_things_view.dart:34)
-  - `initState()` method: [`lib/src/views/daily_things_view.dart:34`](lib/src/views/daily_things_view.dart:34)
-  - `dispose()` method: [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39)
-  - `_loadData()` method: [`lib/src/views/daily_things_view.dart:46`](lib/src/views/daily_things_view.dart:46)
-  - `_refreshDisplay()` method: [`lib/src/views/daily_things_view.dart:59`](lib/src/views/daily_things_view.dart:59)
-  - `_openAddDailyItemPopup()` method: [`lib/src/views/daily_things_view.dart:64`](lib/src/views/daily_things_view.dart:64)
-  - `_editDailyThing(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:80`](lib/src/views/daily_things_view.dart:80)
-  - `_deleteDailyThing(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:112`](lib/src/views/daily_things_view.dart:112)
-  - `_showFullscreenTimer(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:171`](lib/src/views/daily_things_view.dart:171)
-  - `_buildItemRow(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:187`](lib/src/views/daily_things_view.dart:187)
-  - `_showRepsInputDialog(DailyThing item)` method: [`lib/src/views/daily_things_view.dart:205`](lib/src/views/daily_things_view.dart:205)
-  - `_saveHistoryToFile()` method: [`lib/src/views/daily_things_view.dart:217`](lib/src/views/daily_things_view.dart:217)
-  - `_expandAllVisibleItems()` method: [`lib/src/views/daily_things_view.dart:419`](lib/src/views/daily_things_view.dart:419) - Toggles expansion state of all visible items
-  - `_checkAndShowCompletionSnackbar()` method: [`lib/src/views/daily_things_view.dart:461`](lib/src/views/daily_things_view.dart:461)
-  - `_loadHistoryFromFile()` method: [`lib/src/views/daily_things_view.dart:495`](lib/src/views/daily_things_view.dart:495)
-  - `build(BuildContext context)` method: [`lib/src/views/daily_things_view.dart:561`](lib/src/views/daily_things_view.dart:561)
+  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:575`](lib/src/views/daily_things_view.dart:575): Builds filters, menus, the reorderable task list, and the AppBar with update notifications.
 
 ## lib/src/views/graph_view.dart
 - `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress.
@@ -205,6 +158,9 @@ This document provides a map of the project, listing the location of all functio
   - `_buildSpots()` [`lib/src/views/graph_view.dart:191`](lib/src/views/graph_view.dart:191): Produces a point per day from history for plotting.
   - `_getAllDatesFromStartToToday()` [`lib/src/views/graph_view.dart:227`](lib/src/views/graph_view.dart:227): Builds the full date range shown.
   - `_generateDateRange(DateTime start, DateTime end)` [`lib/src/views/graph_view.dart:250`](lib/src/views/graph_view.dart:250): Helper to create consecutive dates for the chart.
+
+## lib/src/views/help_view.dart
+- `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.
 
 ## lib/src/views/reps_input_dialog.dart
 - `RepsInputDialog` class [`lib/src/views/reps_input_dialog.dart:7`](lib/src/views/reps_input_dialog.dart:7): Dialog to enter how many reps you did today.
@@ -246,6 +202,10 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/widgets/graph_style_helpers.dart
 - `GraphStyle` class [`lib/src/views/widgets/graph_style_helpers.dart:6`](lib/src/views/widgets/graph_style_helpers.dart:6): Provides styling constants for graphs.
 - `GraphStyleHelpers` class [`lib/src/views/widgets/graph_style_helpers.dart:24`](lib/src/views/widgets/graph_style_helpers.dart:24): Provides helper functions for graph styling.
+
+## lib/src/views/widgets/interval_selection_widget.dart
+- `IntervalSelectionWidget` class [`lib/src/views/widgets/interval_selection_widget.dart:4`](lib/src/views/widgets/interval_selection_widget.dart:4): A unified widget for selecting intervals (by days or weekdays).
+- `_IntervalSelectionWidgetState` class [`lib/src/views/widgets/interval_selection_widget.dart:19`](lib/src/views/widgets/interval_selection_widget.dart:19): Manages the state for the interval selection widget.
 
 ## lib/src/views/widgets/pulse.dart
 - `Pulse` class [`lib/src/views/widgets/pulse.dart:4`](lib/src/views/widgets/pulse.dart:4): A widget that creates a pulsing effect around its child.

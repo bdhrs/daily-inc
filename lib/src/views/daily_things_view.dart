@@ -14,7 +14,10 @@ import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
+import 'package:daily_inc/src/services/update_service.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -25,6 +28,7 @@ class DailyThingsView extends StatefulWidget {
 
 class _DailyThingsViewState extends State<DailyThingsView>
     with WidgetsBindingObserver {
+  final UpdateService _updateService = UpdateService();
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
@@ -35,6 +39,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _hideWhenDone = false;
   bool _motivationCheckedThisBuild = false;
   bool _allExpanded = false;
+  bool _updateAvailable = false;
 
   @override
   void initState() {
@@ -44,6 +49,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
     // Load settings first to ensure they're available for first build
     _loadHideWhenDoneSetting().then((_) {
       _loadData();
+    });
+    _updateService.isUpdateAvailable().then((isAvailable) {
+      _log.info('Update check completed. Result: $isAvailable');
+      if (isAvailable && mounted) {
+        _log.info('Update is available. Setting state to show indicator.');
+        setState(() {
+          _updateAvailable = true;
+        });
+      } else {
+        _log.info('No update available or view is not mounted.');
+      }
     });
   }
 
@@ -527,6 +543,48 @@ class _DailyThingsViewState extends State<DailyThingsView>
           ),
         ),
         actions: [
+          if (_updateAvailable)
+            Pulse(
+              pulseColor: ColorPalette.primaryBlue,
+              child: IconButton(
+                tooltip: 'Download the latest release',
+                icon: const Icon(Icons.download),
+                onPressed: () async {
+                  // Get the latest release URL and open it in browser
+                  final url = await _updateService.getDownloadUrl();
+                  if (url != null) {
+                    // Open the URL in browser
+                    if (await launchUrl(Uri.parse(url))) {
+                      // Successfully opened URL
+                      _log.info('Opened download URL in browser: $url');
+                    } else {
+                      // Failed to open URL
+                      _log.warning('Could not launch download URL: $url');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Could not open download page in browser.'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    // Could not get download URL
+                    _log.warning('Could not get download URL from GitHub');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not get download URL.'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
           // Essential actions that should always be visible
           IconButton(
             tooltip:

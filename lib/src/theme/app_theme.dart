@@ -107,10 +107,12 @@ class AppTheme {
         hintStyle: const TextStyle(color: ColorPalette.secondaryText),
       ),
       // SnackBar theme
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         backgroundColor:
             ColorPalette.cardBackground, // Use card background for snackbar
-        contentTextStyle: TextStyle(color: ColorPalette.lightText),
+        contentTextStyle: const TextStyle(color: ColorPalette.lightText),
+        actionTextColor:
+            ColorPalette.primaryBlue, // Make action text more visible
       ),
       // Dialog theme
       dialogTheme: DialogThemeData(

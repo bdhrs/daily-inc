@@ -375,7 +375,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ItemType>(
-                  value: _selectedItemType,
+                  initialValue: _selectedItemType,
                   items: ItemType.values.map((type) {
                     return DropdownMenuItem(
                         value: type,
