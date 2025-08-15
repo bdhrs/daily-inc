@@ -1,3 +1,4 @@
+import 'package:daily_inc/src/core/value_converter.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/data/history_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -399,22 +400,41 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                  onChanged: widget.dailyThing == null
-                      ? (value) async {
-                          // Update selected type first
-                          _selectedItemType = value!;
-                          // Refresh category suggestions for the new type
-                          await _loadUniqueCategoriesForSelectedType();
-                          // If current category is not valid for this type, clear it
-                          final current = _categoryController.text.trim();
-                          if (current.isNotEmpty &&
-                              !_uniqueCategories.contains(current)) {
-                            _categoryController.text = '';
-                          }
-                          // Trigger rebuild after data and controller updates
-                          setState(() {});
-                        }
-                      : null,
+                  onChanged: (value) async {
+                    if (value == null) return;
+
+                    final currentDailyThing = DailyThing(
+                      name: _nameController.text,
+                      itemType: _selectedItemType,
+                      startDate: DateTime.now(),
+                      startValue:
+                          double.tryParse(_startValueController.text) ?? 0.0,
+                      duration: int.tryParse(_durationController.text) ?? 30,
+                      endValue:
+                          double.tryParse(_endValueController.text) ?? 0.0,
+                    );
+
+                    final converted =
+                        ValueConverter.convert(currentDailyThing, value);
+                    final newCategories =
+                        await widget.dataManager.getUniqueCategoriesForType(value);
+
+                    final currentCategory = _categoryController.text.trim();
+                    String newCategoryText = _categoryController.text;
+                    if (currentCategory.isNotEmpty &&
+                        !newCategories.contains(currentCategory)) {
+                      newCategoryText = '';
+                    }
+
+                    setState(() {
+                      _selectedItemType = value;
+                      _startValueController.text =
+                          converted.startValue.toString();
+                      _endValueController.text = converted.endValue.toString();
+                      _uniqueCategories = newCategories;
+                      _categoryController.text = newCategoryText;
+                    });
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Type',
                   ),
@@ -442,25 +462,22 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       TextEditingController fieldTextEditingController,
                       FocusNode fieldFocusNode,
                       VoidCallback onFieldSubmitted) {
-                    // Sync the field controller with our category controller
-                    if (fieldTextEditingController.text !=
-                        _categoryController.text) {
-                      fieldTextEditingController.text =
-                          _categoryController.text;
-                    }
-
-                    // Update our controller when field changes
-                    fieldTextEditingController.addListener(() {
-                      if (_categoryController.text !=
-                          fieldTextEditingController.text) {
-                        _categoryController.text =
-                            fieldTextEditingController.text;
+                    // Post-build callback to safely update the controller
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted &&
+                          fieldTextEditingController.text !=
+                              _categoryController.text) {
+                        fieldTextEditingController.text =
+                            _categoryController.text;
                       }
                     });
 
                     return TextFormField(
                       controller: fieldTextEditingController,
                       focusNode: fieldFocusNode,
+                      onChanged: (value) {
+                        _categoryController.text = value;
+                      },
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
                         labelText: 'Category',
