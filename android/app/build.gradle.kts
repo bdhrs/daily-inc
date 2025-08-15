@@ -12,6 +12,12 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+val keyProperties = Properties()
+val keyPropertiesFile = rootProject.file("key.properties")
+if (keyPropertiesFile.exists()) {
+    keyProperties.load(keyPropertiesFile.inputStream())
+}
+
 val flutterVersionCode: String? = localProperties.getProperty("flutter.versionCode")
 val flutterVersionName: String? = localProperties.getProperty("flutter.versionName")
 
@@ -40,10 +46,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = "daily_inc_release"
-            keyAlias = "daily_inc_key"
-            keyPassword = "daily_inc_release"
+            storeFile = file(keyProperties.getProperty("storeFile") ?: "release.keystore")
+            storePassword = keyProperties.getProperty("storePassword") ?: "daily_inc_release"
+            keyAlias = keyProperties.getProperty("keyAlias") ?: "daily_inc_key"
+            keyPassword = keyProperties.getProperty("keyPassword") ?: "daily_inc_release"
         }
     }
 

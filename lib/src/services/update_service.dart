@@ -78,11 +78,27 @@ class UpdateService {
   Future<String?> downloadUpdate(String url) async {
     try {
       _log.info('Release URL is accessible: $url');
+      _log.warning(
+          'DEBUG: downloadUpdate() called but only returns URL - no actual download implemented');
+      _log.warning(
+          'DEBUG: This is likely why automatic installation fails - no APK download logic');
       return url;
     } catch (e, st) {
       _log.severe(
           'An unexpected error occurred while checking release URL', e, st);
       return null;
+    }
+  }
+
+  Future<bool> installUpdate(String apkPath) async {
+    try {
+      _log.warning('DEBUG: installUpdate() called but not implemented');
+      _log.warning(
+          'DEBUG: This is why automatic installation fails - no installation logic');
+      return false;
+    } catch (e, st) {
+      _log.severe('Error installing update', e, st);
+      return false;
     }
   }
 }

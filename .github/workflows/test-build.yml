@@ -44,14 +44,22 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
-      - name: Generate Release Keystore
+      - name: Setup Android Signing
+        id: setup_signing
+        env:
+          KEY_JKS: ${{ secrets.KEY_JKS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          ALIAS_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          cd android/app
-          chmod +x ../generate-keystore.sh
-          ../generate-keystore.sh
-          cd ../..
+          echo "$KEY_JKS" | base64 --decode > android/app/release.keystore
+          echo "storeFile=release.keystore" > android/key.properties
+          echo "storePassword=$KEY_PASSWORD" >> android/key.properties
+          echo "keyPassword=$ALIAS_PASSWORD" >> android/key.properties
+          echo "keyAlias=$KEY_ALIAS" >> android/key.properties
 
       - name: Build per-ABI APKs
+        if: steps.setup_signing.outcome == 'success'
         run: flutter build apk --release --split-per-abi --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
