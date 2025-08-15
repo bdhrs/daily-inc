@@ -98,8 +98,9 @@ This document provides a map of the project, listing the location of all functio
   - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values.
   - `didChangeDependencies()` [`lib/src/views/add_edit_daily_item_view.dart:108`](lib/src/views/add_edit_daily_item_view.dart:108): Formats the time field when context is ready.
   - `dispose()` [`lib/src/views/add_edit_daily_item_view.dart:120`](lib/src/views/add_edit_daily_item_view.dart:120): Disposes controllers to avoid leaks.
-  - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment preview from inputs.
-  - `_updateIncrementField()` [`lib/src/views/add_edit_daily_item_view.dart:154`](lib/src/views/add_edit_daily_item_view.dart:154): Keeps the increment preview in sync.
+  - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment from inputs.
+  - `_updateIncrementField()` [`lib/src/views/add_edit_daily_item_view.dart:154`](lib/src/views/add_edit_daily_item_view.dart:154): Updates increment when duration changes.
+  - `_updateDurationFromIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:160`](lib/src/views/add_edit_daily_item_view.dart:160): Updates duration when increment changes.
   - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
   - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.

@@ -160,9 +160,25 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   void _updateIncrementField() {
     if (_incrementController != null) {
       _incrementController!.text = _calculateIncrement();
-      setState(() {
-        // This will trigger a rebuild with the updated increment value
-      });
+      setState(() {});
+    }
+  }
+
+  void _updateDurationFromIncrement() {
+    try {
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+      final increment = double.tryParse(_incrementController!.text) ?? 0.0;
+
+      if (increment == 0) return;
+
+      final newDuration = ((endValue - startValue) / increment).round();
+      if (newDuration > 0) {
+        _durationController.text = newDuration.toString();
+        setState(() {});
+      }
+    } catch (e) {
+      _log.warning('Error calculating duration from increment: $e');
     }
   }
 
@@ -570,8 +586,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a duration';
                             }
-                            if (int.tryParse(value) == null) {
+                            final duration = int.tryParse(value);
+                            if (duration == null) {
                               return 'Please enter a valid number';
+                            }
+                            if (duration <= 0) {
+                              return 'Duration must be positive';
                             }
                             return null;
                           },
@@ -580,37 +600,23 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
-                          decoration: InputDecoration(
+                          controller: _incrementController,
+                          decoration: const InputDecoration(
                             labelText: 'Increment',
                             hintText: '0.0',
-                            filled: true,
-                            fillColor: Theme.of(context)
-                                .disabledColor
-                                .withValues(alpha: 0.1),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context)
-                                    .disabledColor
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context)
-                                    .disabledColor
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
                           ),
                           keyboardType: TextInputType.number,
-                          readOnly: true,
-                          controller: _incrementController,
-                          style: TextStyle(
-                            color: Theme.of(context).disabledColor,
-                          ),
-                          onTap: () {
-                            // Do nothing, visually indicate it's not editable
-                            FocusScope.of(context).unfocus();
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter an increment';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            _updateDurationFromIncrement();
                           },
                         ),
                       ),
