@@ -6,7 +6,7 @@ on:
       release_type:
         description: 'The type of release to create.'
         required: true
-        default: 'patch'
+        default: 'minor'
         type: 'choice'
         options:
           - major
