@@ -1,16 +1,12 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 class UpdateService {
   final _log = Logger('UpdateService');
-  final _dio = Dio();
 
   Future<Map<String, dynamic>?> getLatestRelease() async {
     final url = Uri.parse(
@@ -68,66 +64,24 @@ class UpdateService {
       return null;
     }
 
-    final assets = release['assets'] as List<dynamic>?;
-    if (assets == null || assets.isEmpty) {
-      _log.warning('No assets found in the latest release.');
+    // Get the HTML URL for the release page instead of direct download URL
+    final releaseUrl = release['html_url'] as String?;
+    if (releaseUrl != null) {
+      _log.info('Release URL: $releaseUrl');
+      return releaseUrl;
+    } else {
+      _log.warning('No release URL found in the latest release.');
       return null;
-    }
-    _log.info('Found assets: ${assets.map((a) => a['name']).join(', ')}');
-
-    try {
-      final androidAsset = assets.firstWhere(
-        (asset) {
-          final name = asset['name'] as String?;
-          return name != null && name.toLowerCase().endsWith('.apk');
-        },
-      );
-      final downloadUrl = androidAsset['browser_download_url'] as String?;
-      _log.info('Selected download URL: $downloadUrl');
-      return downloadUrl;
-    } catch (e) {
-      _log.warning('No Android .apk asset found in the latest release.');
-      return null;
-    }
-  }
-
-  Future<void> installUpdate(String filePath) async {
-    _log.info('Attempting to install update from $filePath');
-    try {
-      final result = await OpenFile.open(filePath);
-      if (result.type == ResultType.done) {
-        _log.info('Installation started successfully.');
-      } else {
-        _log.warning(
-            'Failed to start installation: ${result.type} - ${result.message}');
-        throw Exception('Failed to start installation: ${result.message}');
-      }
-    } catch (e, st) {
-      _log.severe('Error installing update', e, st);
-      rethrow;
     }
   }
 
   Future<String?> downloadUpdate(String url) async {
     try {
-      final downloadsDir = await getDownloadsDirectory();
-      if (downloadsDir == null) {
-        _log.severe('Could not get downloads directory.');
-        return null;
-      }
-      final filePath = '${downloadsDir.path}/${url.split('/').last}';
-
-      _log.info('Downloading update from $url to $filePath');
-
-      await _dio.download(url, filePath);
-
-      _log.info('Download complete.');
-      return filePath;
-    } on DioException catch (e, st) {
-      _log.severe('Failed to download update', e, st);
-      return null;
+      _log.info('Release URL is accessible: $url');
+      return url;
     } catch (e, st) {
-      _log.severe('An unexpected error occurred during download', e, st);
+      _log.severe(
+          'An unexpected error occurred while checking release URL', e, st);
       return null;
     }
   }

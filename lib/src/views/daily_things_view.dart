@@ -15,7 +15,9 @@ import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
 import 'package:daily_inc/src/services/update_service.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -543,74 +545,39 @@ class _DailyThingsViewState extends State<DailyThingsView>
         actions: [
           if (_updateAvailable)
             Pulse(
-              pulseColor: Theme.of(context).primaryColor,
+              pulseColor: ColorPalette.primaryBlue,
               child: IconButton(
-                tooltip: 'Update available',
+                tooltip: 'Download the latest release',
                 icon: const Icon(Icons.download),
                 onPressed: () async {
+                  // Get the latest release URL and open it in browser
                   final url = await _updateService.getDownloadUrl();
                   if (url != null) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Download started...'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                    final filePath = await _updateService.downloadUpdate(url);
-                    if (filePath != null) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Download finished!'),
-                            duration: const Duration(seconds: 5),
-                            action: SnackBarAction(
-                              label: 'Install',
-                              onPressed: () async {
-                                try {
-                                  await _updateService.installUpdate(filePath);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Installation started...'),
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content:
-                                            Text('Installation failed: $e'),
-                                        backgroundColor:
-                                            Theme.of(context).colorScheme.error,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        );
-                      }
+                    // Open the URL in browser
+                    if (await launchUrl(Uri.parse(url))) {
+                      // Successfully opened URL
+                      _log.info('Opened download URL in browser: $url');
                     } else {
+                      // Failed to open URL
+                      _log.warning('Could not launch download URL: $url');
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Download failed.'),
-                            duration: Duration(seconds: 2),
+                            content: Text(
+                                'Could not open download page in browser.'),
+                            duration: Duration(seconds: 3),
                           ),
                         );
                       }
                     }
                   } else {
+                    // Could not get download URL
+                    _log.warning('Could not get download URL from GitHub');
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Could not get download URL.'),
-                          duration: Duration(seconds: 2),
+                          duration: Duration(seconds: 3),
                         ),
                       );
                     }
