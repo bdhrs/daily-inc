@@ -18,6 +18,7 @@ import 'package:daily_inc/src/services/update_service.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -254,6 +255,78 @@ class _DailyThingsViewState extends State<DailyThingsView>
     ).then((_) {
       _checkAndShowCompletionSnackbar();
     });
+  }
+
+  void _showAboutDialog() async {
+    _log.info('Showing about dialog.');
+    final packageInfo = await PackageInfo.fromPlatform();
+    final versionText =
+        'Version: ${packageInfo.version}+${packageInfo.buildNumber}';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Daily Inc',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+                'Do the important things daily, and increase incrementally over time.',
+                textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            const Text('vibe coded by bdhrs', textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Text(versionText, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () async {
+                final url =
+                    Uri.parse('https://github.com/bdhrs/daily-inc-timer');
+                if (await launchUrl(url)) {
+                  // Successfully opened URL
+                  _log.info('Opened GitHub URL in browser');
+                } else {
+                  // Failed to open URL
+                  _log.warning('Could not launch GitHub URL');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not open GitHub page.'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                'github.com/bdhrs/daily-inc-timer',
+                style: TextStyle(
+                  color: ColorPalette.primaryBlue,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _maybeShowMotivation() async {
@@ -672,6 +745,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
                 case 'save_history':
                   _saveHistoryToFile();
                   break;
+                case 'about':
+                  _showAboutDialog();
+                  break;
               }
             },
             itemBuilder: (context) => [
@@ -737,6 +813,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
                     Icon(Icons.save_alt),
                     SizedBox(width: 8),
                     Text('Save History'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'about',
+                child: Row(
+                  children: [
+                    Icon(Icons.info),
+                    SizedBox(width: 8),
+                    Text('About'),
                   ],
                 ),
               ),
