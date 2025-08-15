@@ -25,6 +25,7 @@ class DailyThing {
   final IntervalType intervalType;
   final int intervalValue;
   final List<int> intervalWeekdays;
+  final String? bellSoundPath; // New field for bell sound path
 
   DailyThing({
     String? id,
@@ -43,6 +44,7 @@ class DailyThing {
     this.intervalType = IntervalType.byDays,
     this.intervalValue = 1,
     this.intervalWeekdays = const [],
+    this.bellSoundPath, // Initialize new field
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -136,6 +138,7 @@ class DailyThing {
       'intervalType': intervalType.toString().split('.').last,
       'intervalValue': intervalValue,
       'intervalWeekdays': intervalWeekdays,
+      'bellSoundPath': bellSoundPath, // Add to toJson
     };
   }
 
@@ -188,6 +191,7 @@ class DailyThing {
       intervalWeekdays: json['intervalWeekdays'] == null
           ? []
           : List<int>.from(json['intervalWeekdays']),
+      bellSoundPath: json['bellSoundPath'] as String?, // Add to fromJson
     );
   }
 
@@ -208,6 +212,7 @@ class DailyThing {
     IntervalType? intervalType,
     int? intervalValue,
     List<int>? intervalWeekdays,
+    String? bellSoundPath, // Add to copyWith
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -226,6 +231,7 @@ class DailyThing {
       intervalType: intervalType ?? this.intervalType,
       intervalValue: intervalValue ?? this.intervalValue,
       intervalWeekdays: intervalWeekdays ?? this.intervalWeekdays,
+      bellSoundPath: bellSoundPath ?? this.bellSoundPath, // Use new field
     );
   }
 }

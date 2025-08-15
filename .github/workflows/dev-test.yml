@@ -1,4 +1,4 @@
-name: Test Build
+name: Development Test Build
 
 on:
   push:
@@ -109,14 +109,14 @@ jobs:
       - name: Package Linux Bundle
         run: |
           cd build/linux/x64/release/bundle
-          tar -czvf daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.tar.gz *
+          zip -r daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.zip .
           cd ../../../../../
       
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.tar.gz
+          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.zip
 
   create-draft-release:
     needs: [build-android, build-linux]
