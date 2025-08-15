@@ -176,8 +176,18 @@ This document provides a map of the project, listing the location of all functio
   - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:21`](lib/src/views/settings_view.dart:21): Initializes and fetches stored values.
   - `_updateStickyNotifications(bool)` [`lib/src/views/settings_view.dart:35`](lib/src/views/settings_view.dart:35): Updates toggle state.
   - `_handleSaveAndReset(...)` [`lib/src/views/settings_view.dart:135`](lib/src/views/settings_view.dart:135): Persists data and shows messages.
-  - `_handleReset(...)` [`lib/src/views/settings_view.dart:171`](lib/src/views/settings_view.dart:171): Clears stored data and confirms.
-  - `build(BuildContext context)` [`lib/src/views/settings_view.dart:46`](lib/src/views/settings_view.dart:46): Renders the settings UI.
+- `_handleReset(...)` [`lib/src/views/settings_view.dart:171`](lib/src/views/settings_view.dart:171): Clears stored data and confirms.
+- `build(BuildContext context)` [`lib/src/views/settings_view.dart:46`](lib/src/views/settings_view.dart:46): Renders the settings UI.
+
+## lib/src/views/history_view.dart
+- `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.
+- `_HistoryViewState` class [`lib/src/views/history_view.dart:15`](lib/src/views/history_view.dart:15): Manages the state for the history view.
+  - `_history` [`lib/src/views/history_view.dart:16`](lib/src/views/history_view.dart:16): Local copy of the history entries.
+  - `_dataManager` [`lib/src/views/history_view.dart:17`](lib/src/views/history_view.dart:17): Handles data saving.
+  - `initState()` [`lib/src/views/history_view.dart:20`](lib/src/views/history_view.dart:20): Initializes the local history list.
+  - `_saveChanges()` [`lib/src/views/history_view.dart:26`](lib/src/views/history_view.dart:26): Shows a confirmation dialog and saves changes.
+  - `build(BuildContext context)` [`lib/src/views/history_view.dart:55`](lib/src/views/history_view.dart:55): Renders the history list with editable fields.
+
 
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.

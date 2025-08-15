@@ -4,6 +4,7 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
+import 'package:daily_inc/src/views/history_view.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 
 class DailyThingItem extends StatefulWidget {
@@ -320,6 +321,22 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               },
                             ),
                             IconButton(
+                              tooltip: 'edit history',
+                              icon: const Icon(Icons.history),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        HistoryView(item: widget.item),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
                               tooltip: widget.item.isPaused
                                   ? 'resume increments'
                                   : 'pause increments',
@@ -472,6 +489,22 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         GraphView(dailyThing: widget.item),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              tooltip: 'edit history',
+                              icon: const Icon(Icons.history),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        HistoryView(item: widget.item),
                                   ),
                                 );
                               },

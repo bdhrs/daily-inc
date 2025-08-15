@@ -260,8 +260,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   void _showAboutDialog() async {
     _log.info('Showing about dialog.');
     final packageInfo = await PackageInfo.fromPlatform();
-    final versionText =
-        'Version: ${packageInfo.version}+${packageInfo.buildNumber}';
+    final versionText = 'v${packageInfo.version}+${packageInfo.buildNumber}';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
