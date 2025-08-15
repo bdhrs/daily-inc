@@ -1,4 +1,4 @@
-name: Release
+name: Release Build
 
 on:
   workflow_dispatch:
@@ -129,40 +129,38 @@ jobs:
 
       - name: Build Linux Bundle
         run: |
-          sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
           flutter build linux --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           cd build/linux/x64/release/bundle
-          tar -czvf daily-inc-v${{ needs.bump_version.outputs.VERSION }}-linux.tar.gz *
+          zip -r daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip .
           cd ../../../../../
 
 
-      # - name: Generate Changelog
-      #   id: changelog
-      #   run: |
-      #     # Get the latest tag
-      #     LATEST_TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
-      #     echo "Latest tag: $LATEST_TAG"
-      #     # Generate changelog from commits since the latest tag
-      #     CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD)
-      #     # Make the changelog safe to use in JSON/multiline strings
-      #     CHANGELOG="${CHANGELOG//'%'/'%25'}"
-      #     CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-      #     CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-      #     echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-      #     echo "$CHANGELOG" >> $GITHUB_ENV
-      #     echo "EOF" >> $GITHUB_ENV
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          # Generate changelog from commits since the latest tag
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD)
+          # Make the changelog safe to use in JSON/multiline strings for GITHUB_OUTPUT
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Daily Inc v${{ needs.bump_version.outputs.VERSION }}
           tag_name: v${{ needs.bump_version.outputs.VERSION }}
-          body: "Release v${{ needs.bump_version.outputs.VERSION }}"
+          body: "${{ steps.changelog.outputs.CHANGELOG }}"
           draft: false
           prerelease: false
           files: |
             build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
-            build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}-linux.tar.gz
+            build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip
             
 
   sync_back_to_dev:
