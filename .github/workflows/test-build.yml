@@ -95,6 +95,7 @@ jobs:
             ${{ steps.rename_apks.outputs.X86_64_APK }}
 
   build-linux:
+    needs: [build-android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -150,4 +151,4 @@ jobs:
             Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
           files: |
             artifacts/android/*
-            artifacts/linux/daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.tar.gz
+            artifacts/linux/*
