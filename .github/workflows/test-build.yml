@@ -95,6 +95,7 @@ jobs:
             ${{ steps.rename_apks.outputs.X86_64_APK }}
 
   build-linux:
+    needs: [build-android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,14 +106,20 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build linux --release
+      - name: Package Linux Bundle
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czvf daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.tar.gz *
+          cd ../../../../../
+      
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: build/linux/x64/release/bundle
+          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.tar.gz
 
   create-draft-release:
-    needs: [build-android]
+    needs: [build-android, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -121,6 +128,10 @@ jobs:
         with:
           name: android-release
           path: artifacts/android
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: artifacts/linux
 
       - name: Get commit info
         id: commit_info
@@ -138,4 +149,6 @@ jobs:
           body: |
             Automated development build
             Commit: ${{ steps.commit_info.outputs.COMMIT_MSG }}
-          files: artifacts/android/*
+          files: |
+            artifacts/android/*
+            artifacts/linux/*

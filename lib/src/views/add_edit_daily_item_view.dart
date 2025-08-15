@@ -1,3 +1,4 @@
+import 'package:daily_inc/src/core/value_converter.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/data/history_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -160,9 +161,25 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   void _updateIncrementField() {
     if (_incrementController != null) {
       _incrementController!.text = _calculateIncrement();
-      setState(() {
-        // This will trigger a rebuild with the updated increment value
-      });
+      setState(() {});
+    }
+  }
+
+  void _updateDurationFromIncrement() {
+    try {
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+      final increment = double.tryParse(_incrementController!.text) ?? 0.0;
+
+      if (increment == 0) return;
+
+      final newDuration = ((endValue - startValue) / increment).round();
+      if (newDuration > 0) {
+        _durationController.text = newDuration.toString();
+        setState(() {});
+      }
+    } catch (e) {
+      _log.warning('Error calculating duration from increment: $e');
     }
   }
 
@@ -383,22 +400,41 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           type.toString().split('.').last.toUpperCase(),
                         ));
                   }).toList(),
-                  onChanged: widget.dailyThing == null
-                      ? (value) async {
-                          // Update selected type first
-                          _selectedItemType = value!;
-                          // Refresh category suggestions for the new type
-                          await _loadUniqueCategoriesForSelectedType();
-                          // If current category is not valid for this type, clear it
-                          final current = _categoryController.text.trim();
-                          if (current.isNotEmpty &&
-                              !_uniqueCategories.contains(current)) {
-                            _categoryController.text = '';
-                          }
-                          // Trigger rebuild after data and controller updates
-                          setState(() {});
-                        }
-                      : null,
+                  onChanged: (value) async {
+                    if (value == null) return;
+
+                    final currentDailyThing = DailyThing(
+                      name: _nameController.text,
+                      itemType: _selectedItemType,
+                      startDate: DateTime.now(),
+                      startValue:
+                          double.tryParse(_startValueController.text) ?? 0.0,
+                      duration: int.tryParse(_durationController.text) ?? 30,
+                      endValue:
+                          double.tryParse(_endValueController.text) ?? 0.0,
+                    );
+
+                    final converted =
+                        ValueConverter.convert(currentDailyThing, value);
+                    final newCategories =
+                        await widget.dataManager.getUniqueCategoriesForType(value);
+
+                    final currentCategory = _categoryController.text.trim();
+                    String newCategoryText = _categoryController.text;
+                    if (currentCategory.isNotEmpty &&
+                        !newCategories.contains(currentCategory)) {
+                      newCategoryText = '';
+                    }
+
+                    setState(() {
+                      _selectedItemType = value;
+                      _startValueController.text =
+                          converted.startValue.toString();
+                      _endValueController.text = converted.endValue.toString();
+                      _uniqueCategories = newCategories;
+                      _categoryController.text = newCategoryText;
+                    });
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Type',
                   ),
@@ -426,25 +462,22 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       TextEditingController fieldTextEditingController,
                       FocusNode fieldFocusNode,
                       VoidCallback onFieldSubmitted) {
-                    // Sync the field controller with our category controller
-                    if (fieldTextEditingController.text !=
-                        _categoryController.text) {
-                      fieldTextEditingController.text =
-                          _categoryController.text;
-                    }
-
-                    // Update our controller when field changes
-                    fieldTextEditingController.addListener(() {
-                      if (_categoryController.text !=
-                          fieldTextEditingController.text) {
-                        _categoryController.text =
-                            fieldTextEditingController.text;
+                    // Post-build callback to safely update the controller
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted &&
+                          fieldTextEditingController.text !=
+                              _categoryController.text) {
+                        fieldTextEditingController.text =
+                            _categoryController.text;
                       }
                     });
 
                     return TextFormField(
                       controller: fieldTextEditingController,
                       focusNode: fieldFocusNode,
+                      onChanged: (value) {
+                        _categoryController.text = value;
+                      },
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
                         labelText: 'Category',
@@ -570,8 +603,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a duration';
                             }
-                            if (int.tryParse(value) == null) {
+                            final duration = int.tryParse(value);
+                            if (duration == null) {
                               return 'Please enter a valid number';
+                            }
+                            if (duration <= 0) {
+                              return 'Duration must be positive';
                             }
                             return null;
                           },
@@ -580,37 +617,23 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
-                          decoration: InputDecoration(
+                          controller: _incrementController,
+                          decoration: const InputDecoration(
                             labelText: 'Increment',
                             hintText: '0.0',
-                            filled: true,
-                            fillColor: Theme.of(context)
-                                .disabledColor
-                                .withValues(alpha: 0.1),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context)
-                                    .disabledColor
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context)
-                                    .disabledColor
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
                           ),
                           keyboardType: TextInputType.number,
-                          readOnly: true,
-                          controller: _incrementController,
-                          style: TextStyle(
-                            color: Theme.of(context).disabledColor,
-                          ),
-                          onTap: () {
-                            // Do nothing, visually indicate it's not editable
-                            FocusScope.of(context).unfocus();
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter an increment';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            _updateDurationFromIncrement();
                           },
                         ),
                       ),

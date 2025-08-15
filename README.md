@@ -21,20 +21,34 @@ See the full project map for where things live: [`project_map.md`](project_map.m
 flutter run -d linux
 ```
 
+## Android Debug
+```bash
+flutter run
+```
+
 ## Build
-Linux AppImage:
+### Linux AppImage:
 ```bash
 flutter build linux
 cp -r build/linux/x64/release/bundle/* daily_inc.AppDir/
 ./android/appimagetool.AppImage daily_inc.AppDir
 ```
 
-Android:
+
+### Android Release APK:**
 ```bash
 flutter build apk --release
+# The release APK will be located at build/app/outputs/flutter-apk/app-release.apk
 ```
 
-iOS (on macOS with Xcode):
+### iOS (on macOS with Xcode):
+```bash
+flutter build ios --release
+open ios/Runner.xcworkspace
+# Then Archive in Xcode and export
+```
+
+### iOS (on macOS with Xcode):
 ```bash
 flutter build ios --release
 open ios/Runner.xcworkspace

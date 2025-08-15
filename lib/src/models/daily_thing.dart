@@ -190,4 +190,42 @@ class DailyThing {
           : List<int>.from(json['intervalWeekdays']),
     );
   }
+
+  DailyThing copyWith({
+    String? id,
+    String? icon,
+    String? name,
+    ItemType? itemType,
+    DateTime? startDate,
+    double? startValue,
+    int? duration,
+    double? endValue,
+    List<HistoryEntry>? history,
+    DateTime? nagTime,
+    String? nagMessage,
+    String? category,
+    bool? isPaused,
+    IntervalType? intervalType,
+    int? intervalValue,
+    List<int>? intervalWeekdays,
+  }) {
+    return DailyThing(
+      id: id ?? this.id,
+      icon: icon ?? this.icon,
+      name: name ?? this.name,
+      itemType: itemType ?? this.itemType,
+      startDate: startDate ?? this.startDate,
+      startValue: startValue ?? this.startValue,
+      duration: duration ?? this.duration,
+      endValue: endValue ?? this.endValue,
+      history: history ?? this.history,
+      nagTime: nagTime ?? this.nagTime,
+      nagMessage: nagMessage ?? this.nagMessage,
+      category: category ?? this.category,
+      isPaused: isPaused ?? this.isPaused,
+      intervalType: intervalType ?? this.intervalType,
+      intervalValue: intervalValue ?? this.intervalValue,
+      intervalWeekdays: intervalWeekdays ?? this.intervalWeekdays,
+    );
+  }
 }
