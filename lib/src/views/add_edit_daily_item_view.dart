@@ -9,6 +9,7 @@ import 'package:daily_inc/src/views/widgets/interval_selection_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
+import 'package:daily_inc/src/views/widgets/custom_bell_selector.dart'; // Import the new dialog
 
 class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
@@ -37,6 +38,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
   late TextEditingController _categoryController; // New category controller
+  late TextEditingController _bellSoundController; // New bell sound controller
   TextEditingController? _incrementController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
@@ -49,6 +51,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   List<String> _uniqueCategories = [];
 
   bool _didChangeDependencies = false;
+  String? _selectedBellSoundPath; // New state variable for bell sound
 
   @override
   void initState() {
@@ -104,9 +107,13 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
       }
       _nagMessageController.text = existingItem.nagMessage ?? '';
+      _selectedBellSoundPath = existingItem.bellSoundPath ?? 'assets/bells/bell1.mp3'; // Initialize bell sound path with default
     } else {
       _log.info('Creating new item');
+      _selectedBellSoundPath = 'assets/bells/bell1.mp3'; // Set default for new items
     }
+    _bellSoundController = TextEditingController(
+        text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
 
     // Load unique categories for autofill (type-specific)
     _loadUniqueCategoriesForSelectedType();
@@ -139,6 +146,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagTimeController.dispose();
     _nagMessageController.dispose();
     _categoryController.dispose(); // Dispose category controller
+    _bellSoundController.dispose(); // Dispose bell sound controller
     _incrementController?.dispose();
     super.dispose();
   }
@@ -192,8 +200,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       setState(() {
         _uniqueCategories = categories;
       });
-      _log.info(
-          'Loaded ${categories.length} unique categories for $_selectedItemType');
     } catch (e, s) {
       _log.severe('Error loading type-specific unique categories', e, s);
     }
@@ -304,6 +310,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           intervalType: finalIntervalType,
           intervalValue: finalIntervalValue,
           intervalWeekdays: finalIntervalWeekdays,
+          bellSoundPath: _selectedBellSoundPath, // Pass the selected bell sound path
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -374,7 +381,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ),
                     ),
                   ],
-                ),
+                  ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
@@ -677,6 +684,48 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     labelText: 'Nag Message',
                     hintText: 'e.g. Time to do your daily reading!',
                   ),
+                ),
+                const SizedBox(height: 24),
+                // Bell Sound Selector as TextFormField
+                TextFormField(
+                  controller: _bellSoundController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: 'Bell Sound',
+                    hintText: 'Default (bell1.mp3)',
+                    prefixIcon: const Icon(Icons.notifications_active), // Added bell icon
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.arrow_forward_ios),
+                      onPressed: () async {
+                        final selectedPath = await showDialog<String?>(
+                          context: context,
+                          builder: (context) => CustomBellSelectorDialog(
+                            initialBellSoundPath: _selectedBellSoundPath,
+                          ),
+                        );
+                        if (selectedPath != null) {
+                          setState(() {
+                            _selectedBellSoundPath = selectedPath;
+                            _bellSoundController.text = selectedPath.split('/').last;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  onTap: () async {
+                    final selectedPath = await showDialog<String?>(
+                      context: context,
+                      builder: (context) => CustomBellSelectorDialog(
+                        initialBellSoundPath: _selectedBellSoundPath,
+                      ),
+                    );
+                    if (selectedPath != null) {
+                      setState(() {
+                        _selectedBellSoundPath = selectedPath;
+                        _bellSoundController.text = selectedPath.split('/').last;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
                 Row(
