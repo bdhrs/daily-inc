@@ -21,9 +21,18 @@ See the full project map for where things live: [`project_map.md`](project_map.m
 flutter run -d linux
 ```
 
-## Android Debug
+## Build and Install on Android (Debug)
+To automatically build and install the app on a connected Android device or emulator for debugging, run the following command. This will also enable hot-reloading.
+
 ```bash
 flutter run
+```
+
+## Install Release APK on Android
+After building the release APK using `flutter build apk --release`, you can install it on a connected device using the Android Debug Bridge (adb):
+
+```bash
+adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ## Build
