@@ -127,7 +127,7 @@ class DataManager {
       final loadedThings = list
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
-      _log.info('Loaded ${loadedThings.length} items from file-based storage.');
+      _log.info('Loaded ${loadedThings.length} items from file-based storage. First item history (truncated): ${loadedThings.isNotEmpty ? loadedThings.first.history.map((e) => e.comment).take(5).toList() : 'N/A'}');
       return loadedThings;
     } catch (e, s) {
       _log.severe('Error loading data from file', e, s);

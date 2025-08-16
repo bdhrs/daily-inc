@@ -6,8 +6,13 @@ import 'package:intl/intl.dart';
 
 class HistoryView extends StatefulWidget {
   final DailyThing item;
+  final VoidCallback onHistoryUpdated;
 
-  const HistoryView({super.key, required this.item});
+  const HistoryView({
+    super.key,
+    required this.item,
+    required this.onHistoryUpdated,
+  });
 
   @override
   State<HistoryView> createState() => _HistoryViewState();
@@ -45,12 +50,15 @@ class _HistoryViewState extends State<HistoryView> {
       ),
     );
 
-    if (confirmed == true) {
-      final updatedItem = widget.item.copyWith(history: _history);
-      await _dataManager.updateDailyThing(updatedItem);
-      setState(() {
-        _isDirty = false;
-      });
+      if (confirmed == true) {
+        debugPrint('History before saving: ${_history.map((e) => e.comment).toList()}');
+        final updatedItem = widget.item.copyWith(history: _history);
+        await _dataManager.updateDailyThing(updatedItem);
+        widget.onHistoryUpdated();
+        setState(() {
+          _isDirty = false;
+          _history = List.from(updatedItem.history);
+        });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('History saved successfully')),
@@ -153,91 +161,119 @@ class _HistoryViewState extends State<HistoryView> {
             ),
           ],
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: DataTable(
-                    columnSpacing: 16.0,
-                    columns: const [
-                      DataColumn(label: Text('Date')),
-                      DataColumn(label: Text('Target'), numeric: true),
-                      DataColumn(label: Text('Actual'), numeric: true),
-                      DataColumn(label: Text('Done')),
-                      DataColumn(label: Text('')), // For delete icon
-                    ],
-                    rows: _history.map((entry) {
-                      final index = _history.indexOf(entry);
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                              Text(DateFormat('yy/MM/dd').format(entry.date))),
-                          DataCell(
-                            TextFormField(
-                              initialValue:
-                                  _numberFormat.format(entry.targetValue),
-                              textAlign: TextAlign.end,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true),
-                              onChanged: (value) {
-                                setState(() {
-                                  _isDirty = true;
-                                  _history[index] = entry.copyWith(
-                                    targetValue: double.tryParse(value) ??
-                                        entry.targetValue,
-                                  );
-                                });
-                              },
-                            ),
+        body: SingleChildScrollView(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: DataTable(
+              columnSpacing: 4.0,
+              columns: const [
+                DataColumn(label: Text('Date')),
+                DataColumn(label: Text('Target'), numeric: true),
+                DataColumn(label: Text('Actual'), numeric: true),
+                DataColumn(label: Text('Done')),
+                DataColumn(label: Text('Comment')),
+                DataColumn(label: Text('')), // For delete icon
+              ],
+              rows: _history.map((entry) {
+                final index = _history.indexOf(entry);
+                return DataRow(
+                  cells: [
+                    DataCell(
+                        Text(DateFormat('yy/MM/dd').format(entry.date))),
+                    DataCell(
+                      TextFormField(
+                        initialValue:
+                            _numberFormat.format(entry.targetValue),
+                        textAlign: TextAlign.end,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: const TextStyle(fontSize: 14.0),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _isDirty = true;
+                            _history[index] = entry.copyWith(
+                              targetValue: double.tryParse(value) ??
+                                  entry.targetValue,
+                            );
+                            debugPrint('Updated targetValue for index $index: ${_history[index].targetValue}');
+                          });
+                        },
+                      ),
+                    ),
+                    DataCell(
+                      TextFormField(
+                        initialValue: entry.actualValue != null
+                            ? _numberFormat.format(entry.actualValue)
+                            : '',
+                        textAlign: TextAlign.end,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: const TextStyle(fontSize: 14.0),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _isDirty = true;
+                            _history[index] = entry.copyWith(
+                              actualValue: double.tryParse(value),
+                            );
+                            debugPrint('Updated actualValue for index $index: ${_history[index].actualValue}');                                });
+                        },
+                      ),
+                    ),
+                    DataCell(
+                      Checkbox(
+                        value: entry.doneToday,
+                        onChanged: (value) {
+                          setState(() {
+                            _isDirty = true;
+                            _history[index] =
+                                entry.copyWith(doneToday: value);
+                          });
+                        },
+                      ),
+                    ),
+                    DataCell(
+                      Container(
+                        width: 150, // Fixed width for comment field
+                        child: TextFormField(
+                          initialValue: entry.comment,
+                          style: const TextStyle(fontSize: 14.0),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                            border: InputBorder.none,
                           ),
-                          DataCell(
-                            TextFormField(
-                              initialValue: entry.actualValue != null
-                                  ? _numberFormat.format(entry.actualValue)
-                                  : '',
-                              textAlign: TextAlign.end,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true),
-                              onChanged: (value) {
-                                setState(() {
-                                  _isDirty = true;
-                                  _history[index] = entry.copyWith(
-                                    actualValue: double.tryParse(value),
-                                  );
-                                });
-                              },
-                            ),
-                          ),
-                          DataCell(
-                            Checkbox(
-                              value: entry.doneToday,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isDirty = true;
-                                  _history[index] =
-                                      entry.copyWith(doneToday: value);
-                                });
-                              },
-                            ),
-                          ),
-                          DataCell(
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _deleteEntry(entry),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            );
-          },
+                          onChanged: (value) {
+                            setState(() {
+                              _isDirty = true;
+                              _history[index] =
+                                  entry.copyWith(comment: value);
+                              debugPrint('Updated comment for index $index: ${_history[index].comment}');
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteEntry(entry),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
