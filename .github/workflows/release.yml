@@ -164,7 +164,7 @@ jobs:
 
   sync_back_to_dev:
     needs: build_and_release
-    if: always()
+    if: github.event.inputs.release_type == 'major' || github.event.inputs.release_type == 'minor'
     runs-on: ubuntu-latest
     permissions:
       contents: write
