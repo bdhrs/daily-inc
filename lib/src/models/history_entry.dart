@@ -18,13 +18,15 @@ class HistoryEntry {
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'date': date.toIso8601String(),
       'target_value': targetValue,
       'done_today': doneToday,
       'actual_value': actualValue,
       'comment': comment,
     };
+    _logger.info('HistoryEntry toJson: $json');
+    return json;
   }
 
   factory HistoryEntry.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class HistoryEntry {
 
       // Parse comment (nullable)
       final String? comment = json['comment'] as String?;
+      _logger.info('HistoryEntry fromJson - parsed comment: $comment');
 
       return HistoryEntry(
         date: date,

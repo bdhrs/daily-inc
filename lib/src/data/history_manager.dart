@@ -60,6 +60,7 @@ class HistoryManager {
         targetValue: newTargetValue,
         doneToday: entry.doneToday,
         actualValue: entry.actualValue,
+        comment: entry.comment,
       );
     }).toList();
   }

@@ -330,8 +330,13 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        HistoryView(item: widget.item),
+                                    builder: (context) => HistoryView(
+                                      item: widget.item,
+                                      onHistoryUpdated: () {
+                                        if (mounted) setState(() {});
+                                        widget.onItemChanged?.call();
+                                      },
+                                    ),
                                   ),
                                 );
                               },
@@ -503,8 +508,13 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        HistoryView(item: widget.item),
+                                    builder: (context) => HistoryView(
+                                      item: widget.item,
+                                      onHistoryUpdated: () {
+                                        if (mounted) setState(() {});
+                                        widget.onItemChanged?.call();
+                                      },
+                                    ),
                                   ),
                                 );
                               },
