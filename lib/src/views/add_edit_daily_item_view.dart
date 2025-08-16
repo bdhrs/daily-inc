@@ -685,48 +685,54 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 //     hintText: 'e.g. Time to do your daily reading!',
                 //   ),
                 // ),
-                const SizedBox(height: 24),
-                // Bell Sound Selector as TextFormField
-                TextFormField(
-                  controller: _bellSoundController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Bell Sound',
-                    hintText: 'Default (bell1.mp3)',
-                    prefixIcon: const Icon(Icons.notifications_active), // Added bell icon
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios),
-                      onPressed: () async {
-                        final selectedPath = await showDialog<String?>(
-                          context: context,
-                          builder: (context) => CustomBellSelectorDialog(
-                            initialBellSoundPath: _selectedBellSoundPath,
+                if (_selectedItemType == ItemType.minutes)
+                  Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _bellSoundController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Bell Sound',
+                          hintText: 'Default (bell1.mp3)',
+                          prefixIcon: const Icon(Icons.notifications_active),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios),
+                            onPressed: () async {
+                              final selectedPath = await showDialog<String?>(
+                                context: context,
+                                builder: (context) => CustomBellSelectorDialog(
+                                  initialBellSoundPath: _selectedBellSoundPath,
+                                ),
+                              );
+                              if (selectedPath != null) {
+                                setState(() {
+                                  _selectedBellSoundPath = selectedPath;
+                                  _bellSoundController.text =
+                                      selectedPath.split('/').last;
+                                });
+                              }
+                            },
                           ),
-                        );
-                        if (selectedPath != null) {
-                          setState(() {
-                            _selectedBellSoundPath = selectedPath;
-                            _bellSoundController.text = selectedPath.split('/').last;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  onTap: () async {
-                    final selectedPath = await showDialog<String?>(
-                      context: context,
-                      builder: (context) => CustomBellSelectorDialog(
-                        initialBellSoundPath: _selectedBellSoundPath,
+                        ),
+                        onTap: () async {
+                          final selectedPath = await showDialog<String?>(
+                            context: context,
+                            builder: (context) => CustomBellSelectorDialog(
+                              initialBellSoundPath: _selectedBellSoundPath,
+                            ),
+                          );
+                          if (selectedPath != null) {
+                            setState(() {
+                              _selectedBellSoundPath = selectedPath;
+                              _bellSoundController.text =
+                                  selectedPath.split('/').last;
+                            });
+                          }
+                        },
                       ),
-                    );
-                    if (selectedPath != null) {
-                      setState(() {
-                        _selectedBellSoundPath = selectedPath;
-                        _bellSoundController.text = selectedPath.split('/').last;
-                      });
-                    }
-                  },
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
