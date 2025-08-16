@@ -86,35 +86,30 @@ class _CustomBellSelectorDialogState extends State<CustomBellSelectorDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Select Bell Sound'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: _bellSoundPaths.length,
-          itemBuilder: (context, index) {
-            final path = _bellSoundPaths[index];
-            final fileName = path.split('/').last;
-            final isSelected = _selectedBellSoundPath == path;
-            final isPlaying = _currentlyPlayingPath == path;
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _bellSoundPaths.map((path) {
+          final fileName = path.split('/').last;
+          final isSelected = _selectedBellSoundPath == path;
+          final isPlaying = _currentlyPlayingPath == path;
 
-            return ListTile(
-              title: Text(fileName),
-              leading: Icon(
-                isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? Colors.white : null,
+          return ListTile(
+            title: Text(fileName),
+            leading: Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: isSelected ? Colors.white : null,
+            ),
+            trailing: IconButton(
+              icon: Icon(
+                isPlaying ? Icons.stop : Icons.play_arrow,
               ),
-              trailing: IconButton(
-                icon: Icon(
-                  isPlaying ? Icons.stop : Icons.play_arrow,
-                ),
-                onPressed: () => _playBellSound(path),
-              ),
-              onTap: () => _selectBellSound(path),
-              selected: isSelected,
-              selectedTileColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            );
-          },
-        ),
+              onPressed: () => _playBellSound(path),
+            ),
+            onTap: () => _selectBellSound(path),
+            selected: isSelected,
+            selectedTileColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+          );
+        }).toList(),
       ),
       actions: [
         TextButton(
