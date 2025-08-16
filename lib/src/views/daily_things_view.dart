@@ -616,46 +616,46 @@ class _DailyThingsViewState extends State<DailyThingsView>
         ),
         actions: [
           if (_updateAvailable)
-            Pulse(
-              pulseColor: ColorPalette.primaryBlue,
-              child: IconButton(
-                tooltip: 'Download the latest release',
-                icon: const Icon(Icons.download),
-                onPressed: () async {
-                  // Get the latest release URL and open it in browser
-                  final url = await _updateService.getDownloadUrl();
-                  if (url != null) {
-                    // Open the URL in browser
-                    if (await launchUrl(Uri.parse(url))) {
-                      // Successfully opened URL
-                      _log.info('Opened download URL in browser: $url');
-                    } else {
-                      // Failed to open URL
-                      _log.warning('Could not launch download URL: $url');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Could not open download page in browser.'),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
-                      }
-                    }
+            IconButton(
+              tooltip: 'Download the latest release',
+              icon: const Icon(
+                Icons.download,
+                color: ColorPalette.primaryBlue,
+              ),
+              onPressed: () async {
+                // Get the latest release URL and open it in browser
+                final url = await _updateService.getDownloadUrl();
+                if (url != null) {
+                  // Open the URL in browser
+                  if (await launchUrl(Uri.parse(url))) {
+                    // Successfully opened URL
+                    _log.info('Opened download URL in browser: $url');
                   } else {
-                    // Could not get download URL
-                    _log.warning('Could not get download URL from GitHub');
+                    // Failed to open URL
+                    _log.warning('Could not launch download URL: $url');
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Could not get download URL.'),
+                          content:
+                              Text('Could not open download page in browser.'),
                           duration: Duration(seconds: 3),
                         ),
                       );
                     }
                   }
-                },
-              ),
+                } else {
+                  // Could not get download URL
+                  _log.warning('Could not get download URL from GitHub');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not get download URL.'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           // Essential actions that should always be visible
           IconButton(
@@ -830,7 +830,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
           ),
         ],
       ),
-      // Provide a proxyDecorator to ensure the dragged item keeps its identity by key
       body: ReorderableListView(
         onReorder: (oldIndex, newIndex) {
           setState(() {
