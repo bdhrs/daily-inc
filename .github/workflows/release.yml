@@ -47,8 +47,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Sync with remote
-        run: git pull origin main
+
 
       - name: Get version from pubspec.yaml
         id: get_version
