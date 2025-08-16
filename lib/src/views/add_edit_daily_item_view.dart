@@ -648,43 +648,43 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nagTimeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nag Time',
-                    hintText: 'HH:mm',
-                    prefixIcon: Icon(Icons.alarm),
-                  ),
-                  readOnly: true,
-                  onTap: () async {
-                    final TimeOfDay? picked = await showTimePicker(
-                      context: context,
-                      initialTime: _selectedNagTime ?? TimeOfDay.now(),
-                    );
-                    if (picked != null && picked != _selectedNagTime) {
-                      setState(() {
-                        _selectedNagTime = picked;
-                        _nagTimeController.text = picked.format(context);
-                      });
-                    }
-                  },
-                  validator: (value) {
-                    if (_nagMessageController.text.isNotEmpty &&
-                        (value == null || value.isEmpty)) {
-                      return 'Please select a nag time when a nag message is provided.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nagMessageController,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Nag Message',
-                    hintText: 'e.g. Time to do your daily reading!',
-                  ),
-                ),
+                // TextFormField(
+                //   controller: _nagTimeController,
+                //   decoration: const InputDecoration(
+                //     labelText: 'Nag Time',
+                //     hintText: 'HH:mm',
+                //     prefixIcon: Icon(Icons.alarm),
+                //   ),
+                //   readOnly: true,
+                //   onTap: () async {
+                //     final TimeOfDay? picked = await showTimePicker(
+                //       context: context,
+                //       initialTime: _selectedNagTime ?? TimeOfDay.now(),
+                //     );
+                //     if (picked != null && picked != _selectedNagTime) {
+                //       setState(() {
+                //         _selectedNagTime = picked;
+                //         _nagTimeController.text = picked.format(context);
+                //       });
+                //     }
+                //   },
+                //   validator: (value) {
+                //     if (_nagMessageController.text.isNotEmpty &&
+                //         (value == null || value.isEmpty)) {
+                //       return 'Please select a nag time when a nag message is provided.';
+                //     }
+                //     return null;
+                //   },
+                // ),
+                // const SizedBox(height: 16),
+                // TextFormField(
+                //   controller: _nagMessageController,
+                //   textCapitalization: TextCapitalization.sentences,
+                //   decoration: const InputDecoration(
+                //     labelText: 'Nag Message',
+                //     hintText: 'e.g. Time to do your daily reading!',
+                //   ),
+                // ),
                 const SizedBox(height: 24),
                 // Bell Sound Selector as TextFormField
                 TextFormField(
