@@ -540,7 +540,9 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Playing timer complete notification');
 
     try {
-      final bellPath = (widget.item.bellSoundPath ?? 'assets/bells/bell.mp3').replaceFirst('assets/', '');
+      final bellPath =
+          (widget.item.bellSoundPath ?? 'assets/bells/bell1.mp3')
+              .replaceFirst('assets/', '');
       await _audioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
