@@ -29,6 +29,7 @@ class _HistoryViewState extends State<HistoryView> {
   late TextEditingController _newActualValueController;
   late TextEditingController _newCommentController;
   bool _newDoneToday = false;
+  bool _isDateInvalid = false;
 
   // Controllers for existing entries
   final Map<String, TextEditingController> _targetControllers = {};
@@ -48,6 +49,12 @@ class _HistoryViewState extends State<HistoryView> {
     );
     _newActualValueController = TextEditingController();
     _newCommentController = TextEditingController();
+    _isDateInvalid = false;
+
+    // Add listener to validate date when it changes
+    _newDateController.addListener(() {
+      _validateDate(_newDateController.text);
+    });
 
     // Initialize controllers for existing entries
     _initializeControllers();
@@ -91,6 +98,30 @@ class _HistoryViewState extends State<HistoryView> {
     return entry.date.toIso8601String();
   }
 
+  bool _isDateAlreadyExists(DateTime date) {
+    return _history.any(
+      (entry) =>
+          entry.date.year == date.year &&
+          entry.date.month == date.month &&
+          entry.date.day == date.day,
+    );
+  }
+
+  void _validateDate(String dateStr) {
+    try {
+      final date = DateFormat('yy/MM/dd').parse(dateStr);
+      setState(() {
+        _isDateInvalid = _isDateAlreadyExists(date);
+      });
+    } catch (e) {
+      // If parsing fails, we don't need to check for duplicates
+      // The existing validation will handle this
+      setState(() {
+        _isDateInvalid = false;
+      });
+    }
+  }
+
   Future<void> _saveChanges() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -121,6 +152,8 @@ class _HistoryViewState extends State<HistoryView> {
         _history = List.from(updatedItem.history);
         // Reinitialize controllers with new data
         _initializeControllers();
+        // Reinitialize controllers with new data
+        _initializeControllers();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +177,8 @@ class _HistoryViewState extends State<HistoryView> {
       _newActualValueController.text = '';
       _newCommentController.text = '';
       _newDoneToday = false;
+      // Validate the date immediately
+      _validateDate(_newDateController.text);
     });
   }
 
@@ -263,9 +298,14 @@ class _HistoryViewState extends State<HistoryView> {
 
     if (confirmed == true) {
       final key = _getEntryKey(entry);
+      final key = _getEntryKey(entry);
       setState(() {
         _history.remove(entry);
         _isDirty = true;
+        // Remove controllers for deleted entry
+        _targetControllers.remove(key)?.dispose();
+        _actualControllers.remove(key)?.dispose();
+        _commentControllers.remove(key)?.dispose();
         // Remove controllers for deleted entry
         _targetControllers.remove(key)?.dispose();
         _actualControllers.remove(key)?.dispose();
@@ -343,6 +383,18 @@ class _HistoryViewState extends State<HistoryView> {
                 onPressed: _cancelAddingEntry,
                 tooltip: 'Cancel Adding Entry',
               ),
+            if (!_isAddingEntry)
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _startAddingEntry,
+                tooltip: 'Add Entry',
+              ),
+            if (_isAddingEntry)
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _cancelAddingEntry,
+                tooltip: 'Cancel Adding Entry',
+              ),
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: _saveChanges,
@@ -356,6 +408,11 @@ class _HistoryViewState extends State<HistoryView> {
             child: DataTable(
               columnSpacing: 4.0,
               columns: const [
+                DataColumn(
+                    label: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('#',
+                            style: TextStyle(fontWeight: FontWeight.bold)))),
                 DataColumn(
                     label: Align(
                         alignment: Alignment.centerLeft,
@@ -376,12 +433,31 @@ class _HistoryViewState extends State<HistoryView> {
                       DataCell(
                         TextFormField(
                           controller: _newDateController,
-                          style: const TextStyle(fontSize: 14.0),
-                          decoration: const InputDecoration(
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            color: _isDateInvalid ? Colors.red : null,
+                          ),
+                          decoration: InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 4.0),
                             border: InputBorder.none,
+                            errorBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            focusedErrorBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            enabledBorder: _isDateInvalid
+                                ? const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red),
+                                  )
+                                : InputBorder.none,
+                            focusedBorder: _isDateInvalid
+                                ? const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red),
+                                  )
+                                : null,
                           ),
                         ),
                       ),
@@ -443,8 +519,10 @@ class _HistoryViewState extends State<HistoryView> {
                       DataCell(
                         IconButton(
                           icon: const Icon(Icons.save),
-                          onPressed: _saveNewEntry,
-                          tooltip: 'Save Entry',
+                          onPressed: _isDateInvalid ? null : _saveNewEntry,
+                          tooltip: _isDateInvalid
+                              ? 'Date already exists'
+                              : 'Save Entry',
                         ),
                       ),
                     ],
