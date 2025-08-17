@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/views/widgets/graph_style_helpers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
@@ -20,11 +22,46 @@ class _GraphViewState extends State<GraphView> {
   double _maxY = 0;
   final _log = Logger('GraphView');
   List<FlSpot> _spots = [];
+  TimeRange _selectedTimeRange = TimeRange.twelveWeeks;
+  static const String _prefsKey = 'graph_time_range_preference';
 
   @override
   void initState() {
     super.initState();
     _log.info('initState called for item: ${widget.dailyThing.name}');
+    _loadTimeRangePreference();
+  }
+
+  Future<void> _loadTimeRangePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getString(_prefsKey);
+    if (savedValue != null) {
+      try {
+        _selectedTimeRange = TimeRange.values.firstWhere(
+          (e) => e.name == savedValue,
+          orElse: () => TimeRange.twelveWeeks,
+        );
+      } catch (e) {
+        _selectedTimeRange = TimeRange.twelveWeeks;
+      }
+    }
+    // Now that we have the time range preference, build the spots
+    _spots = _buildSpots();
+    _calculateRanges();
+    setState(() {}); // Rebuild with loaded preference
+  }
+
+  Future<void> _saveTimeRangePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, _selectedTimeRange.name);
+  }
+
+  void _onTimeRangeChanged(TimeRange newRange) {
+    setState(() {
+      _selectedTimeRange = newRange;
+    });
+    _saveTimeRangePreference();
+    // Rebuild spots with new time range
     _spots = _buildSpots();
     _calculateRanges();
   }
@@ -49,15 +86,41 @@ class _GraphViewState extends State<GraphView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.dailyThing.name),
+        actions: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton<TimeRange>(
+              value: _selectedTimeRange,
+              icon: const Icon(Icons.arrow_drop_down),
+              iconSize: 24,
+              elevation: 16,
+              style: const TextStyle(color: Colors.white),
+              underline: Container(
+                height: 2,
+                color: Colors.white,
+              ),
+              onChanged: (TimeRange? newValue) {
+                if (newValue != null) {
+                  _onTimeRangeChanged(newValue);
+                }
+              },
+              items: TimeRange.values
+                  .map<DropdownMenuItem<TimeRange>>((TimeRange value) {
+                return DropdownMenuItem<TimeRange>(
+                  value: value,
+                  child: Text(value.name),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: LineChart(
           LineChartData(
-            minX: _epochDays(_getAllDatesFromStartToToday().first)
-                .floorToDouble(),
-            maxX:
-                _epochDays(_getAllDatesFromStartToToday().last).ceilToDouble(),
+            minX: _epochDays(_getFilteredDates().first).floorToDouble(),
+            maxX: _epochDays(_getFilteredDates().last).ceilToDouble(),
             minY: _minY,
             maxY: _maxY,
             lineBarsData: [
@@ -107,18 +170,40 @@ class _GraphViewState extends State<GraphView> {
                       return const SizedBox.shrink();
                     }
                     // X axis uses "epoch days" (days since Unix epoch) as doubles.
-                    // Render labels only on Mondays as M/d.
+                    // Render labels only on Mondays as M/d for shorter ranges.
+                    // For longer ranges (12+ weeks), show labels every other Monday to prevent cramped labels.
                     final v = value.roundToDouble();
                     if (v != value) return const SizedBox.shrink();
                     final d = _dateFromEpochDays(v);
+
+                    // Only show labels on Mondays
                     if (d.weekday == DateTime.monday) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          DateFormat('M/d').format(d),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      );
+                      // For longer time ranges, show labels every other Monday
+                      if (_selectedTimeRange == TimeRange.twelveWeeks ||
+                          _selectedTimeRange == TimeRange.sixteenWeeks) {
+                        // Calculate weeks since a reference point to determine if this should be a label
+                        final daysSinceEpoch =
+                            d.difference(DateTime(1970, 1, 1)).inDays;
+                        final weeksSinceEpoch = daysSinceEpoch ~/ 7;
+                        if (weeksSinceEpoch % 2 == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              DateFormat('M/d').format(d),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          );
+                        }
+                      } else {
+                        // For shorter time ranges, show labels on every Monday
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            DateFormat('M/d').format(d),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        );
+                      }
                     }
                     return const SizedBox.shrink();
                   },
@@ -229,7 +314,7 @@ class _GraphViewState extends State<GraphView> {
   }
 
   List<FlSpot> _buildSpots() {
-    final dates = _getAllDatesFromStartToToday();
+    final dates = _getFilteredDates();
     final historyMap = <DateTime, dynamic>{};
     for (final entry in widget.dailyThing.history) {
       final dateKey =
@@ -264,13 +349,29 @@ class _GraphViewState extends State<GraphView> {
 
   // Removed old _getBarGroups implementation after switching to LineChart
 
-  List<DateTime> _getAllDatesFromStartToToday() {
+  List<DateTime> _getFilteredDates() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    if (widget.dailyThing.history.isEmpty) {
-      final startDate = DateTime(widget.dailyThing.startDate.year,
+    // For "all" time range, use the first history entry date of this specific item
+    if (_selectedTimeRange == TimeRange.all &&
+        widget.dailyThing.history.isNotEmpty) {
+      final sortedHistory = widget.dailyThing.history.toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+      final firstHistoryDate = DateTime(sortedHistory.first.date.year,
+          sortedHistory.first.date.month, sortedHistory.first.date.day);
+      final itemStartDate = DateTime(widget.dailyThing.startDate.year,
           widget.dailyThing.startDate.month, widget.dailyThing.startDate.day);
+      final startDate = firstHistoryDate.isBefore(itemStartDate)
+          ? firstHistoryDate
+          : itemStartDate;
+      return _generateDateRange(startDate, todayDate);
+    }
+
+    // For other time ranges, use the standard logic
+    final startDate = _selectedTimeRange.getStartDate(todayDate);
+
+    if (widget.dailyThing.history.isEmpty) {
       return _generateDateRange(startDate, todayDate);
     }
 
@@ -279,13 +380,15 @@ class _GraphViewState extends State<GraphView> {
 
     final firstHistoryDate = DateTime(sortedHistory.first.date.year,
         sortedHistory.first.date.month, sortedHistory.first.date.day);
-    final startDate = DateTime(widget.dailyThing.startDate.year,
+    final itemStartDate = DateTime(widget.dailyThing.startDate.year,
         widget.dailyThing.startDate.month, widget.dailyThing.startDate.day);
 
-    final earliestDate =
-        firstHistoryDate.isBefore(startDate) ? firstHistoryDate : startDate;
+    final earliestDate = [firstHistoryDate, itemStartDate, startDate]
+        .reduce((a, b) => a.isBefore(b) ? a : b);
 
-    return _generateDateRange(earliestDate, todayDate);
+    return _generateDateRange(earliestDate, todayDate)
+        .where((date) => !date.isBefore(startDate))
+        .toList();
   }
 
   List<DateTime> _generateDateRange(DateTime start, DateTime end) {
