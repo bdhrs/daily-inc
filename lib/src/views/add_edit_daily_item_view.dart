@@ -40,6 +40,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _categoryController; // New category controller
   late TextEditingController _bellSoundController; // New bell sound controller
   TextEditingController? _incrementController;
+  late TextEditingController _incrementMinutesController;
+  late TextEditingController _incrementSecondsController;
   ItemType _selectedItemType = ItemType.minutes;
   TimeOfDay? _selectedNagTime;
   final _log = Logger('AddEditDailyItemView');
@@ -52,6 +54,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   bool _didChangeDependencies = false;
   String? _selectedBellSoundPath; // New state variable for bell sound
+  bool _isUpdatingFromIncrement = false;
 
   @override
   void initState() {
@@ -81,21 +84,21 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     .category); // Initialize category controller properly
 
     _incrementController = TextEditingController();
+    _incrementMinutesController = TextEditingController();
+    _incrementSecondsController = TextEditingController();
 
-    // Add listeners to update increment field
     _startValueController.addListener(_updateIncrementField);
     _endValueController.addListener(_updateIncrementField);
     _durationController.addListener(_updateIncrementField);
+    _incrementMinutesController.addListener(_updateDurationFromIncrement);
+    _incrementSecondsController.addListener(_updateDurationFromIncrement);
 
     // Set initial increment value after all controllers are initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _incrementController!.text = _calculateIncrement();
+      final increment = _calculateIncrement();
+      _incrementController!.text = increment;
+      _updateIncrementMinutesAndSecondsFields(double.tryParse(increment) ?? 0.0);
     });
-
-    // Add listeners to update increment field
-    _startValueController.addListener(_updateIncrementField);
-    _endValueController.addListener(_updateIncrementField);
-    _durationController.addListener(_updateIncrementField);
 
     if (existingItem != null) {
       _log.info('Editing existing item: ${existingItem.name}');
@@ -148,6 +151,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _categoryController.dispose(); // Dispose category controller
     _bellSoundController.dispose(); // Dispose bell sound controller
     _incrementController?.dispose();
+    _incrementMinutesController.dispose();
+    _incrementSecondsController.dispose();
     super.dispose();
   }
 
@@ -155,9 +160,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     try {
       final startValue = double.tryParse(_startValueController.text) ?? 0.0;
       final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-      final duration = int.tryParse(_durationController.text) ?? 1;
+      final duration = int.tryParse(_durationController.text);
 
-      if (duration <= 0) return '0.0';
+      if (duration == null || duration <= 0) return '0.0';
 
       final increment = (endValue - startValue) / duration;
       return increment.toStringAsFixed(2);
@@ -167,17 +172,38 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   }
 
   void _updateIncrementField() {
+    if (_isUpdatingFromIncrement) return;
     if (_incrementController != null) {
-      _incrementController!.text = _calculateIncrement();
+      final increment = _calculateIncrement();
+      _incrementController!.text = increment;
+      _updateIncrementMinutesAndSecondsFields(double.tryParse(increment) ?? 0.0);
       setState(() {});
     }
   }
 
+  void _updateIncrementMinutesAndSecondsFields(double increment) {
+    final minutes = increment.truncate();
+    final seconds = ((increment - minutes) * 60).round();
+    _incrementMinutesController.text = minutes.toString();
+    _incrementSecondsController.text = seconds.toString();
+  }
+
   void _updateDurationFromIncrement() {
+    _isUpdatingFromIncrement = true;
     try {
+      final minutes = int.tryParse(_incrementMinutesController.text) ?? 0;
+      final seconds = int.tryParse(_incrementSecondsController.text) ?? 0;
+      final increment = minutes + (seconds / 60.0);
+
+      if (increment == 0) {
+        _isUpdatingFromIncrement = false;
+        return;
+      }
+
+      _incrementController!.text = increment.toStringAsFixed(2);
+
       final startValue = double.tryParse(_startValueController.text) ?? 0.0;
       final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-      final increment = double.tryParse(_incrementController!.text) ?? 0.0;
 
       if (increment == 0) return;
 
@@ -189,7 +215,36 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     } catch (e) {
       _log.warning('Error calculating duration from increment: $e');
     }
+    _isUpdatingFromIncrement = false;
   }
+
+  void _updateDurationFromIncrementReps() {
+    _isUpdatingFromIncrement = true;
+    try {
+      final increment = double.tryParse(_incrementController!.text) ?? 0.0;
+
+      if (increment == 0) {
+        _isUpdatingFromIncrement = false;
+        return;
+      }
+
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+
+      if (increment == 0) return;
+
+      final newDuration = ((endValue - startValue) / increment).round();
+      if (newDuration > 0) {
+        _durationController.text = newDuration.toString();
+        setState(() {});
+      }
+    } catch (e) {
+      _log.warning('Error calculating duration from increment: $e');
+    }
+    _isUpdatingFromIncrement = false;
+  }
+
+  
 
   /// Load unique categories for autofill for the currently selected type
   Future<void> _loadUniqueCategoriesForSelectedType() async {
@@ -606,6 +661,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             prefixIcon: Icon(Icons.schedule),
                           ),
                           keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              if (_selectedItemType == ItemType.minutes) {
+                                _updateIncrementField();
+                              } else {
+                                _updateIncrementField();
+                              }
+                            }
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a duration';
@@ -622,28 +686,76 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _incrementController,
-                          decoration: const InputDecoration(
-                            labelText: 'Increment',
-                            hintText: '0.0',
+                      if (_selectedItemType == ItemType.minutes) ...[
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _incrementMinutesController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Incr. Min',
+                                    hintText: '0',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    if (_selectedItemType == ItemType.minutes) {
+                                      _updateDurationFromIncrement();
+                                    } else {
+                                      _updateDurationFromIncrementReps();
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _incrementSecondsController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Sec',
+                                    hintText: '0',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    if (_selectedItemType == ItemType.minutes) {
+                                      _updateDurationFromIncrement();
+                                    } else {
+                                      _updateDurationFromIncrementReps();
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter an increment';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Please enter a valid number';
-                            }
-                            return null;
-                          },
-                          onChanged: (value) {
-                            _updateDurationFromIncrement();
-                          },
                         ),
-                      ),
+                      ] else ...[
+                        Expanded(
+                          child: TextFormField(
+                            controller: _incrementController,
+                            decoration: const InputDecoration(
+                              labelText: 'Increment',
+                              hintText: '0.0',
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              if (_selectedItemType == ItemType.minutes) {
+                                _updateDurationFromIncrement();
+                              } else {
+                                _updateDurationFromIncrementReps();
+                              }
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter an increment';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Please enter a valid number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
