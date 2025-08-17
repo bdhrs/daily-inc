@@ -106,7 +106,7 @@ This document provides a map of the project, listing the location of all functio
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.
 
 ## lib/src/views/category_graph_view.dart
-- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category.
+- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category with time range filtering.
 
 ## lib/src/views/daily_thing_item.dart
 - `DailyThingItem` class [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9): A single task row with controls and quick actions.
@@ -149,7 +149,7 @@ This document provides a map of the project, listing the location of all functio
   - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:575`](lib/src/views/daily_things_view.dart:575): Builds filters, menus, the reorderable task list, and the AppBar with update notifications.
 
 ## lib/src/views/graph_view.dart
-- `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress.
+- `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress with time range filtering.
   - `dailyThing` property [`lib/src/views/graph_view.dart:11`](lib/src/views/graph_view.dart:11): The item whose history is graphed.
 - `_GraphViewState` class [`lib/src/views/graph_view.dart:18`](lib/src/views/graph_view.dart:18): Calculates ranges and builds data points.
   - `_minY` / `_maxY` [`lib/src/views/graph_view.dart:19`](lib/src/views/graph_view.dart:19): Y-axis bounds for the chart.

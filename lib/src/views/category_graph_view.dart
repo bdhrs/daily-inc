@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/views/widgets/graph_style_helpers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CategoryGraphView extends StatefulWidget {
   final List<DailyThing> dailyThings;
@@ -17,14 +19,48 @@ class CategoryGraphView extends StatefulWidget {
 
 class _CategoryGraphViewState extends State<CategoryGraphView> {
   final _log = Logger('CategoryGraphView');
+  TimeRange _selectedTimeRange = TimeRange.twelveWeeks;
+  static const String _prefsKey = 'category_graph_time_range_preference';
 
   final Map<String, Map<DateTime, double>> _categoryData = {};
+
+  Future<void> _loadTimeRangePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getString(_prefsKey);
+    if (savedValue != null) {
+      try {
+        _selectedTimeRange = TimeRange.values.firstWhere(
+          (e) => e.name == savedValue,
+          orElse: () => TimeRange.twelveWeeks,
+        );
+      } catch (e) {
+        _selectedTimeRange = TimeRange.twelveWeeks;
+      }
+    }
+    // Now that we have the time range preference, process the category data
+    _processCategoryData();
+    setState(() {}); // Rebuild with loaded preference
+  }
+
+  Future<void> _saveTimeRangePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, _selectedTimeRange.name);
+  }
+
+  void _onTimeRangeChanged(TimeRange newRange) {
+    setState(() {
+      _selectedTimeRange = newRange;
+    });
+    _saveTimeRangePreference();
+    // Re-process category data with new time range
+    _processCategoryData();
+  }
 
   @override
   void initState() {
     super.initState();
     _log.info('initState called for category graph view');
-    _processCategoryData();
+    _loadTimeRangePreference();
   }
 
   void _processCategoryData() {
@@ -42,38 +78,104 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       final category = entry.key;
       final items = entry.value;
 
+      // Get the date range based on the selected time range
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      // For "all" time range, use the earliest history entry of any item within the category
+      DateTime startDate;
+      if (_selectedTimeRange == TimeRange.all) {
+        DateTime? earliestHistoryDate;
+        DateTime? earliestItemStartDate;
+
+        for (final thing in items) {
+          // Check item start date
+          final itemStartDate = DateTime(
+              thing.startDate.year, thing.startDate.month, thing.startDate.day);
+          if (earliestItemStartDate == null ||
+              itemStartDate.isBefore(earliestItemStartDate)) {
+            earliestItemStartDate = itemStartDate;
+          }
+
+          // Check history dates
+          for (final historyEntry in thing.history) {
+            final historyDate = DateTime(historyEntry.date.year,
+                historyEntry.date.month, historyEntry.date.day);
+            if (earliestHistoryDate == null ||
+                historyDate.isBefore(earliestHistoryDate)) {
+              earliestHistoryDate = historyDate;
+            }
+          }
+        }
+
+        // Use the earlier of the earliest history date and earliest item start date
+        startDate = (earliestHistoryDate != null &&
+                (earliestItemStartDate == null ||
+                    earliestHistoryDate.isBefore(earliestItemStartDate)))
+            ? earliestHistoryDate
+            : earliestItemStartDate ?? todayDate;
+      } else {
+        // For other time ranges, use the standard logic
+        startDate = _selectedTimeRange.getStartDate(todayDate);
+      }
+
       DateTime? minDate;
       DateTime? maxDate;
       for (final thing in items) {
         final start = DateTime(
             thing.startDate.year, thing.startDate.month, thing.startDate.day);
-        if (minDate == null || start.isBefore(minDate)) minDate = start;
+        // Only consider dates within the selected time range
+        final effectiveStart = start.isBefore(startDate) ? startDate : start;
+        if (minDate == null || effectiveStart.isBefore(minDate)) {
+          minDate = effectiveStart;
+        }
+
         for (final historyEntry in thing.history) {
           final date = DateTime(historyEntry.date.year, historyEntry.date.month,
               historyEntry.date.day);
+          // Only consider dates within the selected time range
+          if (date.isBefore(startDate)) continue;
           if (minDate == null || date.isBefore(minDate)) minDate = date;
           if (maxDate == null || date.isAfter(maxDate)) maxDate = date;
         }
       }
 
+      // For non-"all" time ranges, ensure minDate is at least startDate
+      if (_selectedTimeRange != TimeRange.all) {
+        minDate = minDate == null || startDate.isBefore(minDate)
+            ? startDate
+            : minDate;
+      }
+
+      // If no data within the selected time range, skip this category
       if (minDate == null || maxDate == null) {
         _categoryData[category] = {};
         continue;
       }
 
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
       final endDate = maxDate.isAfter(todayDate) ? maxDate : todayDate;
 
       final dateTotals = <DateTime, double>{};
-      for (DateTime d = minDate;
-          !d.isAfter(endDate);
-          d = DateTime(d.year, d.month, d.day + 1)) {
+      DateTime currentDate = minDate;
+      int count = 0;
+      const maxDays = 1000; // Limit to prevent performance issues
+
+      while (!currentDate.isAfter(endDate) && count < maxDays) {
+        // Skip dates before the start date (for "all" time range) or ensure we start from startDate (for other time ranges)
+        if ((_selectedTimeRange == TimeRange.all &&
+                currentDate.isBefore(startDate)) ||
+            (_selectedTimeRange != TimeRange.all &&
+                currentDate.isBefore(startDate))) {
+          currentDate = DateTime(
+              currentDate.year, currentDate.month, currentDate.day + 1);
+          continue;
+        }
+
         double total = 0;
         for (final thing in items) {
           final sameDayEntries = thing.history.where((e) {
             final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-            return entryDate == d;
+            return entryDate == currentDate;
           });
           for (final e in sameDayEntries) {
             if (thing.itemType == ItemType.check) {
@@ -83,7 +185,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
             }
           }
         }
-        dateTotals[d] = total;
+        dateTotals[currentDate] = total;
+
+        currentDate =
+            DateTime(currentDate.year, currentDate.month, currentDate.day + 1);
+        count++;
       }
 
       _categoryData[category] = dateTotals;
@@ -98,6 +204,34 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Progress by Category'),
+        actions: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton<TimeRange>(
+              value: _selectedTimeRange,
+              icon: const Icon(Icons.arrow_drop_down),
+              iconSize: 24,
+              elevation: 16,
+              style: const TextStyle(color: Colors.white),
+              underline: Container(
+                height: 2,
+                color: Colors.white,
+              ),
+              onChanged: (TimeRange? newValue) {
+                if (newValue != null) {
+                  _onTimeRangeChanged(newValue);
+                }
+              },
+              items: TimeRange.values
+                  .map<DropdownMenuItem<TimeRange>>((TimeRange value) {
+                return DropdownMenuItem<TimeRange>(
+                  value: value,
+                  child: Text(value.name),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
       body: _categoryData.isEmpty
           ? const Center(child: Text('No category data available'))
@@ -194,13 +328,34 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
                           final v = value.roundToDouble();
                           if (v != value) return const SizedBox.shrink();
                           final d = GraphStyleHelpers.dateFromEpochDays(v);
-                          final isMonday = d.weekday == DateTime.monday;
-                          if (isMonday) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(DateFormat('M/d').format(d),
-                                  style: Theme.of(context).textTheme.bodySmall),
-                            );
+
+                          // Only show labels on Mondays
+                          if (d.weekday == DateTime.monday) {
+                            // For longer time ranges, show labels every other Monday
+                            if (_selectedTimeRange == TimeRange.twelveWeeks ||
+                                _selectedTimeRange == TimeRange.sixteenWeeks) {
+                              // Calculate weeks since a reference point to determine if this should be a label
+                              final daysSinceEpoch =
+                                  d.difference(DateTime(1970, 1, 1)).inDays;
+                              final weeksSinceEpoch = daysSinceEpoch ~/ 7;
+                              if (weeksSinceEpoch % 2 == 0) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(DateFormat('M/d').format(d),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall),
+                                );
+                              }
+                            } else {
+                              // For shorter time ranges, show labels on every Monday
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(DateFormat('M/d').format(d),
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall),
+                              );
+                            }
                           }
                           return const SizedBox.shrink();
                         },
