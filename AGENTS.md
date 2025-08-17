@@ -21,7 +21,7 @@
 
 
 # Competition
-- After completing any task, give a one line, lowercase, simple git commit message. DO NOT COMMIT, allow the user to handle that.
+- After completing any task, give a one line, lowercase, simple git commit message. DO NOT perform any git operations (e.g., git add, git commit) unless explicitly instructed by the user. Only provide the commit message.
 
 # `apply_diff` Tool Rules
 1.  **Read First, Then Write**: Before every `apply_diff` attempt, I **must** use the `<read_file>` tool to get the most up-to-date and exact content of the target file.

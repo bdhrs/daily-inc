@@ -25,10 +25,22 @@ class _SettingsViewState extends State<SettingsView> {
   // Grace period setting
   int _gracePeriodDays = 1; // Default to 1 day
 
+  late TextEditingController _startOfDayMessageController;
+  late TextEditingController _completionMessageController;
+
   @override
   void initState() {
     super.initState();
+    _startOfDayMessageController = TextEditingController();
+    _completionMessageController = TextEditingController();
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _startOfDayMessageController.dispose();
+    _completionMessageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -45,6 +57,10 @@ class _SettingsViewState extends State<SettingsView> {
     });
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
+
+    // Update controllers after loading settings
+    _startOfDayMessageController.text = _startOfDayMessageText;
+    _completionMessageController.text = _completionMessageText;
   }
 
   Future<void> _saveSettings() async {
@@ -150,12 +166,11 @@ class _SettingsViewState extends State<SettingsView> {
                   labelText: 'Start of day message',
                   border: OutlineInputBorder(),
                 ),
-                maxLines: 3,
-                controller: TextEditingController(text: _startOfDayMessageText),
+                minLines: 1,
+                maxLines: null,
+                controller: _startOfDayMessageController,
                 onChanged: (value) {
-                  setState(() {
-                    _startOfDayMessageText = value;
-                  });
+                  _startOfDayMessageText = value;
                   _saveSettings();
                 },
               ),
@@ -181,12 +196,11 @@ class _SettingsViewState extends State<SettingsView> {
                   labelText: 'Completion message',
                   border: OutlineInputBorder(),
                 ),
-                maxLines: 3,
-                controller: TextEditingController(text: _completionMessageText),
+                minLines: 1,
+                maxLines: null,
+                controller: _completionMessageController,
                 onChanged: (value) {
-                  setState(() {
-                    _completionMessageText = value;
-                  });
+                  _completionMessageText = value;
                   _saveSettings();
                 },
               ),
