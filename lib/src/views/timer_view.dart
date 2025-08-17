@@ -162,13 +162,22 @@ class _TimerViewState extends State<TimerView> {
         _hasStarted = true;
         WakelockPlus.enable();
         final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
+        _log.info(
+            'isFinished: $isFinished, _remainingSeconds: $_remainingSeconds, _isOvertime: $_isOvertime');
         if (isFinished) {
-          _isOvertime = true;
+          _log.info('Timer is finished, waiting for user to continue');
+          // Timer is finished, we should wait for user to explicitly continue
+          // Don't automatically start overtime here
+          _isPaused = true; // Pause the timer
+          WakelockPlus.disable();
+          return;
         }
 
         if (_isOvertime) {
+          _log.info('Running overtime timer');
           _runOvertime();
         } else {
+          _log.info('Running countdown timer');
           _runCountdown();
         }
       } else {
@@ -216,9 +225,11 @@ class _TimerViewState extends State<TimerView> {
 
     setState(() {
       _isPaused = true;
+      _log.info('Timer paused in onTimerComplete');
     });
 
     await _saveProgress();
+    _log.info('Progress saved in onTimerComplete');
   }
 
   Future<void> _exitTimerDisplay() async {
@@ -540,9 +551,8 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Playing timer complete notification');
 
     try {
-      final bellPath =
-          (widget.item.bellSoundPath ?? 'assets/bells/bell1.mp3')
-              .replaceFirst('assets/', '');
+      final bellPath = (widget.item.bellSoundPath ?? 'assets/bells/bell1.mp3')
+          .replaceFirst('assets/', '');
       await _audioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
