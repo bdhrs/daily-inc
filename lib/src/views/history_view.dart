@@ -50,15 +50,16 @@ class _HistoryViewState extends State<HistoryView> {
       ),
     );
 
-      if (confirmed == true) {
-        debugPrint('History before saving: ${_history.map((e) => e.comment).toList()}');
-        final updatedItem = widget.item.copyWith(history: _history);
-        await _dataManager.updateDailyThing(updatedItem);
-        widget.onHistoryUpdated();
-        setState(() {
-          _isDirty = false;
-          _history = List.from(updatedItem.history);
-        });
+    if (confirmed == true) {
+      debugPrint(
+          'History before saving: ${_history.map((e) => e.comment).toList()}');
+      final updatedItem = widget.item.copyWith(history: _history);
+      await _dataManager.updateDailyThing(updatedItem);
+      widget.onHistoryUpdated();
+      setState(() {
+        _isDirty = false;
+        _history = List.from(updatedItem.history);
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('History saved successfully')),
@@ -107,7 +108,8 @@ class _HistoryViewState extends State<HistoryView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Unsaved Changes'),
-        content: const Text('You have unsaved changes. What would you like to do?'),
+        content:
+            const Text('You have unsaved changes. What would you like to do?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop('cancel'),
@@ -167,40 +169,42 @@ class _HistoryViewState extends State<HistoryView> {
             child: DataTable(
               columnSpacing: 4.0,
               columns: const [
+                DataColumn(label: Align(alignment: Alignment.centerLeft, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold)))),
                 DataColumn(label: Text('Date')),
                 DataColumn(label: Text('Target'), numeric: true),
                 DataColumn(label: Text('Actual'), numeric: true),
                 DataColumn(label: Text('Done')),
                 DataColumn(label: Text('Comment')),
-                DataColumn(label: Text('')), // For delete icon
+                DataColumn(label: Text('Delete')), // For delete icon
               ],
               rows: _history.map((entry) {
                 final index = _history.indexOf(entry);
                 return DataRow(
                   cells: [
-                    DataCell(
-                        Text(DateFormat('yy/MM/dd').format(entry.date))),
+                    DataCell(Align(alignment: Alignment.centerLeft, child: Text('${_history.length - index}.', style: TextStyle(fontWeight: FontWeight.bold)))),
+                    DataCell(Text(DateFormat('yy/MM/dd').format(entry.date))),
                     DataCell(
                       TextFormField(
-                        initialValue:
-                            _numberFormat.format(entry.targetValue),
+                        initialValue: _numberFormat.format(entry.targetValue),
                         textAlign: TextAlign.end,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         style: const TextStyle(fontSize: 14.0),
                         decoration: const InputDecoration(
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 4.0),
                           border: InputBorder.none,
                         ),
                         onChanged: (value) {
                           setState(() {
                             _isDirty = true;
                             _history[index] = entry.copyWith(
-                              targetValue: double.tryParse(value) ??
-                                  entry.targetValue,
+                              targetValue:
+                                  double.tryParse(value) ?? entry.targetValue,
                             );
-                            debugPrint('Updated targetValue for index $index: ${_history[index].targetValue}');
+                            debugPrint(
+                                'Updated targetValue for index $index: ${_history[index].targetValue}');
                           });
                         },
                       ),
@@ -216,7 +220,8 @@ class _HistoryViewState extends State<HistoryView> {
                         style: const TextStyle(fontSize: 14.0),
                         decoration: const InputDecoration(
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 4.0),
                           border: InputBorder.none,
                         ),
                         onChanged: (value) {
@@ -225,7 +230,9 @@ class _HistoryViewState extends State<HistoryView> {
                             _history[index] = entry.copyWith(
                               actualValue: double.tryParse(value),
                             );
-                            debugPrint('Updated actualValue for index $index: ${_history[index].actualValue}');                                });
+                            debugPrint(
+                                'Updated actualValue for index $index: ${_history[index].actualValue}');
+                          });
                         },
                       ),
                     ),
@@ -235,8 +242,7 @@ class _HistoryViewState extends State<HistoryView> {
                         onChanged: (value) {
                           setState(() {
                             _isDirty = true;
-                            _history[index] =
-                                entry.copyWith(doneToday: value);
+                            _history[index] = entry.copyWith(doneToday: value);
                           });
                         },
                       ),
@@ -249,15 +255,16 @@ class _HistoryViewState extends State<HistoryView> {
                           style: const TextStyle(fontSize: 14.0),
                           decoration: const InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 8.0, horizontal: 4.0),
                             border: InputBorder.none,
                           ),
                           onChanged: (value) {
                             setState(() {
                               _isDirty = true;
-                              _history[index] =
-                                  entry.copyWith(comment: value);
-                              debugPrint('Updated comment for index $index: ${_history[index].comment}');
+                              _history[index] = entry.copyWith(comment: value);
+                              debugPrint(
+                                  'Updated comment for index $index: ${_history[index].comment}');
                             });
                           },
                         ),
