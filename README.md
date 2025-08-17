@@ -42,19 +42,19 @@ adb logcat | grep -i flutter
 flutter pub run flutter_launcher_icons
 ```
 
-### Linux AppImage:
-```bash
-flutter build linux
-cp -r build/linux/x64/release/bundle/* daily_inc.AppDir/
-./android/appimagetool.AppImage daily_inc.AppDir
-```
-
 ### Android APK
 ```bash
 flutter build apk --release
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 The release APK is located at `build/app/outputs/flutter-apk/app-release.apk`
+
+### Linux AppImage:
+```bash
+flutter build linux
+cp -r build/linux/x64/release/bundle/* daily_inc.AppDir/
+./android/appimagetool.AppImage daily_inc.AppDir
+```
 
 ### iOS (on macOS with Xcode):
 ```bash
@@ -63,7 +63,7 @@ open ios/Runner.xcworkspace
 # Then Archive in Xcode and export
 ```
 
-### Automated Release
+### GitHub Automated Release 
 
 1.  Navigate to the "Actions" tab in the GitHub repository.
 2.  Under "Workflows", select the "Release" workflow.
