@@ -298,7 +298,6 @@ class _HistoryViewState extends State<HistoryView> {
 
     if (confirmed == true) {
       final key = _getEntryKey(entry);
-      final key = _getEntryKey(entry);
       setState(() {
         _history.remove(entry);
         _isDirty = true;
