@@ -1,3 +1,4 @@
+import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -21,6 +22,9 @@ class _SettingsViewState extends State<SettingsView> {
   bool _showCompletionMessage = false;
   String _completionMessageText = 'Well done! You did it!';
 
+  // Grace period setting
+  int _gracePeriodDays = 1; // Default to 1 day
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +40,11 @@ class _SettingsViewState extends State<SettingsView> {
       _showCompletionMessage = prefs.getBool('showCompletionMessage') ?? false;
       _completionMessageText =
           prefs.getString('completionMessageText') ?? 'Well done! You did it!';
+      _gracePeriodDays =
+          prefs.getInt('gracePeriodDays') ?? 1; // Default to 1 day
     });
+    // Update the static variable in IncrementCalculator
+    IncrementCalculator.setGracePeriod(_gracePeriodDays);
   }
 
   Future<void> _saveSettings() async {
@@ -45,6 +53,9 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setString('startOfDayMessageText', _startOfDayMessageText);
     await prefs.setBool('showCompletionMessage', _showCompletionMessage);
     await prefs.setString('completionMessageText', _completionMessageText);
+    await prefs.setInt('gracePeriodDays', _gracePeriodDays);
+    // Update the static variable in IncrementCalculator
+    IncrementCalculator.setGracePeriod(_gracePeriodDays);
     _log.info('Settings saved');
   }
 
@@ -182,6 +193,38 @@ class _SettingsViewState extends State<SettingsView> {
             ),
 
           const Divider(),
+          const SizedBox(height: 16),
+
+          // Grace Period Section
+          const Text(
+            'Grace Period',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Number of days before penalties are applied for missed tasks:',
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: _gracePeriodDays.toDouble(),
+                  min: 0,
+                  max: 10,
+                  divisions: 10,
+                  label: '$_gracePeriodDays days',
+                  onChanged: (value) {
+                    setState(() {
+                      _gracePeriodDays = value.toInt();
+                    });
+                    _saveSettings();
+                  },
+                ),
+              ),
+              Text('$_gracePeriodDays days'),
+            ],
+          ),
           const SizedBox(height: 16),
 
           // Reset Data Section

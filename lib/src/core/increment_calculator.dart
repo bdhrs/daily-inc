@@ -7,6 +7,18 @@ import 'package:logging/logging.dart';
 final _logger = Logger('IncrementCalculator');
 
 class IncrementCalculator {
+  static int _gracePeriodDays = 1; // Default to 1 day
+
+  /// Set the grace period
+  static void setGracePeriod(int days) {
+    _gracePeriodDays = days;
+  }
+
+  /// Get the current grace period
+  static int getGracePeriod() {
+    return _gracePeriodDays;
+  }
+
   /// Calculate the daily increment value for a DailyThing
   static double calculateIncrement(DailyThing item) {
     if (item.duration <= 0) return 0.0;
@@ -148,13 +160,13 @@ class IncrementCalculator {
       // increment by increment
       newValue = baseTarget + increment;
       _logger.info('Increment (+$increment) for "${item.name}": $newValue');
-    } else if (daysSinceDone == 2) {
-      // no change
+    } else if (daysSinceDone <= getGracePeriod() + 1) {
+      // no change during grace period
       newValue = baseTarget;
-      _logger
-          .info('No change (2 days since done) for "${item.name}": $newValue');
+      _logger.info(
+          'No change ($daysSinceDone days since done) for "${item.name}" during grace period: $newValue');
     } else {
-      // 3+ days: decrement by increment * (days - 1)
+      // after grace period: decrement by increment * (days - 1)
       final penalty = increment * (daysSinceDone - 1);
       newValue = baseTarget - penalty;
       _logger.info(

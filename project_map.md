@@ -9,15 +9,18 @@ This document provides a map of the project, listing the location of all functio
   - Keyboard shortcut Ctrl/Cmd+Q: quits the app on desktop or pops on mobile [`lib/main.dart:69`](lib/main.dart:69): Handy quick-exit key handler.
 
 ## lib/src/core/increment_calculator.dart
-- `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:8`](lib/src/core/increment_calculator.dart:8): Calculates targets, display values, and status for daily items.
-  - `calculateIncrement(DailyThing item)` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Finds the per-day change from start to end over the duration.
-  - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:16`](lib/src/core/increment_calculator.dart:16): Gets the most recent day you marked the task as done.
-  - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:29`](lib/src/core/increment_calculator.dart:29): Finds the date of the latest history record.
-  - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:38`](lib/src/core/increment_calculator.dart:38): Counts how many days were skipped since the last entry.
-  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:44`](lib/src/core/increment_calculator.dart:44): Computes today’s target based on progress rules and gaps.
-  - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:150`](lib/src/core/increment_calculator.dart:150): Chooses what number to show today (target or actual) depending on type.
-  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:201`](lib/src/core/increment_calculator.dart:201): Tells if today’s goal is met for the item.
-  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:222`](lib/src/core/increment_calculator.dart:222): Returns green or red status based on today’s target.
+- `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:9`](lib/src/core/increment_calculator.dart:9): Calculates targets, display values, and status for daily items.
+  - Static variable `_gracePeriodDays` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Stores the configurable grace period.
+  - `setGracePeriod(int days)` [`lib/src/core/increment_calculator.dart:13`](lib/src/core/increment_calculator.dart:13): Sets the grace period.
+  - `getGracePeriod()` [`lib/src/core/increment_calculator.dart:18`](lib/src/core/increment_calculator.dart:18): Gets the current grace period.
+  - `calculateIncrement(DailyThing item)` [`lib/src/core/increment_calculator.dart:22`](lib/src/core/increment_calculator.dart:22): Finds the per-day change from start to end over the duration.
+  - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:28`](lib/src/core/increment_calculator.dart:28): Gets the most recent day you marked the task as done.
+  - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:41`](lib/src/core/increment_calculator.dart:41): Finds the date of the latest history record.
+  - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:50`](lib/src/core/increment_calculator.dart:50): Counts how many days were skipped since the last entry.
+  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today’s target based on progress rules and gaps.
+  - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:188`](lib/src/core/increment_calculator.dart:188): Chooses what number to show today (target or actual) depending on type.
+  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:250`](lib/src/core/increment_calculator.dart:250): Tells if today’s goal is met for the item.
+  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:271`](lib/src/core/increment_calculator.dart:271): Returns green or red status based on today’s target.
 
 - `Status` enum [`lib/src/core/increment_calculator.dart:244`](lib/src/core/increment_calculator.dart:244): Simple green or red state for display.
 
@@ -177,11 +180,12 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/settings_view.dart
 - `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters and data actions.
 - `_SettingsViewState` class [`lib/src/views/settings_view.dart:14`](lib/src/views/settings_view.dart:14): Loads preferences and handles save/reset.
-  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:18`](lib/src/views/settings_view.dart:18): Controls for customizable motivational messages.
-  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:30`](lib/src/views/settings_view.dart:30): Initializes and fetches stored values.
-  - `_saveSettings()` [`lib/src/views/settings_view.dart:42`](lib/src/views/settings_view.dart:42): Persists motivational message settings.
-  - `_resetAllData()` [`lib/src/views/settings_view.dart:51`](lib/src/views/settings_view.dart:51): Clears stored data and confirms.
-- `build(BuildContext context)` [`lib/src/views/settings_view.dart:107`](lib/src/views/settings_view.dart:107): Renders the settings UI with motivational message controls and warning icon on reset button.
+  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:19`](lib/src/views/settings_view.dart:19): Controls for customizable motivational messages.
+  - State variable for grace period: `_gracePeriodDays` [`lib/src/views/settings_view.dart:26`](lib/src/views/settings_view.dart:26): Controls the number of days before penalties are applied.
+  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:31`](lib/src/views/settings_view.dart:31): Initializes and fetches stored values.
+  - `_saveSettings()` [`lib/src/views/settings_view.dart:49`](lib/src/views/settings_view.dart:49): Persists motivational message settings and grace period.
+  - `_resetAllData()` [`lib/src/views/settings_view.dart:63`](lib/src/views/settings_view.dart:63): Clears stored data and confirms.
+- `build(BuildContext context)` [`lib/src/views/settings_view.dart:123`](lib/src/views/settings_view.dart:123): Renders the settings UI with motivational message controls, grace period slider, and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.
