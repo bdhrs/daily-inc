@@ -37,7 +37,9 @@ This document provides a map of the project, listing the location of all functio
   - `getUniqueCategories()` [`lib/src/data/data_manager.dart:227`](lib/src/data/data_manager.dart:227): Lists all unique categories (except “None”).
   - `getUniqueCategoriesForType(ItemType type)` [`lib/src/data/data_manager.dart:244`](lib/src/data/data_manager.dart:244): Lists unique categories only for the given type.
   - `getLastMotivationShownDate()` [`lib/src/data/data_manager.dart:262`](lib/src/data/data_manager.dart:262): Reads the date when the motivation dialog was last shown.
-  - `setLastMotivationShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:272`](lib/src/data/data_manager.dart:272): Stores today’s date as the last shown motivation.
+  - `setLastMotivationShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:272`](lib/src/data/data_manager.dart:272): Stores today's date as the last shown motivation.
+  - `getLastCompletionShownDate()` [`lib/src/data/data_manager.dart:287`](lib/src/data/data_manager.dart:287): Reads the date when the completion dialog was last shown.
+  - `setLastCompletionShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:297`](lib/src/data/data_manager.dart:297): Stores today's date as the last shown completion message.
 
 ## lib/src/data/history_manager.dart
 - `HistoryManager` class [`lib/src/data/history_manager.dart:6`](lib/src/data/history_manager.dart:6): Safely updates future targets when plan settings change without altering past records.
@@ -123,30 +125,33 @@ This document provides a map of the project, listing the location of all functio
   - `_dataManager` [`lib/src/views/daily_things_view.dart:29`](lib/src/views/daily_things_view.dart:29): Handles loading and saving items.
   - `_dailyThings` [`lib/src/views/daily_things_view.dart:30`](lib/src/views/daily_things_view.dart:30): In-memory list of tasks.
   - `_isExpanded` / `_expansionTileKeys` [`lib/src/views/daily_things_view.dart:31`](lib/src/views/daily_things_view.dart:31): Tracks which rows are expanded.
-  - `_hasShownCompletionSnackbar`, `_allTasksCompleted` [`lib/src/views/daily_things_view.dart:35`](lib/src/views/daily_things_view.dart:35): Status for daily completion celebration.
-  - `_showOnlyDueItems`, `_hideWhenDone` [`lib/src/views/daily_things_view.dart:36`](lib/src/views/daily_things_view.dart:36): Controls filtering and hiding.
-  - `_motivationCheckedThisBuild` [`lib/src/views/daily_things_view.dart:38`](lib/src/views/daily_things_view.dart:38): Ensures motivation dialog is shown once per day.
-  - `_allExpanded` [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39): Tracks expand/collapse all state.
-  - `_updateAvailable` [`lib/src/views/daily_things_view.dart:40`]: Tracks if a new update is available.
-  - `initState()` / `dispose()` [`lib/src/views/daily_things_view.dart:42`](lib/src/views/daily_things_view.dart:42): Lifecycle to subscribe/unsubscribe, kick off loading, and check for updates.
-  - `_loadHideWhenDoneSetting()` / `_refreshHideWhenDoneSetting()` [`lib/src/views/daily_things_view.dart:52`](lib/src/views/daily_things_view.dart:52): Reads and updates the “hide done” preference.
-  - `_loadData()` [`lib/src/views/daily_things_view.dart:78`](lib/src/views/daily_things_view.dart:78): Loads items and checks if everything is done.
-  - `_refreshDisplay()` [`lib/src/views/daily_things_view.dart:97`](lib/src/views/daily_things_view.dart:97): Forces a rebuild and reloads items.
-  - `_openAddDailyItemPopup()` [`lib/src/views/daily_things_view.dart:109`](lib/src/views/daily_things_view.dart:109): Opens the screen to add a new task.
-  - `_editDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:124`](lib/src/views/daily_things_view.dart:124): Opens the edit screen and updates the list on return.
-  - `_deleteDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:157`](lib/src/views/daily_things_view.dart:157): Confirms and deletes a task, then refreshes.
-  - `_duplicateItem(DailyThing item)` [`lib/src/views/daily_things_view.dart:216`](lib/src/views/daily_things_view.dart:216): Creates a copy of a task and saves it.
-  - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:256`](lib/src/views/daily_things_view.dart:256): Opens the minutes timer in full screen.
-  - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:335`](lib/src/views/daily_things_view.dart:335): Prompts to enter reps and saves them.
-  - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:347`](lib/src/views/daily_things_view.dart:347): Exports all items/history to JSON.
-  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:355`]: Checks for updates and shows a pulsing icon.
-  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:372`]: Manages the multi-step update process with user feedback.
-  - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:400`](lib/src/views/daily_things_view.dart:400): Finds the next not-done item’s index.
-  - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:426`](lib/src/views/daily_things_view.dart:426): Toggles expansion for filtered items.
+  - `_hasShownCompletionSnackbar`, `_allTasksCompleted` [`lib/src/views/daily_things_view.dart:38`](lib/src/views/daily_things_view.dart:38): Status for daily completion celebration.
+  - `_showOnlyDueItems`, `_hideWhenDone` [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39): Controls filtering and hiding.
+  - `_motivationCheckedThisBuild` [`lib/src/views/daily_things_view.dart:41`](lib/src/views/daily_things_view.dart:41): Ensures motivation dialog is shown once per day.
+  - `_allExpanded` [`lib/src/views/daily_things_view.dart:42`](lib/src/views/daily_things_view.dart:42): Tracks expand/collapse all state.
+  - `_updateAvailable` [`lib/src/views/daily_things_view.dart:43`](lib/src/views/daily_things_view.dart:43): Tracks if a new update is available.
+  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/daily_things_view.dart:45`](lib/src/views/daily_things_view.dart:45): Controls for customizable motivational messages.
+  - `initState()` / `dispose()` [`lib/src/views/daily_things_view.dart:52`](lib/src/views/daily_things_view.dart:52): Lifecycle to subscribe/unsubscribe, kick off loading, and check for updates.
+  - `_loadHideWhenDoneSetting()` / `_refreshHideWhenDoneSetting()` [`lib/src/views/daily_things_view.dart:75`](lib/src/views/daily_things_view.dart:75): Reads and updates the "hide done" preference.
+  - `_loadMotivationalMessageSettings()` [`lib/src/views/daily_things_view.dart:85`](lib/src/views/daily_things_view.dart:85): Loads motivational message settings from SharedPreferences.
+  - `_loadData()` [`lib/src/views/daily_things_view.dart:113`](lib/src/views/daily_things_view.dart:113): Loads items and checks if everything is done.
+  - `_refreshDisplay()` [`lib/src/views/daily_things_view.dart:131`](lib/src/views/daily_things_view.dart:131): Forces a rebuild and reloads items.
+  - `_openAddDailyItemPopup()` [`lib/src/views/daily_things_view.dart:144`](lib/src/views/daily_things_view.dart:144): Opens the screen to add a new task.
+  - `_editDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:160`](lib/src/views/daily_things_view.dart:160): Opens the edit screen and updates the list on return.
+  - `_deleteDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:193`](lib/src/views/daily_things_view.dart:193): Confirms and deletes a task, then refreshes.
+  - `_duplicateItem(DailyThing item)` [`lib/src/views/daily_things_view.dart:225`](lib/src/views/daily_things_view.dart:225): Creates a copy of a task and saves it.
+  - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:265`](lib/src/views/daily_things_view.dart:265): Opens the minutes timer in full screen.
+  - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:427`](lib/src/views/daily_things_view.dart:427): Prompts to enter reps and saves them.
+  - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:439`](lib/src/views/daily_things_view.dart:439): Exports all items/history to JSON.
+  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:522`](lib/src/views/daily_things_view.dart:522): Checks for updates and shows a pulsing icon.
+  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:538`](lib/src/views/daily_things_view.dart:538): Manages the multi-step update process with user feedback.
+  - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:463`](lib/src/views/daily_things_view.dart:463): Finds the next not-done item's index.
+  - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:467`](lib/src/views/daily_things_view.dart:467): Toggles expansion for filtered items.
   - `_checkAndShowCompletionSnackbar()` [`lib/src/views/daily_things_view.dart:486`](lib/src/views/daily_things_view.dart:486): Shows a message when all tasks are done.
-  - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:526`](lib/src/views/daily_things_view.dart:526): Imports tasks from a JSON file and saves them.
-  - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:568`](lib/src/views/daily_things_view.dart:568): Re-triggers motivation when app resumes.
-  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:575`](lib/src/views/daily_things_view.dart:575): Builds filters, menus, the reorderable task list, and the AppBar with update notifications.
+  - `_maybeShowCompletionDialog()` [`lib/src/views/daily_things_view.dart:517`](lib/src/views/daily_things_view.dart:517): Shows customizable completion dialog once per day.
+  - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:550`](lib/src/views/daily_things_view.dart:550): Imports tasks from a JSON file and saves them.
+  - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:592`](lib/src/views/daily_things_view.dart:592): Re-triggers motivation when app resumes.
+  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and the AppBar with update notifications.
 
 ## lib/src/views/graph_view.dart
 - `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress with time range filtering.
@@ -171,13 +176,12 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/settings_view.dart
 - `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters and data actions.
-- `_SettingsViewState` class [`lib/src/views/settings_view.dart:15`](lib/src/views/settings_view.dart:15): Loads preferences and handles save/reset.
-  - `_stickyNotifications` [`lib/src/views/settings_view.dart:17`](lib/src/views/settings_view.dart:17): Example toggle stored in preferences.
-  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:21`](lib/src/views/settings_view.dart:21): Initializes and fetches stored values.
-  - `_updateStickyNotifications(bool)` [`lib/src/views/settings_view.dart:35`](lib/src/views/settings_view.dart:35): Updates toggle state.
-  - `_handleSaveAndReset(...)` [`lib/src/views/settings_view.dart:135`](lib/src/views/settings_view.dart:135): Persists data and shows messages.
-- `_handleReset(...)` [`lib/src/views/settings_view.dart:171`](lib/src/views/settings_view.dart:171): Clears stored data and confirms.
-- `build(BuildContext context)` [`lib/src/views/settings_view.dart:46`](lib/src/views/settings_view.dart:46): Renders the settings UI.
+- `_SettingsViewState` class [`lib/src/views/settings_view.dart:14`](lib/src/views/settings_view.dart:14): Loads preferences and handles save/reset.
+  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:18`](lib/src/views/settings_view.dart:18): Controls for customizable motivational messages.
+  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:30`](lib/src/views/settings_view.dart:30): Initializes and fetches stored values.
+  - `_saveSettings()` [`lib/src/views/settings_view.dart:42`](lib/src/views/settings_view.dart:42): Persists motivational message settings.
+  - `_resetAllData()` [`lib/src/views/settings_view.dart:51`](lib/src/views/settings_view.dart:51): Clears stored data and confirms.
+- `build(BuildContext context)` [`lib/src/views/settings_view.dart:107`](lib/src/views/settings_view.dart:107): Renders the settings UI with motivational message controls and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.

@@ -42,6 +42,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _allExpanded = false;
   bool _updateAvailable = false;
 
+  // Motivational message settings
+  bool _showStartOfDayMessage = false;
+  String _startOfDayMessageText = 'Finish all your things today!';
+  bool _showCompletionMessage = false;
+  String _completionMessageText = 'Well done! You did it!';
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -49,7 +55,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
     _log.info('initState called');
     // Load settings first to ensure they're available for first build
     _loadHideWhenDoneSetting().then((_) {
-      _loadData();
+      _loadMotivationalMessageSettings().then((_) {
+        _loadData();
+      });
     });
     _updateService.isUpdateAvailable().then((isAvailable) {
       _log.info('Update check completed. Result: $isAvailable');
@@ -72,6 +80,18 @@ class _DailyThingsViewState extends State<DailyThingsView>
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<void> _loadMotivationalMessageSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _showStartOfDayMessage = prefs.getBool('showStartOfDayMessage') ?? false;
+    _startOfDayMessageText = prefs.getString('startOfDayMessageText') ??
+        'Finish all your things today!';
+    _showCompletionMessage = prefs.getBool('showCompletionMessage') ?? false;
+    _completionMessageText =
+        prefs.getString('completionMessageText') ?? 'Well done! You did it!';
+    _log.info(
+        'Loaded motivational message settings: startOfDay=$_showStartOfDayMessage, completion=$_showCompletionMessage');
   }
 
   Future<void> _refreshHideWhenDoneSetting() async {
@@ -109,14 +129,16 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   void _refreshDisplay() {
-    _maybeShowMotivation();
-    _log.info('Refreshing display.');
-    // Ensure a rebuild occurs immediately before async reload,
-    // so UI reflects updated completion state without needing a second tap.
-    if (mounted) {
-      setState(() {});
-    }
-    _loadData();
+    _loadMotivationalMessageSettings().then((_) {
+      _maybeShowMotivation();
+      _log.info('Refreshing display.');
+      // Ensure a rebuild occurs immediately before async reload,
+      // so UI reflects updated completion state without needing a second tap.
+      if (mounted) {
+        setState(() {});
+      }
+      _loadData();
+    });
   }
 
   void _openAddDailyItemPopup() {
@@ -329,6 +351,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   Future<void> _maybeShowMotivation() async {
+    // Check if start of day message is enabled
+    if (!_showStartOfDayMessage) return;
+
     try {
       final today = DateTime.now();
       final ymd =
@@ -341,7 +366,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       final acknowledged = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          content: const Text('Finish all your things today!'),
+          content: Text(_startOfDayMessageText),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -479,11 +504,31 @@ class _DailyThingsViewState extends State<DailyThingsView>
       setState(() {
         _hasShownCompletionSnackbar = true;
       });
+
+      // Show completion dialog only if enabled and once per day
+      _maybeShowCompletionDialog();
+    } else if (!allCompleted) {
+      setState(() {
+        _hasShownCompletionSnackbar = false;
+      });
+    }
+  }
+
+  Future<void> _maybeShowCompletionDialog() async {
+    // Check if completion message is enabled
+    if (!_showCompletionMessage) return;
+
+    try {
+      final today = DateTime.now();
+      final ymd =
+          '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final last = await _dataManager.getLastCompletionShownDate();
+      if (last == ymd || !mounted) return;
       // ignore: use_build_context_synchronously
       showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          content: const Text('Well done! You did it!'),
+          content: Text(_completionMessageText),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -491,11 +536,14 @@ class _DailyThingsViewState extends State<DailyThingsView>
             ),
           ],
         ),
-      );
-    } else if (!allCompleted) {
-      setState(() {
-        _hasShownCompletionSnackbar = false;
+      ).then((_) async {
+        // Set the completion shown date after dialog is closed
+        if (mounted) {
+          await _dataManager.setLastCompletionShownDate(ymd);
+        }
       });
+    } catch (e, s) {
+      _log.severe('Error showing completion dialog', e, s);
     }
   }
 
