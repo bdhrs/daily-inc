@@ -127,7 +127,8 @@ class DataManager {
       final loadedThings = list
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
-      _log.info('Loaded ${loadedThings.length} items from file-based storage. First item history (truncated): ${loadedThings.isNotEmpty ? loadedThings.first.history.map((e) => e.comment).take(5).toList() : 'N/A'}');
+      _log.info(
+          'Loaded ${loadedThings.length} items from file-based storage. First item history (truncated): ${loadedThings.isNotEmpty ? loadedThings.first.history.map((e) => e.comment).take(5).toList() : 'N/A'}');
       return loadedThings;
     } catch (e, s) {
       _log.severe('Error loading data from file', e, s);
@@ -279,6 +280,27 @@ class DataManager {
         ? Map<String, dynamic>.from(dynamicMeta)
         : <String, dynamic>{};
     meta['lastMotivationShownDate'] = yyyymmdd;
+    raw['meta'] = meta;
+    await _writeRawStore(raw);
+  }
+
+  Future<String?> getLastCompletionShownDate() async {
+    final raw = await _readRawStore();
+    final dynamicMeta = raw['meta'];
+    if (dynamicMeta is Map) {
+      final m = Map<String, dynamic>.from(dynamicMeta);
+      return m['lastCompletionShownDate'] as String?;
+    }
+    return null;
+  }
+
+  Future<void> setLastCompletionShownDate(String yyyymmdd) async {
+    final raw = await _readRawStore();
+    final dynamicMeta = raw['meta'];
+    final meta = (dynamicMeta is Map)
+        ? Map<String, dynamic>.from(dynamicMeta)
+        : <String, dynamic>{};
+    meta['lastCompletionShownDate'] = yyyymmdd;
     raw['meta'] = meta;
     await _writeRawStore(raw);
   }
