@@ -194,6 +194,9 @@ This document provides a map of the project, listing the location of all functio
   - `_dataManager` [`lib/src/views/history_view.dart:17`](lib/src/views/history_view.dart:17): Handles data saving.
   - `initState()` [`lib/src/views/history_view.dart:20`](lib/src/views/history_view.dart:20): Initializes the local history list.
   - `_saveChanges()` [`lib/src/views/history_view.dart:26`](lib/src/views/history_view.dart:26): Shows a confirmation dialog and saves changes.
+  - `_startAddingEntry()` [`lib/src/views/history_view.dart:90`](lib/src/views/history_view.dart:90): Starts the process of adding a new entry.
+  - `_saveNewEntry()` [`lib/src/views/history_view.dart:103`](lib/src/views/history_view.dart:103): Validates and saves a new entry.
+  - `_cancelAddingEntry()` [`lib/src/views/history_view.dart:133`](lib/src/views/history_view.dart:133): Cancels the process of adding a new entry.
   - `build(BuildContext context)` [`lib/src/views/history_view.dart:55`](lib/src/views/history_view.dart:55): Renders the history list with editable fields.
 
 
@@ -231,6 +234,9 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/widgets/reorder_helpers.dart
 - `reorderDailyThings(...)` [`lib/src/views/widgets/reorder_helpers.dart:16`](lib/src/views/widgets/reorder_helpers.dart:16): Reorders the list of daily things.
+
+## lib/src/views/widgets/add_history_entry_dialog.dart
+- `AddHistoryEntryDialog` class [`lib/src/views/widgets/add_history_entry_dialog.dart:7`](lib/src/views/widgets/add_history_entry_dialog.dart:7): A dialog to add a new history entry (currently unused).
 
 ## lib/src/views/widgets/visibility_and_expand_helpers.dart
 - `filterDisplayedItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:6`](lib/src/views/widgets/visibility_and_expand_helpers.dart:6): Filters the list of daily things to be displayed.
