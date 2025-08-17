@@ -382,18 +382,6 @@ class _HistoryViewState extends State<HistoryView> {
                 onPressed: _cancelAddingEntry,
                 tooltip: 'Cancel Adding Entry',
               ),
-            if (!_isAddingEntry)
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _startAddingEntry,
-                tooltip: 'Add Entry',
-              ),
-            if (_isAddingEntry)
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _cancelAddingEntry,
-                tooltip: 'Cancel Adding Entry',
-              ),
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: _saveChanges,
@@ -412,17 +400,12 @@ class _HistoryViewState extends State<HistoryView> {
                         alignment: Alignment.centerLeft,
                         child: Text('#',
                             style: TextStyle(fontWeight: FontWeight.bold)))),
-                DataColumn(
-                    label: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('#',
-                            style: TextStyle(fontWeight: FontWeight.bold)))),
                 DataColumn(label: Text('Date')),
                 DataColumn(label: Text('Target'), numeric: true),
                 DataColumn(label: Text('Actual'), numeric: true),
                 DataColumn(label: Text('Done')),
                 DataColumn(label: Text('Comment')),
-                DataColumn(label: Text('Delete')), // For delete icon
+                DataColumn(label: Text('Actions')), // For delete icon
               ],
               rows: [
                 if (_isAddingEntry)
