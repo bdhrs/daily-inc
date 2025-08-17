@@ -12,6 +12,7 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     try {
       WidgetsFlutterBinding.ensureInitialized();
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
       // Setup logging
       Logger.root.level = Level.ALL;
