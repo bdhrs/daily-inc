@@ -42,6 +42,11 @@ adb logcat | grep -i flutter
 flutter pub run flutter_launcher_icons
 ```
 
+### Test and Analyze
+```bash
+flutter test && flutter analyze
+```
+
 ### Android APK
 ```bash
 flutter build apk --release
