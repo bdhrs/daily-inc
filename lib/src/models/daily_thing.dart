@@ -76,16 +76,47 @@ class DailyThing {
     final todayDate = DateTime(today.year, today.month, today.day);
     final lastDone = lastCompletedDate;
 
-    if (lastDone == null) {
-      // If it's never been done, it's due if the start date is today or in the past.
-      return !todayDate.isBefore(startDate);
-    }
-
     if (intervalType == IntervalType.byDays) {
+      if (lastDone == null) {
+        // If it's never been done, it's due if the start date is today or in the past.
+        return !todayDate.isBefore(startDate);
+      }
+
       final difference = todayDate.difference(lastDone).inDays;
       return difference >= intervalValue;
     } else {
-      return intervalWeekdays.contains(todayDate.weekday);
+      // For weekday-based items, check if today is one of the selected weekdays
+      if (!intervalWeekdays.contains(todayDate.weekday)) {
+        return false; // Not scheduled for today
+      }
+
+      // If it's never been done, it's due if the start date is today or in the past
+      if (lastDone == null) {
+        return !todayDate.isBefore(startDate);
+      }
+
+      // Find the most recent completion date that matches one of the selected weekdays
+      DateTime? lastMatchingWeekdayCompletion;
+      for (final entry in history.where((e) => e.doneToday)) {
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        if (intervalWeekdays.contains(entryDate.weekday)) {
+          if (lastMatchingWeekdayCompletion == null ||
+              entryDate.isAfter(lastMatchingWeekdayCompletion)) {
+            lastMatchingWeekdayCompletion = entryDate;
+          }
+        }
+      }
+
+      // If never completed on a matching weekday, it's due today
+      if (lastMatchingWeekdayCompletion == null) {
+        return true;
+      }
+
+      // Check if at least one week has passed since the last completion on a matching weekday
+      final weeksSinceLastCompletion =
+          todayDate.difference(lastMatchingWeekdayCompletion).inDays ~/ 7;
+      return weeksSinceLastCompletion >= 1;
     }
   }
 
