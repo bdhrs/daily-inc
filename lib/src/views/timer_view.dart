@@ -4,6 +4,7 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -82,6 +83,8 @@ class _TimerViewState extends State<TimerView> {
   @override
   void initState() {
     super.initState();
+    // Enable fullscreen mode when entering the timer view
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (widget.startInOvertime) {
       _isOvertime = true;
       _isPaused = true;
@@ -146,6 +149,8 @@ class _TimerViewState extends State<TimerView> {
   @override
   void dispose() {
     _log.info('dispose called');
+    // Disable fullscreen mode when exiting the timer view
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _timer?.cancel();
     _commentController.dispose();
     _commentFocusNode.dispose();
