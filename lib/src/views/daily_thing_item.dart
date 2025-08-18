@@ -220,8 +220,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                         }
                       },
                       child: SizedBox(
-                        width: 72.0,
-                        height: 34.0,
+                        width: 90.0,
+                        height: 35.0,
                         child: Container(
                           margin: EdgeInsets.zero,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
