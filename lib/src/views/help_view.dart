@@ -75,6 +75,10 @@ class HelpView extends StatelessWidget {
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: null,
                       tooltip: 'Add an item'),
+                  IconButton(
+                      icon: const Icon(Icons.bar_chart, color: Colors.white),
+                      onPressed: null,
+                      tooltip: 'Category Graphs'),
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: Colors.white),
                     tooltip: 'More options',
@@ -107,16 +111,6 @@ class HelpView extends StatelessWidget {
                             Icon(Icons.help),
                             SizedBox(width: 8),
                             Text('Help'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'graphs',
-                        child: Row(
-                          children: [
-                            Icon(Icons.bar_chart),
-                            SizedBox(width: 8),
-                            Text('Category Graphs'),
                           ],
                         ),
                       ),
@@ -165,10 +159,15 @@ class HelpView extends StatelessWidget {
             title: Text('Add an item'),
             subtitle: Text('Create a new daily thing.'),
           ),
+          const ListTile(
+            leading: Icon(Icons.bar_chart),
+            title: Text('Category Graphs'),
+            subtitle: Text('View graphs aggregated by category.'),
+          ),
 
           const Divider(height: 32),
           Text(
-            'More options menu',
+            'Overflow menu',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
@@ -196,12 +195,6 @@ class HelpView extends StatelessWidget {
                     title: Text('Help'),
                     subtitle: Text('You are here!'),
                   ),
-                  ListTile(
-                    leading: Icon(Icons.bar_chart),
-                    title: Text('Category Graphs'),
-                    subtitle: Text('View graphs aggregated by category.'),
-                  ),
-                  Divider(),
                   ListTile(
                     leading: Icon(Icons.folder_open),
                     title: Text('Load History'),
@@ -291,6 +284,17 @@ class HelpView extends StatelessWidget {
             leading: Icon(Icons.auto_graph),
             title: Text('View Stats'),
             subtitle: Text('Shows your progress over time for this task.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.history),
+            title: Text('Edit History'),
+            subtitle: Text('Manually edit or view the history of this task.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.pause),
+            title: Text('Pause Increments'),
+            subtitle: Text(
+                'Temporarily pause the automatic incrementing of this task\'s target value.'),
           ),
           const ListTile(
             leading: Icon(Icons.edit),

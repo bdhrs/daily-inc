@@ -3,12 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
-import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
-import 'package:daily_inc/src/views/help_view.dart';
-import 'package:daily_inc/src/views/category_graph_view.dart';
+import 'package:daily_inc/src/views/app_bar.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
 import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
@@ -47,6 +45,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
   String _startOfDayMessageText = 'Finish all your things today!';
   bool _showCompletionMessage = false;
   String _completionMessageText = 'Well done! You did it!';
+
+  void _toggleShowOnlyDueItems() {
+    setState(() {
+      _showOnlyDueItems = !_showOnlyDueItems;
+    });
+  }
 
   @override
   void initState() {
@@ -653,230 +657,21 @@ class _DailyThingsViewState extends State<DailyThingsView>
     final nextUndoneIndex = _getNextUndoneIndex(displayedItems);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Daily Inc',
-          style: TextStyle(
-            color: allTasksCompleted
-                ? Theme.of(context).colorScheme.primary
-                : null,
-          ),
-        ),
-        actions: [
-          if (_updateAvailable)
-            IconButton(
-              tooltip: 'Download the latest release',
-              icon: const Icon(
-                Icons.download,
-                color: ColorPalette.primaryBlue,
-              ),
-              onPressed: () async {
-                // Get the latest release URL and open it in browser
-                final url = await _updateService.getDownloadUrl();
-                if (url != null) {
-                  // Open the URL in browser
-                  if (await launchUrl(Uri.parse(url))) {
-                    // Successfully opened URL
-                    _log.info('Opened download URL in browser: $url');
-                  } else {
-                    // Failed to open URL
-                    _log.warning('Could not launch download URL: $url');
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Could not open download page in browser.'),
-                          duration: Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  }
-                } else {
-                  // Could not get download URL
-                  _log.warning('Could not get download URL from GitHub');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Could not get download URL.'),
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-          // Essential actions that should always be visible
-          IconButton(
-            tooltip:
-                _hideWhenDone ? 'Show Completed Items' : 'Hide Completed Items',
-            icon: Icon(
-              _hideWhenDone ? Icons.filter_list : Icons.filter_list_off,
-              color: allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: () async {
-              final newValue = !_hideWhenDone;
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('hideWhenDone', newValue);
-              setState(() {
-                _hideWhenDone = newValue;
-              });
-            },
-          ),
-
-          IconButton(
-            tooltip: _allExpanded ? 'Collapse all items' : 'Expand all items',
-            icon: Icon(
-              _allExpanded ? Icons.expand_less : Icons.expand_more,
-              color: allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: _expandAllVisibleItems,
-          ),
-          IconButton(
-            tooltip: 'Add an item',
-            icon: Icon(
-              Icons.add,
-              color: allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: _openAddDailyItemPopup,
-          ),
-          // All other actions in a single overflow menu to prevent title cropping
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            icon: Icon(
-              Icons.more_vert,
-              color: allTasksCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onSelected: (value) {
-              switch (value) {
-                case 'toggle_due':
-                  setState(() {
-                    _showOnlyDueItems = !_showOnlyDueItems;
-                  });
-                  break;
-                case 'settings':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsView(),
-                    ),
-                  ).then((_) => _refreshHideWhenDoneSetting());
-                  break;
-                case 'help':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HelpView(),
-                    ),
-                  );
-                  break;
-                case 'graphs':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CategoryGraphView(dailyThings: _dailyThings),
-                    ),
-                  );
-                  break;
-                case 'load_history':
-                  _loadHistoryFromFile();
-                  break;
-                case 'save_history':
-                  _saveHistoryToFile();
-                  break;
-                case 'about':
-                  _showAboutDialog();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                value: 'toggle_due',
-                child: Row(
-                  children: [
-                    Icon(_showOnlyDueItems
-                        ? Icons.visibility
-                        : Icons.visibility_off),
-                    const SizedBox(width: 8),
-                    Text(_showOnlyDueItems
-                        ? 'Show All Items'
-                        : 'Show Due Items Only'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings),
-                    SizedBox(width: 8),
-                    Text('Settings'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'help',
-                child: Row(
-                  children: [
-                    Icon(Icons.help),
-                    SizedBox(width: 8),
-                    Text('Help'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'graphs',
-                child: Row(
-                  children: [
-                    Icon(Icons.bar_chart),
-                    SizedBox(width: 8),
-                    Text('Category Graphs'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'load_history',
-                child: Row(
-                  children: [
-                    Icon(Icons.folder_open),
-                    SizedBox(width: 8),
-                    Text('Load History'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'save_history',
-                child: Row(
-                  children: [
-                    Icon(Icons.save_alt),
-                    SizedBox(width: 8),
-                    Text('Save History'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'about',
-                child: Row(
-                  children: [
-                    Icon(Icons.info),
-                    SizedBox(width: 8),
-                    Text('About'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+      appBar: DailyThingsAppBar(
+        updateAvailable: _updateAvailable,
+        onOpenAddDailyItemPopup: _openAddDailyItemPopup,
+        onRefreshHideWhenDoneSetting: _refreshHideWhenDoneSetting,
+        onRefreshDisplay: _refreshDisplay,
+        onExpandAllVisibleItems: _expandAllVisibleItems,
+        onLoadHistoryFromFile: _loadHistoryFromFile,
+        onSaveHistoryToFile: _saveHistoryToFile,
+        dailyThings: _dailyThings,
+        hideWhenDone: _hideWhenDone,
+        allExpanded: _allExpanded,
+        showOnlyDueItems: _showOnlyDueItems,
+        onShowAboutDialog: _showAboutDialog,
+        onToggleShowOnlyDueItems: _toggleShowOnlyDueItems,
+        log: _log,
       ),
       body: ReorderableListView(
         onReorder: (oldIndex, newIndex) {

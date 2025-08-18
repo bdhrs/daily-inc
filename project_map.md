@@ -154,7 +154,7 @@ This document provides a map of the project, listing the location of all functio
   - `_maybeShowCompletionDialog()` [`lib/src/views/daily_things_view.dart:517`](lib/src/views/daily_things_view.dart:517): Shows customizable completion dialog once per day.
   - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:550`](lib/src/views/daily_things_view.dart:550): Imports tasks from a JSON file and saves them.
   - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:592`](lib/src/views/daily_things_view.dart:592): Re-triggers motivation when app resumes.
-  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and the AppBar with update notifications.
+  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
 
 ## lib/src/views/graph_view.dart
 - `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress with time range filtering.
@@ -167,6 +167,12 @@ This document provides a map of the project, listing the location of all functio
   - `_buildSpots()` [`lib/src/views/graph_view.dart:191`](lib/src/views/graph_view.dart:191): Produces a point per day from history for plotting.
   - `_getAllDatesFromStartToToday()` [`lib/src/views/graph_view.dart:227`](lib/src/views/graph_view.dart:227): Builds the full date range shown.
   - `_generateDateRange(DateTime start, DateTime end)` [`lib/src/views/graph_view.dart:250`](lib/src/views/graph_view.dart:250): Helper to create consecutive dates for the chart.
+
+## lib/src/views/app_bar.dart
+- `DailyThingsAppBar` class [`lib/src/views/app_bar.dart:12`](lib/src/views/app_bar.dart:12): A custom AppBar widget that manages the app's main actions and overflow menu.
+  - Props `updateAvailable`, `onOpenAddDailyItemPopup`, `onRefreshHideWhenDoneSetting`, `onRefreshDisplay`, `onExpandAllVisibleItems`, `onLoadHistoryFromFile`, `onSaveHistoryToFile`, `dailyThings`, `hideWhenDone`, `allExpanded`, `showOnlyDueItems`, `onShowAboutDialog`, `onToggleShowOnlyDueItems`, `log` [`lib/src/views/app_bar.dart:13`](lib/src/views/app_bar.dart:13): Inputs and callbacks for the AppBar behavior.
+- `_DailyThingsAppBarState` class [`lib/src/views/app_bar.dart:53`](lib/src/views/app_bar.dart:53): Manages the state and rendering of the AppBar.
+  - `build(BuildContext context)` [`lib/src/views/app_bar.dart:55`](lib/src/views/app_bar.dart:55): Renders the AppBar with actions and overflow menu.
 
 ## lib/src/views/help_view.dart
 - `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.

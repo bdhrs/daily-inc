@@ -69,7 +69,6 @@ class HistoryEntry {
 
       // Parse comment (nullable)
       final String? comment = json['comment'] as String?;
-      _logger.info('HistoryEntry fromJson - parsed comment: $comment');
 
       return HistoryEntry(
         date: date,
