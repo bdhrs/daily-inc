@@ -211,7 +211,7 @@ This document provides a map of the project, listing the location of all functio
   - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
   - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:43`](lib/src/views/timer_view.dart:43): Calculates the total time elapsed, including persisted history and the current session.
-  - `_toggleTimer()` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Starts, pauses, or continues the timer. Triggers overtime mode only when 'Continue' is pressed.
+  - `_toggleTimer()` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Starts, pauses, or continues the timer. Starts overtime mode when 'Continue' is pressed after timer finishes.
   - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:189`](lib/src/views/timer_view.dart:189): Main timer loops for countdown and overtime, run by `_toggleTimer`.
   - `_onTimerComplete()` [`lib/src/views/timer_view.dart:206`](lib/src/views/timer_view.dart:206): Plays a sound, pauses the timer, and automatically saves the completed progress.
   - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:218`](lib/src/views/timer_view.dart:218): Handles exiting the screen, showing a dialog for partial progress or updating the final overtime value.

@@ -165,15 +165,11 @@ class _TimerViewState extends State<TimerView> {
         _log.info(
             'isFinished: $isFinished, _remainingSeconds: $_remainingSeconds, _isOvertime: $_isOvertime');
         if (isFinished) {
-          _log.info('Timer is finished, waiting for user to continue');
-          // Timer is finished, we should wait for user to explicitly continue
-          // Don't automatically start overtime here
-          _isPaused = true; // Pause the timer
-          WakelockPlus.disable();
-          return;
-        }
-
-        if (_isOvertime) {
+          _log.info('Timer is finished, starting overtime mode');
+          // Timer is finished, start overtime mode
+          _isOvertime = true;
+          _runOvertime();
+        } else if (_isOvertime) {
           _log.info('Running overtime timer');
           _runOvertime();
         } else {
