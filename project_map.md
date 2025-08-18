@@ -247,3 +247,10 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/widgets/visibility_and_expand_helpers.dart
 - `filterDisplayedItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:6`](lib/src/views/widgets/visibility_and_expand_helpers.dart:6): Filters the list of daily things to be displayed.
 - `toggleExpansionForVisibleItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:52`](lib/src/views/widgets/visibility_and_expand_helpers.dart:52): Toggles the expansion state of visible items.
+
+## .github/workflows/release.yml
+- Release workflow [`/.github/workflows/release.yml`](/.github/workflows/release.yml): GitHub Actions workflow for building and releasing the application with different versioning options.
+  - "minor-from-main" option: Increments the MINOR version number for releases from the main branch (fixed to properly increment minor instead of patch)
+  - "patch-from-main" option: Increments the PATCH version number for releases from the main branch
+  - "major-from-dev" option: Increments the MAJOR version number for releases from the dev branch
+  - "minor-from-dev" option: Increments the MINOR version number for releases from the dev branch
