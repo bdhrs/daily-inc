@@ -6,12 +6,14 @@ on:
       release_type:
         description: 'The type of release to create.'
         required: true
-        default: 'minor'
+        default: 'minor-from-main'
         type: 'choice'
         options:
-          - major
-          - minor
-          - patch
+          - minor-from-main # Minor release from main branch
+          - patch-from-main # Patch release from main branch
+          - major-from-dev # Major release from dev branch
+          - minor-from-dev # Minor release from dev branch
+
           
 
 jobs:
@@ -64,11 +66,11 @@ jobs:
           MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
 
-          if [ "${{ github.event.inputs.release_type }}" == "major" ]; then
+          if [ "${{ github.event.inputs.release_type }}" == "major-from-dev" ]; then
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
-          elif [ "${{ github.event.inputs.release_type }}" == "minor" ]; then
+          elif [ "${{ github.event.inputs.release_type }}" == "minor-from-dev" ] || [ "${{ github.event.inputs.release_type }}" == "minor-from-main" ]; then
             MINOR=$((MINOR + 1))
             PATCH=0
           else
@@ -87,6 +89,7 @@ jobs:
           git add pubspec.yaml
           git commit -m "Bump version to v${{ steps.versioning.outputs.NEW_VERSION }}"
           git push
+  
   build_and_release:
     needs: bump_version
     if: always()
@@ -161,7 +164,6 @@ jobs:
             build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
             build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip
             
-
   sync_back_to_dev:
     needs: build_and_release
     if: github.event.inputs.release_type == 'major' || github.event.inputs.release_type == 'minor'
