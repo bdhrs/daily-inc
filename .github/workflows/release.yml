@@ -144,8 +144,8 @@ jobs:
           # Get the latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
           echo "Latest tag: $LATEST_TAG"
-          # Generate changelog from commits since the latest tag
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD)
+          # Generate changelog from commits since the latest tag, excluding "chore:" commits
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD | grep -v "^- chore:")
           # Make the changelog safe to use in JSON/multiline strings for GITHUB_OUTPUT
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
