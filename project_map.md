@@ -216,6 +216,8 @@ This document provides a map of the project, listing the location of all functio
   - `_onTimerComplete()` [`lib/src/views/timer_view.dart:206`](lib/src/views/timer_view.dart:206): Plays a sound, pauses the timer, and automatically saves the completed progress.
   - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:218`](lib/src/views/timer_view.dart:218): Handles exiting the screen, showing a dialog for partial progress or updating the final overtime value.
   - `_saveProgress()` [`lib/src/views/timer_view.dart:281`](lib/src/views/timer_view.dart:281): A unified method to save or update today's history entry, preventing duplicates.
+  - `initState()` [`lib/src/views/timer_view.dart:83`](lib/src/views/timer_view.dart:83): Initializes the timer state and enables fullscreen mode.
+  - `dispose()` [`lib/src/views/timer_view.dart:146`](lib/src/views/timer_view.dart:146): Cleans up resources and disables fullscreen mode.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:368`](lib/src/views/timer_view.dart:368): Renders the main UI with a responsive timer, info text, comment field, and controls.
   - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:444`](lib/src/views/timer_view.dart:444): Builds the main timer display, using `LayoutBuilder` and `FittedBox` to maximize its size.
   - `_buildCommentField()` [`lib/src/views/timer_view.dart:490`](lib/src/views/timer_view.dart:490): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
