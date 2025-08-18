@@ -9,6 +9,13 @@ import 'package:logging/logging.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class Point {
+  final double x;
+  final double y;
+
+  Point(this.x, this.y);
+}
+
 class CategoryGraphView extends StatefulWidget {
   final List<DailyThing> dailyThings;
   const CategoryGraphView({super.key, required this.dailyThings});
@@ -292,6 +299,17 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
                           show: true, color: GraphStyle.areaColor(context)),
                       dotData: GraphStyle.dotData,
                     ),
+                    // Trend line
+                    LineChartBarData(
+                      spots: _calculateCategoryTrendLine(dateTotals, 0, maxY),
+                      color: Colors.white,
+                      barWidth: 2.5,
+                      isCurved: true,
+                      curveSmoothness: 0.1,
+                      dashArray: [5, 5], // Dashed line pattern
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ),
                   ],
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
@@ -441,5 +459,65 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       spots.add(FlSpot(GraphStyleHelpers.epochDays(d), y));
     }
     return spots;
+  }
+
+  /// Calculate trend line points for category data using linear regression
+  /// The trend line only spans actual data points, not the full time range
+  List<FlSpot> _calculateCategoryTrendLine(
+      Map<DateTime, double> dateTotals, double minY, double maxY) {
+    // Collect values for dates with actual data (non-zero values)
+    final dataPoints = <Point>[];
+    
+    // Get sorted dates with data
+    final sortedDates = dateTotals.keys.toList()..sort();
+    for (final d in sortedDates) {
+      final value = dateTotals[d] ?? 0;
+      // Only include points with actual data (non-zero values) for trend calculation
+      // This ensures the trend line only spans dates where there's actual activity
+      if (value > 0) {
+        dataPoints.add(Point(GraphStyleHelpers.epochDays(d), value));
+      }
+    }
+
+    // Need at least 2 points to calculate a trend
+    if (dataPoints.length < 2) return [];
+
+    // Perform linear regression: y = mx + b using only actual data points
+    double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    final n = dataPoints.length.toDouble();
+    
+    for (final point in dataPoints) {
+      sumX += point.x;
+      sumY += point.y;
+      sumXY += point.x * point.y;
+      sumXX += point.x * point.x;
+    }
+    
+    // Prevent division by zero
+    final denominator = (n * sumXX - sumX * sumX);
+    if (denominator == 0) {
+      // If all x values are the same, return a flat line at the average y value
+      final averageY = sumY / n;
+      // Constrain to graph bounds
+      final constrainedY = averageY.clamp(minY, maxY);
+      return [
+        FlSpot(dataPoints.first.x, constrainedY),
+        FlSpot(dataPoints.last.x, constrainedY),
+      ];
+    }
+    
+    final slope = (n * sumXY - sumX * sumY) / denominator;
+    final intercept = (sumY - slope * sumX) / n;
+    
+    // Create line from first to last actual data point using the regression formula
+    final firstX = dataPoints.first.x;
+    final lastX = dataPoints.last.x;
+    final firstY = (slope * firstX + intercept).clamp(minY, maxY);
+    final lastY = (slope * lastX + intercept).clamp(minY, maxY);
+    
+    return [
+      FlSpot(firstX, firstY),
+      FlSpot(lastX, lastY),
+    ];
   }
 }

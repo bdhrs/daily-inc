@@ -9,6 +9,13 @@ import 'package:logging/logging.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class Point {
+  final double x;
+  final double y;
+
+  Point(this.x, this.y);
+}
+
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
   const GraphView({super.key, required this.dailyThing});
@@ -135,6 +142,17 @@ class _GraphViewState extends State<GraphView> {
                 belowBarData: BarAreaData(
                     show: true, color: GraphStyle.areaColor(context)),
                 dotData: const FlDotData(show: false),
+              ),
+              // Trend line
+              LineChartBarData(
+                spots: _calculateTrendLine(),
+                color: Colors.white,
+                barWidth: 2.5,
+                isCurved: true,
+                curveSmoothness: 0.1,
+                dashArray: [5, 5], // Dashed line pattern
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
               ),
             ],
             titlesData: FlTitlesData(
@@ -399,5 +417,78 @@ class _GraphViewState extends State<GraphView> {
       dates.add(d);
     }
     return dates;
+  }
+
+  /// Calculate trend line points using linear regression
+  /// The trend line only spans actual data points, not the full time range
+  List<FlSpot> _calculateTrendLine() {
+    // Get history data
+    final historyMap = <DateTime, dynamic>{};
+    for (final entry in widget.dailyThing.history) {
+      final dateKey = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      historyMap[dateKey] = entry;
+    }
+
+    // Collect actual values for dates with data
+    final dataPoints = <Point>[];
+    
+    // Get the filtered dates to respect the time range
+    final dates = _getFilteredDates();
+    for (final d in dates) {
+      final entry = historyMap[d];
+      double y = 0;
+      if (entry != null) {
+        if (widget.dailyThing.itemType == ItemType.check) {
+          if (entry.doneToday) y = 1;
+        } else {
+          if (entry.actualValue != null) y = entry.actualValue!;
+        }
+      }
+      // Only include points with actual data for trend calculation
+      if (y > 0 || widget.dailyThing.itemType == ItemType.check) {
+        dataPoints.add(Point(_epochDays(d), y));
+      }
+    }
+
+    // Need at least 2 points to calculate a trend
+    if (dataPoints.length < 2) return [];
+
+    // Perform linear regression: y = mx + b using only actual data points
+    double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    final n = dataPoints.length.toDouble();
+    
+    for (final point in dataPoints) {
+      sumX += point.x;
+      sumY += point.y;
+      sumXY += point.x * point.y;
+      sumXX += point.x * point.x;
+    }
+    
+    // Prevent division by zero
+    final denominator = (n * sumXX - sumX * sumX);
+    if (denominator == 0) {
+      // If all x values are the same, return a flat line at the average y value
+      final averageY = sumY / n;
+      // Constrain to graph bounds
+      final constrainedY = averageY.clamp(_minY, _maxY);
+      return [
+        FlSpot(dataPoints.first.x, constrainedY),
+        FlSpot(dataPoints.last.x, constrainedY),
+      ];
+    }
+    
+    final slope = (n * sumXY - sumX * sumY) / denominator;
+    final intercept = (sumY - slope * sumX) / n;
+    
+    // Create line from first to last actual data point using the regression formula
+    final firstX = dataPoints.first.x;
+    final lastX = dataPoints.last.x;
+    final firstY = (slope * firstX + intercept).clamp(_minY, _maxY);
+    final lastY = (slope * lastX + intercept).clamp(_minY, _maxY);
+    
+    return [
+      FlSpot(firstX, firstY),
+      FlSpot(lastX, lastY),
+    ];
   }
 }
