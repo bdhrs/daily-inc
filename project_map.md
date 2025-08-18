@@ -61,6 +61,7 @@ This document provides a map of the project, listing the location of all functio
   - `isDueToday` getter [`lib/src/models/daily_thing.dart:67`](lib/src/models/daily_thing.dart:67): Says if the task needs doing today based on its frequency.
   - `completedForToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if today counts as done for this task.
   - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today’s history entry is marked as done.
+  - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:154`](lib/src/models/daily_thing.dart:154): Determines if this item should be shown in the list based on due status and completion.
   - `toJson()` [`lib/src/models/daily_thing.dart:112`](lib/src/models/daily_thing.dart:112): Converts this item to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:131`](lib/src/models/daily_thing.dart:131): Builds the item from a JSON map.
 
@@ -247,8 +248,11 @@ This document provides a map of the project, listing the location of all functio
 - `AddHistoryEntryDialog` class [`lib/src/views/widgets/add_history_entry_dialog.dart:7`](lib/src/views/widgets/add_history_entry_dialog.dart:7): A dialog to add a new history entry (currently unused).
 
 ## lib/src/views/widgets/visibility_and_expand_helpers.dart
-- `filterDisplayedItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:6`](lib/src/views/widgets/visibility_and_expand_helpers.dart:6): Filters the list of daily things to be displayed.
-- `toggleExpansionForVisibleItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:52`](lib/src/views/widgets/visibility_and_expand_helpers.dart:52): Toggles the expansion state of visible items.
+- `toggleExpansionForVisibleItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:3`](lib/src/views/widgets/visibility_and_expand_helpers.dart:3): Toggles the expansion state of visible items.
+
+## lib/src/views/widgets/filtering_helpers.dart
+- `filterDisplayedItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:4`](lib/src/views/widgets/filtering_helpers.dart:4): Filters the list of daily things to be displayed based on showItemsDueToday and hideWhenDone rules.
+- `calculateDueItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:48`](lib/src/views/widgets/filtering_helpers.dart:48): Calculates the list of items that are due today for completion status calculation.
 
 ## .github/workflows/release.yml
 - Release workflow [`/.github/workflows/release.yml`](/.github/workflows/release.yml): GitHub Actions workflow for building and releasing the application with different versioning options.
