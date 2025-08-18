@@ -6,6 +6,7 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -488,7 +489,7 @@ class _TimerViewState extends State<TimerView> {
               _formatMinutesToMmSs(
                   (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
                       .clamp(0.0, double.infinity)),
-              style: const TextStyle(
+              style: GoogleFonts.robotoMono(
                 fontWeight: FontWeight.bold,
                 color: ColorPalette.lightText,
               ),
@@ -510,7 +511,7 @@ class _TimerViewState extends State<TimerView> {
           fit: BoxFit.contain,
           child: Text(
             _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
-            style: const TextStyle(
+            style: GoogleFonts.robotoMono(
               fontWeight: FontWeight.bold,
               color: ColorPalette.lightText,
             ),

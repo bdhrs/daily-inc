@@ -219,7 +219,7 @@ This document provides a map of the project, listing the location of all functio
   - `initState()` [`lib/src/views/timer_view.dart:83`](lib/src/views/timer_view.dart:83): Initializes the timer state and enables fullscreen mode.
   - `dispose()` [`lib/src/views/timer_view.dart:146`](lib/src/views/timer_view.dart:146): Cleans up resources and disables fullscreen mode.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:368`](lib/src/views/timer_view.dart:368): Renders the main UI with a responsive timer, info text, comment field, and controls.
-  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:444`](lib/src/views/timer_view.dart:444): Builds the main timer display, using `LayoutBuilder` and `FittedBox` to maximize its size.
+  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:444`](lib/src/views/timer_view.dart:444): Builds the main timer display using Roboto Mono monospace font, LayoutBuilder and FittedBox to maximize its size.
   - `_buildCommentField()` [`lib/src/views/timer_view.dart:490`](lib/src/views/timer_view.dart:490): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
   - `_getButtonText()` [`lib/src/views/timer_view.dart:434`](lib/src/views/timer_view.dart:434): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
 
