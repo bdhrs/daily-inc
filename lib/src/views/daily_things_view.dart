@@ -12,6 +12,7 @@ import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
+import 'package:daily_inc/src/views/widgets/filtering_helpers.dart';
 import 'package:daily_inc/src/services/update_service.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
@@ -473,7 +474,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
     setState(() {
       final displayedItems = filterDisplayedItems(
         allItems: _dailyThings,
-        showOnlyDueItems: _showOnlyDueItems,
+        showItemsDueToday: _showOnlyDueItems,
         hideWhenDone: _hideWhenDone,
       );
 
@@ -607,11 +608,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
     _log.info('build called');
     // First, determine all items that are due today. This list is used to calculate the "all done" status.
-    final List<DailyThing> dueItems = _showOnlyDueItems
-        ? _dailyThings
-            .where((item) => item.isDueToday || item.hasBeenDoneLiterallyToday)
-            .toList()
-        : _dailyThings;
+    final List<DailyThing> dueItems = calculateDueItems(
+      allItems: _dailyThings,
+      showItemsDueToday: _showOnlyDueItems,
+    );
 
     // The "all completed" status should be based on all due items, regardless of visibility.
     final allTasksCompleted =

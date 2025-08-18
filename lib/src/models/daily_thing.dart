@@ -121,10 +121,22 @@ class DailyThing {
   }
 
   bool get completedForToday {
-    if (!isDueToday) {
-      return true;
+    // If it's due today, check if it has been done today
+    if (isDueToday) {
+      return hasBeenDoneLiterallyToday;
     }
-    return hasBeenDoneLiterallyToday;
+
+    // If it's not due today, check if it was due previously but not completed
+    // For items that were due previously but not completed, they should not be considered "completed for today"
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    if (IncrementCalculator.isDue(this, todayDate)) {
+      // It was due previously but not completed, so it's not completed for today
+      return false;
+    }
+
+    // If it's not due today and was not due previously, then it's completed for today
+    return true;
   }
 
   bool get hasBeenDoneLiterallyToday {
@@ -149,6 +161,25 @@ class DailyThing {
       return todayEntry.doneToday;
     }
     return false; // No entry for today, so not done today
+  }
+
+  /// Determines if this item should be shown in the list.
+  ///
+  /// An item should be shown if:
+  /// 1. It is due today ([isDueToday])
+  /// 2. It has been done today ([hasBeenDoneLiterallyToday])
+  /// 3. It was due previously but not yet completed (carry-over items)
+  bool get shouldShowInList {
+    // If it's due today or has been done today, it should be shown
+    if (isDueToday || hasBeenDoneLiterallyToday) {
+      return true;
+    }
+
+    // For items that were due previously but not completed, they should also be shown
+    // We'll use the isDue method from IncrementCalculator to check this
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    return IncrementCalculator.isDue(this, todayDate);
   }
 
   Map<String, dynamic> toJson() {

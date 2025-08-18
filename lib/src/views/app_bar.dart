@@ -190,7 +190,7 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                   const SizedBox(width: 8),
                   Text(widget.showOnlyDueItems
                       ? 'Show All Items'
-                      : 'Show Due Items Only'),
+                      : 'Only Show Today\'s Items'),
                 ],
               ),
             ),
