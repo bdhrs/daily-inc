@@ -269,59 +269,59 @@ class _GraphViewState extends State<GraphView> {
                 maxContentWidth: 200,
                 fitInsideHorizontally: true,
                 getTooltipItems: (touchedSpots) {
-                  return touchedSpots
-                      .map((spotData) {
-                        final spotIndex = spotData.spotIndex;
-                        if (spotIndex >= _spots.length) return null;
+                  return touchedSpots.map((spotData) {
+                    if (spotData.barIndex == 1) {
+                      return null;
+                    }
+                    final spotIndex = spotData.spotIndex;
+                    if (spotIndex >= _spots.length) return null;
 
-                        final spot = _spots[spotIndex];
-                        final d = _dateFromEpochDays(spot.x);
-                        final dateKey = DateTime(d.year, d.month, d.day);
+                    final spot = _spots[spotIndex];
+                    final d = _dateFromEpochDays(spot.x);
+                    final dateKey = DateTime(d.year, d.month, d.day);
 
-                        dynamic entry;
-                        try {
-                          entry = widget.dailyThing.history.firstWhere((e) =>
-                              DateTime(e.date.year, e.date.month, e.date.day) ==
-                              dateKey);
-                        } catch (e) {
-                          entry = null;
-                        }
+                    dynamic entry;
+                    try {
+                      entry = widget.dailyThing.history.firstWhere((e) =>
+                          DateTime(e.date.year, e.date.month, e.date.day) ==
+                          dateKey);
+                    } catch (e) {
+                      entry = null;
+                    }
 
-                        final children = <TextSpan>[
-                          TextSpan(
-                            text: spot.y.toStringAsFixed(1),
-                            style: const TextStyle(
-                                color: Colors.yellow,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ];
+                    final children = <TextSpan>[
+                      TextSpan(
+                        text: spot.y.toStringAsFixed(1),
+                        style: const TextStyle(
+                            color: Colors.yellow,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ];
 
-                        if (entry != null &&
-                            entry.comment != null &&
-                            entry.comment!.isNotEmpty) {
-                          children.add(
-                            TextSpan(
-                              text: '\n${entry.comment}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal),
-                            ),
-                          );
-                        }
-
-                        return LineTooltipItem(
-                          '${DateFormat('M/d').format(d)}\n',
-                          const TextStyle(
+                    if (entry != null &&
+                        entry.comment != null &&
+                        entry.comment!.isNotEmpty) {
+                      children.add(
+                        TextSpan(
+                          text: '\n${entry.comment}',
+                          style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14),
-                          children: children,
-                        );
-                      })
-                      .whereType<LineTooltipItem>()
-                      .toList();
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal),
+                        ),
+                      );
+                    }
+
+                    return LineTooltipItem(
+                      '${DateFormat('M/d').format(d)}\n',
+                      const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14),
+                      children: children,
+                    );
+                  }).toList();
                 },
               ),
             ),
