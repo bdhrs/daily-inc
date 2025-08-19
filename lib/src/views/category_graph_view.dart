@@ -419,27 +419,32 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
                             ))
                         .toList(),
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
-                        final d = GraphStyleHelpers.dateFromEpochDays(
-                            s.x.floorToDouble());
-                        return LineTooltipItem(
-                          '${DateFormat('M/d').format(d)}\n',
-                          const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14),
-                          children: [
-                            const TextSpan(text: ''),
-                            TextSpan(
-                              text: s.y.toStringAsFixed(1),
-                              style: const TextStyle(
-                                  color: Colors.yellow,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((s) {
+                          if (s.barIndex == 1) {
+                            return null;
+                          }
+                          final d = GraphStyleHelpers.dateFromEpochDays(
+                              s.x.floorToDouble());
+                          return LineTooltipItem(
+                            '${DateFormat('M/d').format(d)}\n',
+                            const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14),
+                            children: [
+                              const TextSpan(text: ''),
+                              TextSpan(
+                                text: s.y.toStringAsFixed(1),
+                                style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          );
+                        }).toList();
+                      },
                     ),
                   ),
                 ),
@@ -467,7 +472,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
       Map<DateTime, double> dateTotals, double minY, double maxY) {
     // Collect values for dates with actual data (non-zero values)
     final dataPoints = <Point>[];
-    
+
     // Get sorted dates with data
     final sortedDates = dateTotals.keys.toList()..sort();
     for (final d in sortedDates) {
@@ -485,14 +490,14 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
     // Perform linear regression: y = mx + b using only actual data points
     double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     final n = dataPoints.length.toDouble();
-    
+
     for (final point in dataPoints) {
       sumX += point.x;
       sumY += point.y;
       sumXY += point.x * point.y;
       sumXX += point.x * point.x;
     }
-    
+
     // Prevent division by zero
     final denominator = (n * sumXX - sumX * sumX);
     if (denominator == 0) {
@@ -505,16 +510,16 @@ class _CategoryGraphViewState extends State<CategoryGraphView> {
         FlSpot(dataPoints.last.x, constrainedY),
       ];
     }
-    
+
     final slope = (n * sumXY - sumX * sumY) / denominator;
     final intercept = (sumY - slope * sumX) / n;
-    
+
     // Create line from first to last actual data point using the regression formula
     final firstX = dataPoints.first.x;
     final lastX = dataPoints.last.x;
     final firstY = (slope * firstX + intercept).clamp(minY, maxY);
     final lastY = (slope * lastX + intercept).clamp(minY, maxY);
-    
+
     return [
       FlSpot(firstX, firstY),
       FlSpot(lastX, lastY),
