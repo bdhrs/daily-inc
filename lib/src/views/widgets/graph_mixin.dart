@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// This includes time range selection, axis configuration, grid setup, and trend line calculation.
 mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
   final Logger _log = Logger('BaseGraphStateMixin');
-  
+
   /// The currently selected time range for the graph.
   TimeRange _selectedTimeRange = TimeRange.twelveWeeks;
 
@@ -50,7 +50,8 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
 
   /// Saves the current time range preference to SharedPreferences.
   Future<void> saveTimeRangePreference() async {
-    _log.info('Saving time range preference: \$_selectedTimeRange with key: \$prefsKey');
+    _log.info(
+        'Saving time range preference: \$_selectedTimeRange with key: \$prefsKey');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(prefsKey, _selectedTimeRange.name);
   }
@@ -88,11 +89,11 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
         },
         items: TimeRange.values
             .map<DropdownMenuItem<TimeRange>>((TimeRange value) {
-              return DropdownMenuItem<TimeRange>(
-                value: value,
-                child: Text(value.name),
-              );
-            }).toList(),
+          return DropdownMenuItem<TimeRange>(
+            value: value,
+            child: Text(value.name),
+          );
+        }).toList(),
       ),
     );
   }
@@ -108,7 +109,8 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
             if (value == meta.min || value == meta.max) {
               return const SizedBox.shrink();
             }
-            final interval = GraphStyleHelpers.calculateYAxisInterval(minY, maxY);
+            final interval =
+                GraphStyleHelpers.calculateYAxisInterval(minY, maxY);
             final rounded = (value / interval).round() * interval;
             if ((value - rounded).abs() < interval * 0.01) {
               return Padding(
@@ -143,7 +145,8 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
               if (_selectedTimeRange == TimeRange.twelveWeeks ||
                   _selectedTimeRange == TimeRange.sixteenWeeks) {
                 // Calculate weeks since a reference point to determine if this should be a label
-                final daysSinceEpoch = d.difference(DateTime(1970, 1, 1)).inDays;
+                final daysSinceEpoch =
+                    d.difference(DateTime(1970, 1, 1)).inDays;
                 final weeksSinceEpoch = daysSinceEpoch ~/ 7;
                 if (weeksSinceEpoch % 2 == 0) {
                   return Padding(
@@ -200,10 +203,11 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
 
   /// Calculates the trend line points using linear regression.
   /// The trend line only spans actual data points, not the full time range.
-  List<FlSpot> calculateTrendLine(List<FlSpot> spots, double minY, double maxY) {
+  List<FlSpot> calculateTrendLine(
+      List<FlSpot> spots, double minY, double maxY) {
     // Collect values for dates with actual data (non-zero values)
     final dataPoints = <Point>[];
-    
+
     // Filter spots to only include those with actual data
     for (final spot in spots) {
       // Only include points with actual data (non-zero values) for trend calculation
@@ -256,13 +260,17 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// Builds the touch tooltip data for the graph.
-  LineTouchTooltipData buildTouchTooltipData(List<FlSpot> spots, List<dynamic> historyEntries, DateTime Function(double) dateFromEpochDays) {
+  LineTouchTooltipData buildTouchTooltipData(
+      List<FlSpot> spots,
+      List<dynamic> historyEntries,
+      DateTime Function(double) dateFromEpochDays) {
     return LineTouchTooltipData(
       maxContentWidth: 200,
       fitInsideHorizontally: true,
       getTooltipItems: (touchedSpots) {
         return touchedSpots.map((spotData) {
-          if (spotData.barIndex == 1) { // Trend line
+          if (spotData.barIndex == 1) {
+            // Trend line
             return null;
           }
           final spotIndex = spotData.spotIndex;
@@ -283,23 +291,24 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
           final children = <TextSpan>[];
 
           if (entry != null) {
-            // For check type, we might want to show "Done" or "Not Done"
-            // For other types, we show the actual value
-            String valueText;
-            if (entry.doneToday != null && entry.doneToday) {
-              valueText = "Done";
-            } else if (entry.actualValue != null) {
-              valueText = entry.actualValue.toStringAsFixed(1);
-            } else {
-              valueText = "0";
-            }
-            
+            // Show target value and actual value on separate lines
             children.add(
               TextSpan(
-                text: valueText,
+                text: 'Target: ${entry.targetValue.toStringAsFixed(1)}\n',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold),
+              ),
+            );
+
+            children.add(
+              TextSpan(
+                text:
+                    'Actual: ${entry.actualValue?.toStringAsFixed(1) ?? "0.0"}',
                 style: const TextStyle(
                     color: Colors.yellow,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold),
               ),
             );
@@ -316,7 +325,7 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
               );
             }
           } else {
-            // If no entry, show 0 or "Not Done"
+            // If no entry, just show 0
             children.add(
               TextSpan(
                 text: "0",
@@ -331,9 +340,7 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
           return LineTooltipItem(
             '${DateFormat('M/d').format(d)}\n',
             const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14),
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
             children: children,
           );
         }).toList();
