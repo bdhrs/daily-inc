@@ -101,6 +101,14 @@ class IncrementCalculator {
     final todayDate = DateTime(today.year, today.month, today.day);
     final increment = calculateIncrement(item);
 
+    // If start date is today or in the future, return start value without increment
+    final startDateOnly =
+        DateTime(item.startDate.year, item.startDate.month, item.startDate.day);
+    if (todayDate.isAtSameMomentAs(startDateOnly) ||
+        todayDate.isBefore(startDateOnly)) {
+      return item.startValue;
+    }
+
     // Sort history by date (newest first)
     final sortedHistory = List<HistoryEntry>.from(item.history)
       ..sort((a, b) => b.date.compareTo(a.date));

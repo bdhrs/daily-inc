@@ -17,7 +17,7 @@ This document provides a map of the project, listing the location of all functio
   - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:28`](lib/src/core/increment_calculator.dart:28): Gets the most recent day you marked the task as done.
   - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:41`](lib/src/core/increment_calculator.dart:41): Finds the date of the latest history record.
   - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:50`](lib/src/core/increment_calculator.dart:50): Counts how many days were skipped since the last entry.
-  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today’s target based on progress rules and gaps.
+  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today’s target based on progress rules and gaps. Returns start value when start date is today or in the future.
   - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:188`](lib/src/core/increment_calculator.dart:188): Chooses what number to show today (target or actual) depending on type.
   - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:250`](lib/src/core/increment_calculator.dart:250): Tells if today’s goal is met for the item.
   - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:271`](lib/src/core/increment_calculator.dart:271): Returns green or red status based on today’s target.
