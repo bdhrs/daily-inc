@@ -126,7 +126,11 @@ class _TimerViewState extends State<TimerView> {
 
       final dailyTarget = _todaysTargetMinutes;
       final completedMinutes = todayEntry.actualValue ?? 0.0;
-      if (widget.startInOvertime || completedMinutes >= dailyTarget) {
+      // Use epsilon comparison to handle floating-point precision issues
+      final epsilon = 0.0001; // Small tolerance for floating-point comparison
+      if (widget.startInOvertime ||
+          (completedMinutes - dailyTarget).abs() < epsilon ||
+          completedMinutes > dailyTarget) {
         _isOvertime = true;
         _isPaused = true;
         _hasStarted = true;
@@ -354,7 +358,11 @@ class _TimerViewState extends State<TimerView> {
 
   Future<void> _saveProgress() async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final isDone = _currentElapsedTimeInMinutes >= _todaysTargetMinutes;
+    // Use epsilon comparison to handle floating-point precision issues
+    final epsilon = 0.0001; // Small tolerance for floating-point comparison
+    final elapsed = _currentElapsedTimeInMinutes;
+    final target = _todaysTargetMinutes;
+    final isDone = (elapsed - target).abs() < epsilon || elapsed > target;
 
     _log.info(
         'Saving progress. Done: $isDone, Time: ${_currentElapsedTimeInMinutes.toStringAsFixed(2)} min');
