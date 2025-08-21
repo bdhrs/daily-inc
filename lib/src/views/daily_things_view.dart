@@ -288,15 +288,30 @@ class _DailyThingsViewState extends State<DailyThingsView>
     _log.info('Showing about dialog.');
     final packageInfo = await PackageInfo.fromPlatform();
     final versionText = 'v${packageInfo.version}+${packageInfo.buildNumber}';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(
-          'Daily Inc',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            const Text(
+              'Daily Inc',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              versionText,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -306,19 +321,15 @@ class _DailyThingsViewState extends State<DailyThingsView>
                 'Do the important things daily, and increase incrementally over time.',
                 textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            const Text('vibe coded by bdhrs', textAlign: TextAlign.center),
+            const Text('Vibe coded by bdhrs.', textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            Text(versionText, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () async {
+            TextButton(
+              onPressed: () async {
                 final url =
                     Uri.parse('https://github.com/bdhrs/daily-inc-timer');
                 if (await launchUrl(url)) {
-                  // Successfully opened URL
                   _log.info('Opened GitHub URL in browser');
                 } else {
-                  // Failed to open URL
                   _log.warning('Could not launch GitHub URL');
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
