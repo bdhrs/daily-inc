@@ -204,19 +204,43 @@ class _TimerViewState extends State<TimerView> {
 
   void _runCountdown() {
     _log.info('runCountdown called with $_remainingSeconds seconds remaining');
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_isPaused || _remainingSeconds <= 0) {
-        timer.cancel();
-        if (_remainingSeconds <= 0) {
-          _log.info('Timer completed at zero.');
-          _onTimerComplete();
+
+    final subdivisions = widget.item.subdivisions;
+    if (subdivisions != null && subdivisions > 1) {
+      final totalSeconds = (widget.item.todayValue * 60).round();
+      final subdivisionInterval = (totalSeconds / subdivisions).round();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_isPaused || _remainingSeconds <= 0) {
+          timer.cancel();
+          if (_remainingSeconds <= 0) {
+            _log.info('Timer completed at zero.');
+            _onTimerComplete();
+          }
+          return;
         }
-        return;
-      }
-      setState(() {
-        _remainingSeconds--;
+        setState(() {
+          _remainingSeconds--;
+          if (subdivisionInterval > 0 && _remainingSeconds > 0 && _remainingSeconds % subdivisionInterval == 0) {
+            _playSubdivisionBell();
+          }
+        });
       });
-    });
+    } else {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_isPaused || _remainingSeconds <= 0) {
+          timer.cancel();
+          if (_remainingSeconds <= 0) {
+            _log.info('Timer completed at zero.');
+            _onTimerComplete();
+          }
+          return;
+        }
+        setState(() {
+          _remainingSeconds--;
+        });
+      });
+    }
   }
 
   void _onTimerComplete() async {
@@ -398,6 +422,8 @@ class _TimerViewState extends State<TimerView> {
       intervalValue: widget.item.intervalValue,
       intervalWeekdays: widget.item.intervalWeekdays,
       bellSoundPath: widget.item.bellSoundPath, // Pass the bell sound path
+      subdivisions: widget.item.subdivisions,
+      subdivisionBellSoundPath: widget.item.subdivisionBellSoundPath,
     );
   }
 
@@ -558,6 +584,18 @@ class _TimerViewState extends State<TimerView> {
       await _audioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
+    }
+  }
+
+  Future<void> _playSubdivisionBell() async {
+    _log.info('Playing subdivision bell');
+
+    try {
+      final bellPath = (widget.item.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
+          .replaceFirst('assets/', '');
+      await _audioPlayer.play(AssetSource(bellPath));
+    } catch (e) {
+      _log.warning('Failed to play subdivision bell sound: $e');
     }
   }
 

@@ -39,6 +39,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _nagMessageController;
   late TextEditingController _categoryController; // New category controller
   late TextEditingController _bellSoundController; // New bell sound controller
+  late TextEditingController _subdivisionsController;
+  late TextEditingController _subdivisionBellSoundController;
   TextEditingController? _incrementController;
   late TextEditingController _incrementMinutesController;
   late TextEditingController _incrementSecondsController;
@@ -54,6 +56,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   bool _didChangeDependencies = false;
   String? _selectedBellSoundPath; // New state variable for bell sound
+  String? _selectedSubdivisionBellSoundPath;
   bool _isUpdatingFromIncrement = false;
 
   @override
@@ -111,12 +114,17 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       }
       _nagMessageController.text = existingItem.nagMessage ?? '';
       _selectedBellSoundPath = existingItem.bellSoundPath ?? 'assets/bells/bell1.mp3'; // Initialize bell sound path with default
+      _subdivisionsController = TextEditingController(text: existingItem.subdivisions?.toString() ?? '1');
+      _selectedSubdivisionBellSoundPath = existingItem.subdivisionBellSoundPath;
     } else {
       _log.info('Creating new item');
       _selectedBellSoundPath = 'assets/bells/bell1.mp3'; // Set default for new items
+      _subdivisionsController = TextEditingController(text: '1');
     }
     _bellSoundController = TextEditingController(
         text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
+    _subdivisionBellSoundController = TextEditingController(
+        text: _selectedSubdivisionBellSoundPath?.split('/').last);
 
     // Load unique categories for autofill (type-specific)
     _loadUniqueCategoriesForSelectedType();
@@ -150,6 +158,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagMessageController.dispose();
     _categoryController.dispose(); // Dispose category controller
     _bellSoundController.dispose(); // Dispose bell sound controller
+    _subdivisionsController.dispose();
+    _subdivisionBellSoundController.dispose();
     _incrementController?.dispose();
     _incrementMinutesController.dispose();
     _incrementSecondsController.dispose();
@@ -243,8 +253,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
     _isUpdatingFromIncrement = false;
   }
-
-  
 
   /// Load unique categories for autofill for the currently selected type
   Future<void> _loadUniqueCategoriesForSelectedType() async {
@@ -366,6 +374,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           intervalValue: finalIntervalValue,
           intervalWeekdays: finalIntervalWeekdays,
           bellSoundPath: _selectedBellSoundPath, // Pass the selected bell sound path
+          subdivisions: int.tryParse(_subdivisionsController.text),
+          subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -845,6 +855,80 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ),
                     ],
                   ),
+                if (_selectedItemType == ItemType.minutes) ...[
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _subdivisionsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Subdivisions',
+                      hintText: 'e.g. 2',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final subdivisions = int.tryParse(value);
+                        if (subdivisions == null || subdivisions < 1) {
+                          return 'Must be a positive number';
+                        }
+                      }
+                      return null;
+                    },
+                    onChanged: (value) => setState(() {}),
+                  ),
+                  if (int.tryParse(_subdivisionsController.text) != null &&
+                      (int.tryParse(_subdivisionsController.text) ?? 0) > 1)
+                    Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: _subdivisionBellSoundController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Subdivision Bell Sound',
+                            hintText: 'Default (bell1.mp3)',
+                            prefixIcon: const Icon(Icons.notifications_active),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.arrow_forward_ios),
+                              onPressed: () async {
+                                final selectedPath = await showDialog<String?>(
+                                  context: context,
+                                  builder: (context) =>
+                                      CustomBellSelectorDialog(
+                                    initialBellSoundPath:
+                                        _selectedSubdivisionBellSoundPath,
+                                  ),
+                                );
+                                if (selectedPath != null) {
+                                  setState(() {
+                                    _selectedSubdivisionBellSoundPath =
+                                        selectedPath;
+                                    _subdivisionBellSoundController.text =
+                                        selectedPath.split('/').last;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          onTap: () async {
+                            final selectedPath = await showDialog<String?>(
+                              context: context,
+                              builder: (context) => CustomBellSelectorDialog(
+                                initialBellSoundPath:
+                                    _selectedSubdivisionBellSoundPath,
+                              ),
+                            );
+                            if (selectedPath != null) {
+                              setState(() {
+                                _selectedSubdivisionBellSoundPath = selectedPath;
+                                _subdivisionBellSoundController.text =
+                                    selectedPath.split('/').last;
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

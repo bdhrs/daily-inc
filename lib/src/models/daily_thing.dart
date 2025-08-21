@@ -26,6 +26,8 @@ class DailyThing {
   final int intervalValue;
   final List<int> intervalWeekdays;
   final String? bellSoundPath; // New field for bell sound path
+  final int? subdivisions;
+  final String? subdivisionBellSoundPath;
 
   DailyThing({
     String? id,
@@ -45,6 +47,8 @@ class DailyThing {
     this.intervalValue = 1,
     this.intervalWeekdays = const [],
     this.bellSoundPath, // Initialize new field
+    this.subdivisions,
+    this.subdivisionBellSoundPath,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -201,6 +205,8 @@ class DailyThing {
       'intervalValue': intervalValue,
       'intervalWeekdays': intervalWeekdays,
       'bellSoundPath': bellSoundPath, // Add to toJson
+      'subdivisions': subdivisions,
+      'subdivisionBellSoundPath': subdivisionBellSoundPath,
     };
   }
 
@@ -254,6 +260,8 @@ class DailyThing {
           ? []
           : List<int>.from(json['intervalWeekdays']),
       bellSoundPath: json['bellSoundPath'] as String?, // Add to fromJson
+      subdivisions: json['subdivisions'] as int?,
+      subdivisionBellSoundPath: json['subdivisionBellSoundPath'] as String?,
     );
   }
 
@@ -275,6 +283,8 @@ class DailyThing {
     int? intervalValue,
     List<int>? intervalWeekdays,
     String? bellSoundPath, // Add to copyWith
+    int? subdivisions,
+    String? subdivisionBellSoundPath,
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -294,6 +304,9 @@ class DailyThing {
       intervalValue: intervalValue ?? this.intervalValue,
       intervalWeekdays: intervalWeekdays ?? this.intervalWeekdays,
       bellSoundPath: bellSoundPath ?? this.bellSoundPath, // Use new field
+      subdivisions: subdivisions ?? this.subdivisions,
+      subdivisionBellSoundPath:
+          subdivisionBellSoundPath ?? this.subdivisionBellSoundPath,
     );
   }
 }
