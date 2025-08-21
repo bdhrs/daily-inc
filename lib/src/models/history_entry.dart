@@ -25,7 +25,7 @@ class HistoryEntry {
       'actual_value': actualValue,
       'comment': comment,
     };
-    _logger.info('HistoryEntry toJson: $json');
+    _logger.fine('HistoryEntry toJson: $json');
     return json;
   }
 

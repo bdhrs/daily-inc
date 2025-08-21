@@ -41,9 +41,22 @@ class _TimerViewState extends State<TimerView> {
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
 
-  double get _todaysTargetMinutes => widget.item.todayValue;
+  late double _todaysTargetMinutes;
+  late double _initialTargetSeconds;
 
   double get _currentElapsedTimeInMinutes {
+    if (_isOvertime) {
+      final overtimeMinutes = _overtimeSeconds / 60.0;
+      return _todaysTargetMinutes + overtimeMinutes;
+    }
+
+    if (_hasStarted) {
+      final elapsedSeconds = _initialTargetSeconds - _remainingSeconds;
+      final sessionElapsedMinutes = elapsedSeconds / 60.0;
+      return sessionElapsedMinutes;
+    }
+
+    // For non-started case, we need to check persisted value
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
@@ -57,22 +70,7 @@ class _TimerViewState extends State<TimerView> {
       }
     }
 
-    final persistedMinutes = todaysEntry?.actualValue ?? 0.0;
-
-    if (_isOvertime) {
-      final targetMinutes = _todaysTargetMinutes;
-      final overtimeMinutes = _overtimeSeconds / 60.0;
-      return targetMinutes + overtimeMinutes;
-    }
-
-    if (_hasStarted) {
-      final elapsedSeconds =
-          (_todaysTargetMinutes * 60).round() - _remainingSeconds;
-      final sessionElapsedMinutes = elapsedSeconds / 60.0;
-      return sessionElapsedMinutes;
-    }
-
-    return persistedMinutes;
+    return todaysEntry?.actualValue ?? 0.0;
   }
 
   String _formatMinutesToMmSs(double minutesValue) {
@@ -85,6 +83,10 @@ class _TimerViewState extends State<TimerView> {
   @override
   void initState() {
     super.initState();
+    // Initialize target values first
+    _todaysTargetMinutes = widget.item.todayValue;
+    _initialTargetSeconds = _todaysTargetMinutes * 60;
+
     // Enable fullscreen mode when entering the timer view
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (widget.startInOvertime) {
@@ -98,8 +100,7 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Start Value: ${widget.item.startValue}');
     _log.info('End Value: ${widget.item.endValue}');
     _log.info('Calculated Increment: ${widget.item.increment}');
-    _log.info(
-        'Calculated Daily Target (todayValue): ${widget.item.todayValue}');
+    _log.info('Calculated Daily Target (todayValue): $_todaysTargetMinutes');
 
     final todayDate = DateUtils.dateOnly(DateTime.now());
     _log.info('Searching for history entry for date: $todayDate');
@@ -107,8 +108,6 @@ class _TimerViewState extends State<TimerView> {
     HistoryEntry? todayEntry;
     for (final entry in widget.item.history) {
       final entryDate = DateUtils.dateOnly(entry.date);
-      _log.info(
-          'Checking history: date=$entryDate, actual=${entry.actualValue}, done=${entry.doneToday}, target=${entry.targetValue}');
       if (entryDate == todayDate) {
         // Find any entry for today, regardless of completion state.
         // This is crucial for correctly resuming overtime.
@@ -125,7 +124,7 @@ class _TimerViewState extends State<TimerView> {
         _commentController.text = todayEntry.comment!;
       }
 
-      final dailyTarget = widget.item.todayValue;
+      final dailyTarget = _todaysTargetMinutes;
       final completedMinutes = todayEntry.actualValue ?? 0.0;
       if (widget.startInOvertime || completedMinutes >= dailyTarget) {
         _isOvertime = true;
@@ -140,7 +139,7 @@ class _TimerViewState extends State<TimerView> {
         _remainingSeconds = (remainingMinutes * 60).round();
       }
     } else {
-      _remainingSeconds = (widget.item.todayValue * 60).round();
+      _remainingSeconds = _initialTargetSeconds.round();
     }
     _log.info('--- TIMER INITIALIZATION END ---');
     _commentFocusNode.addListener(() {
@@ -206,39 +205,59 @@ class _TimerViewState extends State<TimerView> {
   void _runCountdown() {
     _log.info('runCountdown called with $_remainingSeconds seconds remaining');
 
+    // Check if timer is already at 0 and complete immediately
+    if (_remainingSeconds <= 0) {
+      _log.info('Timer already at zero, completing immediately.');
+      _onTimerComplete();
+      return;
+    }
+
     final subdivisions = widget.item.subdivisions;
     if (subdivisions != null && subdivisions > 1) {
-      final totalSeconds = (widget.item.todayValue * 60).round();
+      final totalSeconds = (_todaysTargetMinutes * 60).round();
       final subdivisionInterval = (totalSeconds / subdivisions).round();
 
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_isPaused || _remainingSeconds <= 0) {
+        if (_isPaused) {
           timer.cancel();
-          if (_remainingSeconds <= 0) {
-            _log.info('Timer completed at zero.');
-            _onTimerComplete();
-          }
           return;
         }
+
         setState(() {
           _remainingSeconds--;
-          if (subdivisionInterval > 0 && _remainingSeconds > 0 && _remainingSeconds % subdivisionInterval == 0) {
+
+          // Check for immediate completion when reaching 0
+          if (_remainingSeconds <= 0) {
+            _log.info('Timer completed at zero.');
+            timer.cancel();
+            _onTimerComplete();
+            return;
+          }
+
+          if (subdivisionInterval > 0 &&
+              _remainingSeconds > 0 &&
+              _remainingSeconds % subdivisionInterval == 0) {
             _playSubdivisionBell();
           }
         });
       });
     } else {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_isPaused || _remainingSeconds <= 0) {
+        if (_isPaused) {
           timer.cancel();
-          if (_remainingSeconds <= 0) {
-            _log.info('Timer completed at zero.');
-            _onTimerComplete();
-          }
           return;
         }
+
         setState(() {
           _remainingSeconds--;
+
+          // Check for immediate completion when reaching 0
+          if (_remainingSeconds <= 0) {
+            _log.info('Timer completed at zero.');
+            timer.cancel();
+            _onTimerComplete();
+            return;
+          }
         });
       });
     }
@@ -246,15 +265,21 @@ class _TimerViewState extends State<TimerView> {
 
   void _onTimerComplete() async {
     _log.info('onTimerComplete called');
-    await _playTimerCompleteNotification();
-    WakelockPlus.disable();
-    _log.info('Wakelock disabled.');
 
+    // Play the bell sound immediately for instant feedback
+    _playTimerCompleteNotification();
+
+    // Update UI state immediately to show completion
     setState(() {
       _isPaused = true;
       _log.info('Timer paused in onTimerComplete');
     });
 
+    // Disable wakelock immediately
+    WakelockPlus.disable();
+    _log.info('Wakelock disabled.');
+
+    // Perform heavy operations (file I/O) after the bell has started playing
     await _saveProgress();
     _log.info('Progress saved in onTimerComplete');
   }
@@ -336,7 +361,7 @@ class _TimerViewState extends State<TimerView> {
 
     final newEntry = HistoryEntry(
       date: today,
-      targetValue: widget.item.todayValue,
+      targetValue: _todaysTargetMinutes,
       doneToday: isDone,
       actualValue: _currentElapsedTimeInMinutes,
       comment: _commentController.text,
@@ -390,7 +415,7 @@ class _TimerViewState extends State<TimerView> {
       if (currentComment.isNotEmpty) {
         final newEntry = HistoryEntry(
           date: today,
-          targetValue: widget.item.todayValue,
+          targetValue: _todaysTargetMinutes,
           doneToday: false,
           actualValue: 0,
           comment: currentComment,
@@ -430,8 +455,6 @@ class _TimerViewState extends State<TimerView> {
 
   @override
   Widget build(BuildContext context) {
-    _log.info('build called');
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -596,7 +619,8 @@ class _TimerViewState extends State<TimerView> {
     try {
       final bellPath = (widget.item.bellSoundPath ?? 'assets/bells/bell1.mp3')
           .replaceFirst('assets/', '');
-      await _audioPlayer.play(AssetSource(bellPath));
+      // Don't await the play operation - let it run in background
+      _audioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play bell sound: $e');
     }
@@ -606,9 +630,11 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Playing subdivision bell');
 
     try {
-      final bellPath = (widget.item.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
-          .replaceFirst('assets/', '');
-      await _audioPlayer.play(AssetSource(bellPath));
+      final bellPath =
+          (widget.item.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
+              .replaceFirst('assets/', '');
+      // Don't await the play operation - let it run in background
+      _audioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play subdivision bell sound: $e');
     }

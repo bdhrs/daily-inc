@@ -120,15 +120,14 @@ class DataManager {
   }
 
   Future<List<DailyThing>> loadData() async {
-    _log.info('loadData called');
+    _log.fine('loadData called');
     try {
       final raw = await _readRawStore();
       final list = (raw['dailyThings'] as List<dynamic>? ?? []);
       final loadedThings = list
           .map((json) => DailyThing.fromJson(json as Map<String, dynamic>))
           .toList();
-      _log.info(
-          'Loaded ${loadedThings.length} items from file-based storage. First item history (truncated): ${loadedThings.isNotEmpty ? loadedThings.first.history.map((e) => e.comment).take(5).toList() : 'N/A'}');
+      _log.fine('Loaded ${loadedThings.length} items from file-based storage');
       return loadedThings;
     } catch (e, s) {
       _log.severe('Error loading data from file', e, s);

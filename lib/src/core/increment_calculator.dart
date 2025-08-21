@@ -163,21 +163,21 @@ class IncrementCalculator {
       // already done today
       newValue = baseTarget;
       _logger
-          .info('No change (already done today) for "${item.name}": $newValue');
+          .fine('No change (already done today) for "${item.name}": $newValue');
     } else if (daysSinceDone == 1) {
       // increment by increment
       newValue = baseTarget + increment;
-      _logger.info('Increment (+$increment) for "${item.name}": $newValue');
+      _logger.fine('Increment (+$increment) for "${item.name}": $newValue');
     } else if (daysSinceDone <= getGracePeriod() + 1) {
       // no change during grace period
       newValue = baseTarget;
-      _logger.info(
+      _logger.fine(
           'No change ($daysSinceDone days since done) for "${item.name}" during grace period: $newValue');
     } else {
       // after grace period: decrement by increment * (days - 1)
       final penalty = increment * (daysSinceDone - 1);
       newValue = baseTarget - penalty;
-      _logger.info(
+      _logger.fine(
           'Penalty (${daysSinceDone - 1} * $increment = $penalty) for "${item.name}": $newValue');
     }
 
