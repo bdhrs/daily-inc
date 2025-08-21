@@ -123,25 +123,6 @@ class _HistoryViewState extends State<HistoryView> {
   }
 
   Future<void> _saveChanges() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Save'),
-        content: const Text('Are you sure you want to save these changes?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
       debugPrint(
           'History before saving: ${_history.map((e) => e.comment).toList()}');
       final updatedItem = widget.item.copyWith(history: _history);
@@ -152,19 +133,12 @@ class _HistoryViewState extends State<HistoryView> {
         _history = List.from(updatedItem.history);
         // Reinitialize controllers with new data
         _initializeControllers();
-        // Reinitialize controllers with new data
-        _initializeControllers();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('History saved successfully')),
         );
-        // Only pop if we are not already popping due to the PopScope
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
       }
-    }
   }
 
   void _startAddingEntry() {
@@ -305,66 +279,54 @@ class _HistoryViewState extends State<HistoryView> {
         _targetControllers.remove(key)?.dispose();
         _actualControllers.remove(key)?.dispose();
         _commentControllers.remove(key)?.dispose();
-        // Remove controllers for deleted entry
-        _targetControllers.remove(key)?.dispose();
-        _actualControllers.remove(key)?.dispose();
-        _commentControllers.remove(key)?.dispose();
       });
     }
-  }
-
-  Future<bool> _onWillPop() async {
-    if (!_isDirty) {
-      return true; // No changes, allow pop
-    }
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content:
-            const Text('You have unsaved changes. What would you like to do?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop('cancel'),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop('discard'),
-            child: const Text('Discard'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop('save'),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == 'save') {
-      await _saveChanges();
-      return false; // Don't pop, saveChanges will handle navigation
-    } else if (result == 'discard') {
-      return true; // Allow pop
-    }
-    // If result is 'cancel', do nothing and stay on the page
-    return false;
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_isDirty,
-      onPopInvokedWithResult: (bool didPop, Object? result) async {
+      canPop: !_isDirty, // This will prevent immediate pop if dirty
+      onPopInvoked: (bool didPop) async {
         if (didPop) {
-          return; // A pop gesture was already handled by the system
+          return; // A pop gesture was already handled by the system (e.g., if canPop was true)
         }
-        // This callback is for when the system tries to pop, but canPop is false.
-        // We should show our dialog here as well.
-        final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
-          Navigator.of(context).pop();
+
+        // If canPop was false (meaning _isDirty is true), we handle the dialog here.
+        final result = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Unsaved Changes'),
+            content:
+                const Text('You have unsaved changes. What would you like to do?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop('cancel'),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop('discard'),
+                child: const Text('Discard'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop('save'),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+
+        if (result == 'save') {
+          await _saveChanges();
+          if (mounted) {
+            Navigator.of(context).pop(); // Pop after saving
+          }
+        } else if (result == 'discard') {
+          if (mounted) {
+            Navigator.of(context).pop(); // Pop, discarding changes
+          }
         }
+        // If result is 'cancel', do nothing and stay on the page.
       },
       child: Scaffold(
         appBar: AppBar(
