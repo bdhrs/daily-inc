@@ -100,7 +100,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final increment = _calculateIncrement();
       _incrementController!.text = increment;
-      _updateIncrementMinutesAndSecondsFields(double.tryParse(increment) ?? 0.0);
+      _updateIncrementMinutesAndSecondsFields(
+          double.tryParse(increment) ?? 0.0);
     });
 
     if (existingItem != null) {
@@ -113,13 +114,18 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
       }
       _nagMessageController.text = existingItem.nagMessage ?? '';
-      _selectedBellSoundPath = existingItem.bellSoundPath ?? 'assets/bells/bell1.mp3'; // Initialize bell sound path with default
-      _subdivisionsController = TextEditingController(text: existingItem.subdivisions?.toString() ?? '1');
+      _selectedBellSoundPath = existingItem.bellSoundPath ??
+          'assets/bells/bell1.mp3'; // Initialize bell sound path with default
+      _subdivisionsController = TextEditingController(
+          text: existingItem.subdivisions?.toString() ?? '1');
       _selectedSubdivisionBellSoundPath = existingItem.subdivisionBellSoundPath;
     } else {
       _log.info('Creating new item');
-      _selectedBellSoundPath = 'assets/bells/bell1.mp3'; // Set default for new items
+      _selectedBellSoundPath =
+          'assets/bells/bell1.mp3'; // Set default for new items
       _subdivisionsController = TextEditingController(text: '1');
+      // Initialize subdivision bell sound path for new items
+      _selectedSubdivisionBellSoundPath = null;
     }
     _bellSoundController = TextEditingController(
         text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
@@ -186,7 +192,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     if (_incrementController != null) {
       final increment = _calculateIncrement();
       _incrementController!.text = increment;
-      _updateIncrementMinutesAndSecondsFields(double.tryParse(increment) ?? 0.0);
+      _updateIncrementMinutesAndSecondsFields(
+          double.tryParse(increment) ?? 0.0);
       setState(() {});
     }
   }
@@ -373,7 +380,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           intervalType: finalIntervalType,
           intervalValue: finalIntervalValue,
           intervalWeekdays: finalIntervalWeekdays,
-          bellSoundPath: _selectedBellSoundPath, // Pass the selected bell sound path
+          bellSoundPath:
+              _selectedBellSoundPath, // Pass the selected bell sound path
           subdivisions: int.tryParse(_subdivisionsController.text),
           subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
         );
@@ -446,7 +454,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ),
                     ),
                   ],
-                  ),
+                ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
@@ -488,8 +496,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
                     final converted =
                         ValueConverter.convert(currentDailyThing, value);
-                    final newCategories =
-                        await widget.dataManager.getUniqueCategoriesForType(value);
+                    final newCategories = await widget.dataManager
+                        .getUniqueCategoriesForType(value);
 
                     final currentCategory = _categoryController.text.trim();
                     String newCategoryText = _categoryController.text;
@@ -873,7 +881,20 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       }
                       return null;
                     },
-                    onChanged: (value) => setState(() {}),
+                    onChanged: (value) {
+                      // Automatically set bell3 as default subdivision bell when subdivisions > 1
+                      if (value != null && value.isNotEmpty) {
+                        final subdivisions = int.tryParse(value);
+                        if (subdivisions != null &&
+                            subdivisions > 1 &&
+                            _selectedSubdivisionBellSoundPath == null) {
+                          _selectedSubdivisionBellSoundPath =
+                              'assets/bells/bell3.mp3';
+                          _subdivisionBellSoundController.text = 'bell3.mp3';
+                        }
+                      }
+                      setState(() {});
+                    },
                   ),
                   if (int.tryParse(_subdivisionsController.text) != null &&
                       (int.tryParse(_subdivisionsController.text) ?? 0) > 1)
@@ -919,7 +940,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             );
                             if (selectedPath != null) {
                               setState(() {
-                                _selectedSubdivisionBellSoundPath = selectedPath;
+                                _selectedSubdivisionBellSoundPath =
+                                    selectedPath;
                                 _subdivisionBellSoundController.text =
                                     selectedPath.split('/').last;
                               });

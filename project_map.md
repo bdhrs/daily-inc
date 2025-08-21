@@ -99,9 +99,9 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
 - `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:26`](lib/src/views/add_edit_daily_item_view.dart:26): Handles form state and input controllers.
-  - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
-  - Selections: `_selectedItemType`, `_selectedNagTime`, `_uniqueCategories` [`lib/src/views/add_edit_daily_item_view.dart:39`](lib/src/views/add_edit_daily_item_view.dart:39): Track current type/time and category options.
-  - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values.
+  - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController`, `_bellSoundController`, `_subdivisionsController`, `_subdivisionBellSoundController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
+  - Selections: `_selectedItemType`, `_selectedNagTime`, `_uniqueCategories`, `_selectedBellSoundPath`, `_selectedSubdivisionBellSoundPath` [`lib/src/views/add_edit_daily_item_view.dart:39`](lib/src/views/add_edit_daily_item_view.dart:39): Track current type/time, category options, and bell sounds.
+  - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values, including automatic bell3 assignment for new items with subdivisions > 1.
   - `didChangeDependencies()` [`lib/src/views/add_edit_daily_item_view.dart:108`](lib/src/views/add_edit_daily_item_view.dart:108): Formats the time field when context is ready.
   - `dispose()` [`lib/src/views/add_edit_daily_item_view.dart:120`](lib/src/views/add_edit_daily_item_view.dart:120): Disposes controllers to avoid leaks.
   - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment from inputs.
@@ -109,6 +109,7 @@ This document provides a map of the project, listing the location of all functio
   - `_updateDurationFromIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:160`](lib/src/views/add_edit_daily_item_view.dart:160): Updates duration when increment changes.
   - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
   - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
+  - Subdivisions onChanged handler [`lib/src/views/add_edit_daily_item_view.dart:882`](lib/src/views/add_edit_daily_item_view.dart:882): Automatically sets bell3 as default subdivision bell when subdivisions > 1.
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.
 
 ## lib/src/views/category_graph_view.dart
