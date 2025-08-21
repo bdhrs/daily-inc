@@ -1,4 +1,3 @@
-
 import 'dart:math';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:flutter/material.dart';
@@ -21,29 +20,37 @@ class TimerPainter extends CustomPainter {
 
     // Background circle
     final backgroundPaint = Paint()
-      ..color = elapsedTime >= totalTime ? ColorPalette.cardBackground.withAlpha(100) : ColorPalette.cardBackground
+      ..color = elapsedTime >= totalTime
+          ? ColorPalette.cardBackground.withAlpha(100)
+          : ColorPalette.cardBackground
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12;
     if (elapsedTime <= totalTime) {
       canvas.drawCircle(center, radius, backgroundPaint);
     }
 
-    // Progress arc
-    final progressAngle = 2 * pi * (elapsedTime / totalTime).clamp(0.0, 1.0);
-
     final progressPaint = Paint()
-      ..color = elapsedTime >= totalTime ? ColorPalette.primaryBlue : ColorPalette.primaryBlue
+      ..color = elapsedTime >= totalTime
+          ? ColorPalette.primaryBlue
+          : ColorPalette.primaryBlue
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.butt;
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -pi / 2,
-      progressAngle,
-      false,
-      progressPaint,
-    );
+    if (elapsedTime >= totalTime) {
+      // When timer is complete, draw a full circle for perfect closure
+      canvas.drawCircle(center, radius, progressPaint);
+    } else {
+      // Draw progress arc for incomplete timer
+      final progressAngle = 2 * pi * (elapsedTime / totalTime).clamp(0.0, 1.0);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -pi / 2,
+        progressAngle,
+        false,
+        progressPaint,
+      );
+    }
 
     // Spokes
     if (subdivisions > 0 && elapsedTime < totalTime) {
@@ -57,8 +64,6 @@ class TimerPainter extends CustomPainter {
         canvas.drawLine(start, end, spokePaint);
       }
     }
-
-    
   }
 
   @override
