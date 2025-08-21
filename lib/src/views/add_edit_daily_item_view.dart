@@ -883,7 +883,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     },
                     onChanged: (value) {
                       // Automatically set bell3 as default subdivision bell when subdivisions > 1
-                      if (value != null && value.isNotEmpty) {
+                      if (value.isNotEmpty) {
                         final subdivisions = int.tryParse(value);
                         if (subdivisions != null &&
                             subdivisions > 1 &&

@@ -123,22 +123,22 @@ class _HistoryViewState extends State<HistoryView> {
   }
 
   Future<void> _saveChanges() async {
-      debugPrint(
-          'History before saving: ${_history.map((e) => e.comment).toList()}');
-      final updatedItem = widget.item.copyWith(history: _history);
-      await _dataManager.updateDailyThing(updatedItem);
-      widget.onHistoryUpdated();
-      setState(() {
-        _isDirty = false;
-        _history = List.from(updatedItem.history);
-        // Reinitialize controllers with new data
-        _initializeControllers();
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('History saved successfully')),
-        );
-      }
+    debugPrint(
+        'History before saving: ${_history.map((e) => e.comment).toList()}');
+    final updatedItem = widget.item.copyWith(history: _history);
+    await _dataManager.updateDailyThing(updatedItem);
+    widget.onHistoryUpdated();
+    setState(() {
+      _isDirty = false;
+      _history = List.from(updatedItem.history);
+      // Reinitialize controllers with new data
+      _initializeControllers();
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('History saved successfully')),
+      );
+    }
   }
 
   void _startAddingEntry() {
@@ -287,18 +287,18 @@ class _HistoryViewState extends State<HistoryView> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_isDirty, // This will prevent immediate pop if dirty
-      onPopInvoked: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
         if (didPop) {
           return; // A pop gesture was already handled by the system (e.g., if canPop was true)
         }
 
         // If canPop was false (meaning _isDirty is true), we handle the dialog here.
-        final result = await showDialog<String>(
+        final dialogResult = await showDialog<String>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Unsaved Changes'),
-            content:
-                const Text('You have unsaved changes. What would you like to do?'),
+            content: const Text(
+                'You have unsaved changes. What would you like to do?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop('cancel'),
@@ -316,12 +316,12 @@ class _HistoryViewState extends State<HistoryView> {
           ),
         );
 
-        if (result == 'save') {
+        if (dialogResult == 'save') {
           await _saveChanges();
           if (mounted) {
             Navigator.of(context).pop(); // Pop after saving
           }
-        } else if (result == 'discard') {
+        } else if (dialogResult == 'discard') {
           if (mounted) {
             Navigator.of(context).pop(); // Pop, discarding changes
           }
