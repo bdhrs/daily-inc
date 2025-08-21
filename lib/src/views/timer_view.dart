@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:daily_inc/src/views/widgets/timer_painter.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -506,21 +507,28 @@ class _TimerViewState extends State<TimerView> {
   Widget _buildCountdownView() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SizedBox(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: Text(
-              _formatMinutesToMmSs(
-                  (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
-                      .clamp(0.0, double.infinity)),
-              style: GoogleFonts.robotoMono(
-                fontWeight: FontWeight.bold,
-                color: ColorPalette.lightText,
+        return CustomPaint(
+          painter: TimerPainter(
+            totalTime: _todaysTargetMinutes,
+            elapsedTime: _currentElapsedTimeInMinutes,
+            subdivisions: widget.item.subdivisions ?? 0,
+          ),
+          child: SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Text(
+                _formatMinutesToMmSs(
+                    (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
+                        .clamp(0.0, double.infinity)),
+                style: GoogleFonts.robotoMono(
+                  fontWeight: FontWeight.bold,
+                  color: ColorPalette.lightText,
+                ),
+                textAlign: TextAlign.center,
+                softWrap: false,
               ),
-              textAlign: TextAlign.center,
-              softWrap: false,
             ),
           ),
         );
@@ -530,19 +538,26 @@ class _TimerViewState extends State<TimerView> {
 
   Widget _buildOvertimeView() {
     return LayoutBuilder(builder: (context, constraints) {
-      return SizedBox(
-        width: constraints.maxWidth,
-        height: constraints.maxHeight,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: Text(
-            _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
-            style: GoogleFonts.robotoMono(
-              fontWeight: FontWeight.bold,
-              color: ColorPalette.lightText,
+      return CustomPaint(
+        painter: TimerPainter(
+          totalTime: _todaysTargetMinutes,
+          elapsedTime: _currentElapsedTimeInMinutes,
+          subdivisions: widget.item.subdivisions ?? 0,
+        ),
+        child: SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Text(
+              _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
+              style: GoogleFonts.robotoMono(
+                fontWeight: FontWeight.bold,
+                color: ColorPalette.lightText,
+              ),
+              textAlign: TextAlign.center,
+              softWrap: false,
             ),
-            textAlign: TextAlign.center,
-            softWrap: false,
           ),
         ),
       );
