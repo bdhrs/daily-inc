@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -772,6 +773,68 @@ class _TimerViewState extends State<TimerView> {
     }
   }
 
+  void _editItem() async {
+    _log.info('Editing item: ${widget.item.name}');
+    
+    // Cancel any running timer
+    _timer?.cancel();
+    
+    // Restore screen brightness if dimming is active
+    if (_dimScreenMode) {
+      _restoreScreenBrightness();
+    }
+    
+    // Disable wakelock
+    WakelockPlus.disable();
+    
+    final updatedItem = await Navigator.push<DailyThing>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEditDailyItemView(
+          dataManager: widget.dataManager,
+          dailyThing: widget.item,
+          onSubmitCallback: () {
+            _log.info('Edit item callback triggered.');
+          },
+        ),
+      ),
+    );
+
+    if (updatedItem != null) {
+      _log.info('Item updated: ${updatedItem.name}');
+      
+      // Update the widget with the new item
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TimerView(
+              item: updatedItem,
+              dataManager: widget.dataManager,
+              onExitCallback: widget.onExitCallback,
+            ),
+          ),
+        );
+      }
+    } else {
+      _log.info('Edit cancelled.');
+      
+      // Resume timer if it was running before editing
+      if (!_isPaused && mounted) {
+        WakelockPlus.enable();
+        if (_dimScreenMode) {
+          _startDimmingProcess();
+        }
+        
+        if (_isOvertime) {
+          _runOvertime();
+        } else {
+          _runCountdown();
+        }
+      }
+    }
+  }
+
   Widget _buildTopInfoRow(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -800,6 +863,8 @@ class _TimerViewState extends State<TimerView> {
           onSelected: (String result) {
             if (result == 'toggle') {
               _toggleDimScreenMode();
+            } else if (result == 'edit') {
+              _editItem();
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -810,6 +875,17 @@ class _TimerViewState extends State<TimerView> {
                   Icon(_dimScreenMode ? Icons.brightness_high : Icons.brightness_low),
                   const SizedBox(width: 8),
                   Text(_dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem<String>(
+              value: 'edit',
+              child: Row(
+                children: [
+                  const Icon(Icons.edit),
+                  const SizedBox(width: 8),
+                  const Text('Edit Item'),
                 ],
               ),
             ),
