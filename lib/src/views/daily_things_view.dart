@@ -230,17 +230,29 @@ class _DailyThingsViewState extends State<DailyThingsView>
   void _duplicateItem(DailyThing item) async {
     _log.info('Duplicating daily thing: ${item.name}');
     try {
+      // Set start date to today
+      final today = DateTime.now();
+      final startDate = DateTime(today.year, today.month, today.day);
+      
       final duplicatedItem = DailyThing(
         name: item.name,
         itemType: item.itemType,
-        startDate: item.startDate,
+        startDate: startDate, // Use today's date instead of the original item's start date
         startValue: item.startValue,
         duration: item.duration,
         endValue: item.endValue,
         icon: item.icon,
         nagTime: item.nagTime,
         nagMessage: item.nagMessage,
-        history: [],
+        history: [], // Empty history as required
+        category: item.category,
+        isPaused: item.isPaused,
+        intervalType: item.intervalType,
+        intervalValue: item.intervalValue,
+        intervalWeekdays: item.intervalWeekdays,
+        bellSoundPath: item.bellSoundPath,
+        subdivisions: item.subdivisions,
+        subdivisionBellSoundPath: item.subdivisionBellSoundPath,
       );
       await _dataManager.addDailyThing(duplicatedItem);
       _refreshDisplay();
