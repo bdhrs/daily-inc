@@ -25,6 +25,9 @@ class _SettingsViewState extends State<SettingsView> {
   // Grace period setting
   int _gracePeriodDays = 1; // Default to 1 day
 
+  // Screen dimmer setting
+  bool _dimScreenMode = false;
+
   late TextEditingController _startOfDayMessageController;
   late TextEditingController _completionMessageController;
 
@@ -54,6 +57,7 @@ class _SettingsViewState extends State<SettingsView> {
           prefs.getString('completionMessageText') ?? 'Well done! You did it!';
       _gracePeriodDays =
           prefs.getInt('gracePeriodDays') ?? 1; // Default to 1 day
+      _dimScreenMode = prefs.getBool('dimScreenMode') ?? false; // Load dim screen mode
     });
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
@@ -70,6 +74,7 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setBool('showCompletionMessage', _showCompletionMessage);
     await prefs.setString('completionMessageText', _completionMessageText);
     await prefs.setInt('gracePeriodDays', _gracePeriodDays);
+    await prefs.setBool('dimScreenMode', _dimScreenMode); // Save dim screen mode
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
     _log.info('Settings saved');
@@ -238,6 +243,25 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               Text('$_gracePeriodDays days'),
             ],
+          ),
+          const SizedBox(height: 16),
+
+          // Screen Dimmer Section
+          const Text(
+            'Screen Dimmer',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Dim screen during timer'),
+            subtitle: const Text('Fade to black after 10 seconds to save battery'),
+            value: _dimScreenMode,
+            onChanged: (value) {
+              setState(() {
+                _dimScreenMode = value;
+              });
+              _saveSettings();
+            },
           ),
           const SizedBox(height: 16),
 

@@ -17,27 +17,27 @@ This document provides a map of the project, listing the location of all functio
   - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:28`](lib/src/core/increment_calculator.dart:28): Gets the most recent day you marked the task as done.
   - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:41`](lib/src/core/increment_calculator.dart:41): Finds the date of the latest history record.
   - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:50`](lib/src/core/increment_calculator.dart:50): Counts how many days were skipped since the last entry.
-  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today’s target based on progress rules and gaps. Returns start value when start date is today or in the future.
+  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today's target based on progress rules and gaps. Returns start value when start date is today or in the future.
   - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:188`](lib/src/core/increment_calculator.dart:188): Chooses what number to show today (target or actual) depending on type.
-  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:250`](lib/src/core/increment_calculator.dart:250): Tells if today’s goal is met for the item.
-  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:271`](lib/src/core/increment_calculator.dart:271): Returns green or red status based on today’s target.
+  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:250`](lib/src/core/increment_calculator.dart:250): Tells if today's goal is met for the item.
+  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:271`](lib/src/core/increment_calculator.dart:271): Returns green or red status based on today's target.
 
 - `Status` enum [`lib/src/core/increment_calculator.dart:244`](lib/src/core/increment_calculator.dart:244): Simple green or red state for display.
 
 ## lib/src/data/data_manager.dart
 - `DataManager` class [`lib/src/data/data_manager.dart:10`](lib/src/data/data_manager.dart:10): Loads, saves, and manages items and metadata on disk.
   - `loadFromFile()` [`lib/src/data/data_manager.dart:14`](lib/src/data/data_manager.dart:14): Lets you pick a JSON file and imports items, fixing missing fields if needed.
-  - `_getFilePath()` [`lib/src/data/data_manager.dart:82`](lib/src/data/data_manager.dart:82): Finds the app’s data file location.
+  - `_getFilePath()` [`lib/src/data/data_manager.dart:82`](lib/src/data/data_manager.dart:82): Finds the app's data file location.
   - `_readRawStore()` [`lib/src/data/data_manager.dart:87`](lib/src/data/data_manager.dart:87): Reads raw JSON data from storage.
   - `_writeRawStore(Map<String, dynamic> data)` [`lib/src/data/data_manager.dart:109`](lib/src/data/data_manager.dart:109): Writes raw JSON data to storage.
-  - `loadData()` [`lib/src/data/data_manager.dart:119`](lib/src/data/data_manager.dart:119): Loads the list of items from the app’s data file.
+  - `loadData()` [`lib/src/data/data_manager.dart:119`](lib/src/data/data_manager.dart:119): Loads the list of items from the app's data file.
   - `saveData(List<DailyThing> items)` [`lib/src/data/data_manager.dart:135`](lib/src/data/data_manager.dart:135): Saves all items back to the data file.
   - `addDailyThing(DailyThing newItem)` [`lib/src/data/data_manager.dart:148`](lib/src/data/data_manager.dart:148): Adds a new item and saves.
   - `deleteDailyThing(DailyThing itemToDelete)` [`lib/src/data/data_manager.dart:156`](lib/src/data/data_manager.dart:156): Removes an item and saves.
   - `updateDailyThing(DailyThing updatedItem)` [`lib/src/data/data_manager.dart:164`](lib/src/data/data_manager.dart:164): Updates an existing item and saves.
   - `resetAllData()` [`lib/src/data/data_manager.dart:178`](lib/src/data/data_manager.dart:178): Deletes the stored data file to start fresh.
   - `saveHistoryToFile()` [`lib/src/data/data_manager.dart:194`](lib/src/data/data_manager.dart:194): Exports all current data to a JSON file via a save dialog.
-  - `getUniqueCategories()` [`lib/src/data/data_manager.dart:227`](lib/src/data/data_manager.dart:227): Lists all unique categories (except “None”).
+  - `getUniqueCategories()` [`lib/src/data/data_manager.dart:227`](lib/src/data/data_manager.dart:227): Lists all unique categories (except "None").
   - `getUniqueCategoriesForType(ItemType type)` [`lib/src/data/data_manager.dart:244`](lib/src/data/data_manager.dart:244): Lists unique categories only for the given type.
   - `getLastMotivationShownDate()` [`lib/src/data/data_manager.dart:262`](lib/src/data/data_manager.dart:262): Reads the date when the motivation dialog was last shown.
   - `setLastMotivationShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:272`](lib/src/data/data_manager.dart:272): Stores today's date as the last shown motivation.
@@ -51,23 +51,23 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/models/daily_thing.dart
 - `_logger` variable [`lib/src/models/daily_thing.dart:7`](lib/src/models/daily_thing.dart:7): Logs messages for this model.
 - `DailyThing` class [`lib/src/models/daily_thing.dart:9`](lib/src/models/daily_thing.dart:9): Represents a daily task with rules, history, and settings.
-  - Fields like `id`, `icon`, `name`, `itemType`, `startDate`, `startValue`, `duration`, `endValue`, `history`, `nagTime`, `nagMessage`, `frequencyInDays`, `category`, `isPaused` [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Store the task’s basic info and behavior.
+  - Fields like `id`, `icon`, `name`, `itemType`, `startDate`, `startValue`, `duration`, `endValue`, `history`, `nagTime`, `nagMessage`, `frequencyInDays`, `category`, `isPaused` [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Store the task's basic info and behavior.
   - `increment` getter [`lib/src/models/daily_thing.dart:43`](lib/src/models/daily_thing.dart:43): Gives the per-day change for this task.
-  - `todayValue` getter [`lib/src/models/daily_thing.dart:47`](lib/src/models/daily_thing.dart:47): Gives today’s target for this task.
+  - `todayValue` getter [`lib/src/models/daily_thing.dart:47`](lib/src/models/daily_thing.dart:47): Gives today's target for this task.
   - `displayValue` getter [`lib/src/models/daily_thing.dart:51`](lib/src/models/daily_thing.dart:51): Gives what to show in the UI today.
   - `determineStatus(double currentValue)` [`lib/src/models/daily_thing.dart:55`](lib/src/models/daily_thing.dart:55): Returns green/red status for the current value.
   - `isDone(double currentValue)` [`lib/src/models/daily_thing.dart:59`](lib/src/models/daily_thing.dart:59): Tells if today is completed for this task.
   - `lastCompletedDate` getter [`lib/src/models/daily_thing.dart:63`](lib/src/models/daily_thing.dart:63): Finds when you last finished this task.
   - `isDueToday` getter [`lib/src/models/daily_thing.dart:67`](lib/src/models/daily_thing.dart:67): Says if the task needs doing today based on its frequency.
   - `completedForToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if today counts as done for this task.
-  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today’s history entry is marked as done.
+  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today's history entry is marked as done.
   - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:154`](lib/src/models/daily_thing.dart:154): Determines if this item should be shown in the list based on due status and completion.
   - `toJson()` [`lib/src/models/daily_thing.dart:112`](lib/src/models/daily_thing.dart:112): Converts this item to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:131`](lib/src/models/daily_thing.dart:131): Builds the item from a JSON map.
 
 ## lib/src/models/history_entry.dart
 - `_logger` variable [`lib/src/models/history_entry.dart:3`](lib/src/models/history_entry.dart:3): Logs parsing warnings for history.
-- `HistoryEntry` class [`lib/src/models/history_entry.dart:5`](lib/src/models/history_entry.dart:5): A single day’s record of target and actual progress.
+- `HistoryEntry` class [`lib/src/models/history_entry.dart:5`](lib/src/models/history_entry.dart:5): A single day's record of target and actual progress.
   - `toJson()` [`lib/src/models/history_entry.dart:18`](lib/src/models/history_entry.dart:18): Converts the entry to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/history_entry.dart:27`](lib/src/models/history_entry.dart:27): Parses a JSON map into an entry with safe fallbacks.
 
@@ -87,7 +87,7 @@ This document provides a map of the project, listing the location of all functio
   - `installUpdate()` [`lib/src/services/update_service.dart:93`](lib/src/services/update_service.dart:93): Stub method that does not actually install updates (not implemented).
 
 ## lib/src/theme/app_theme.dart
-- `AppTheme` class [`lib/src/theme/app_theme.dart:5`](lib/src/theme/app_theme.dart:5): Central place for the app’s dark theme look and feel.
+- `AppTheme` class [`lib/src/theme/app_theme.dart:5`](lib/src/theme/app_theme.dart:5): Central place for the app's dark theme look and feel.
   - `darkTheme` getter [`lib/src/theme/app_theme.dart:6`](lib/src/theme/app_theme.dart:6): Provides colors, fonts, and styles for dark mode.
     - Uses `ColorPalette` tokens for consistent colors, customizes AppBar, Cards, Buttons, Inputs, SnackBars, Dialogs, Switches, ExpansionTiles, TimePicker, and Scrollbar.
 
@@ -159,7 +159,7 @@ This document provides a map of the project, listing the location of all functio
   - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
 
 ## lib/src/views/graph_view.dart
-- `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task’s daily progress with time range filtering.
+- `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task's daily progress with time range filtering.
   - `dailyThing` property [`lib/src/views/graph_view.dart:11`](lib/src/views/graph_view.dart:11): The item whose history is graphed.
 - `_GraphViewState` class [`lib/src/views/graph_view.dart:18`](lib/src/views/graph_view.dart:18): Calculates ranges and builds data points.
   - `_minY` / `_maxY` [`lib/src/views/graph_view.dart:19`](lib/src/views/graph_view.dart:19): Y-axis bounds for the chart.
@@ -181,7 +181,7 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/reps_input_dialog.dart
 - `RepsInputDialog` class [`lib/src/views/reps_input_dialog.dart:7`](lib/src/views/reps_input_dialog.dart:7): Dialog to enter how many reps you did today.
-  - `item`/`dataManager`/`onSuccess` [`lib/src/views/reps_input_dialog.dart:8`](lib/src/views/reps_input_dialog.dart:8): Inputs for saving today’s reps and updating UI.
+  - `item`/`dataManager`/`onSuccess` [`lib/src/views/reps_input_dialog.dart:8`](lib/src/views/reps_input_dialog.dart:8): Inputs for saving today's reps and updating UI.
   - `build(BuildContext context)` [`lib/src/views/reps_input_dialog.dart:21`](lib/src/views/reps_input_dialog.dart:21): Renders the input field and buttons.
   - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/reps_input_dialog.dart:61`](lib/src/views/reps_input_dialog.dart:61): Validates and saves reps for today, then calls success.
 
@@ -190,10 +190,11 @@ This document provides a map of the project, listing the location of all functio
 - `_SettingsViewState` class [`lib/src/views/settings_view.dart:14`](lib/src/views/settings_view.dart:14): Loads preferences and handles save/reset.
   - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:19`](lib/src/views/settings_view.dart:19): Controls for customizable motivational messages.
   - State variable for grace period: `_gracePeriodDays` [`lib/src/views/settings_view.dart:26`](lib/src/views/settings_view.dart:26): Controls the number of days before penalties are applied.
-  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:31`](lib/src/views/settings_view.dart:31): Initializes and fetches stored values.
-  - `_saveSettings()` [`lib/src/views/settings_view.dart:49`](lib/src/views/settings_view.dart:49): Persists motivational message settings and grace period.
-  - `_resetAllData()` [`lib/src/views/settings_view.dart:63`](lib/src/views/settings_view.dart:63): Clears stored data and confirms.
-- `build(BuildContext context)` [`lib/src/views/settings_view.dart:123`](lib/src/views/settings_view.dart:123): Renders the settings UI with motivational message controls, grace period slider, and warning icon on reset button.
+  - State variable for screen dimmer: `_dimScreenMode` [`lib/src/views/settings_view.dart:29`](lib/src/views/settings_view.dart:29): Controls whether the screen dims during timer sessions.
+  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:34`](lib/src/views/settings_view.dart:34): Initializes and fetches stored values.
+  - `_saveSettings()` [`lib/src/views/settings_view.dart:52`](lib/src/views/settings_view.dart:52): Persists motivational message settings, grace period, and screen dimmer preference.
+  - `_resetAllData()` [`lib/src/views/settings_view.dart:66`](lib/src/views/settings_view.dart:66): Clears stored data and confirms.
+- `build(BuildContext context)` [`lib/src/views/settings_view.dart:136`](lib/src/views/settings_view.dart:136): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.
@@ -212,18 +213,24 @@ This document provides a map of the project, listing the location of all functio
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.
   - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
-  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:43`](lib/src/views/timer_view.dart:43): Calculates the total time elapsed, including persisted history and the current session.
-  - `_toggleTimer()` [`lib/src/views/timer_view.dart:150`](lib/src/views/timer_view.dart:150): Starts, pauses, or continues the timer. Starts overtime mode when 'Continue' is pressed after timer finishes.
-  - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:189`](lib/src/views/timer_view.dart:189): Main timer loops for countdown and overtime, run by `_toggleTimer`.
-  - `_onTimerComplete()` [`lib/src/views/timer_view.dart:206`](lib/src/views/timer_view.dart:206): Plays a sound, pauses the timer, and automatically saves the completed progress.
-  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:218`](lib/src/views/timer_view.dart:218): Handles exiting the screen, showing a dialog for partial progress or updating the final overtime value.
-  - `_saveProgress()` [`lib/src/views/timer_view.dart:281`](lib/src/views/timer_view.dart:281): A unified method to save or update today's history entry, preventing duplicates.
-  - `initState()` [`lib/src/views/timer_view.dart:83`](lib/src/views/timer_view.dart:83): Initializes the timer state and enables fullscreen mode.
-  - `dispose()` [`lib/src/views/timer_view.dart:146`](lib/src/views/timer_view.dart:146): Cleans up resources and disables fullscreen mode.
-  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:368`](lib/src/views/timer_view.dart:368): Renders the main UI with a responsive timer, info text, comment field, and controls.
-  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:444`](lib/src/views/timer_view.dart:444): Builds the main timer display using Roboto Mono monospace font, LayoutBuilder and FittedBox to maximize its size.
-  - `_buildCommentField()` [`lib/src/views/timer_view.dart:490`](lib/src/views/timer_view.dart:490): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
-  - `_getButtonText()` [`lib/src/views/timer_view.dart:434`](lib/src/views/timer_view.dart:434): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
+  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:46`](lib/src/views/timer_view.dart:46): Calculates the total time elapsed, including persisted history and the current session.
+  - State variables for screen dimmer: `_dimScreenMode`, `_isDimming`, `_dimTimer`, `_dimOpacity` [`lib/src/views/timer_view.dart:54`](lib/src/views/timer_view.dart:54): Controls for the screen dimmer feature.
+  - `_loadDimScreenPreference()` / `_saveDimScreenPreference()` [`lib/src/views/timer_view.dart:61`](lib/src/views/timer_view.dart:61): Loads and saves the screen dimmer preference.
+  - `_toggleDimScreenMode()` [`lib/src/views/timer_view.dart:68`](lib/src/views/timer_view.dart:68): Toggles the screen dimmer mode and immediately applies changes if timer is running.
+  - `_startDimmingProcess()` [`lib/src/views/timer_view.dart:80`](lib/src/views/timer_view.dart:80): Starts the gradual dimming process over 10 seconds.
+  - `_restoreScreenBrightness()` [`lib/src/views/timer_view.dart:107`](lib/src/views/timer_view.dart:107): Restores screen brightness and cancels dimming.
+  - `_toggleTimer()` [`lib/src/views/timer_view.dart:177`](lib/src/views/timer_view.dart:177): Starts, pauses, or continues the timer. Starts overtime mode when 'Continue' is pressed after timer finishes. Initiates screen dimming when enabled.
+  - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:216`](lib/src/views/timer_view.dart:216): Main timer loops for countdown and overtime, run by `_toggleTimer`.
+  - `_onTimerComplete()` [`lib/src/views/timer_view.dart:233`](lib/src/views/timer_view.dart:233): Plays a sound, pauses the timer, restores screen brightness, and automatically saves the completed progress.
+  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:245`](lib/src/views/timer_view.dart:245): Handles exiting the screen, restores screen brightness, shows a dialog for partial progress or updating the final overtime value.
+  - `_saveProgress()` [`lib/src/views/timer_view.dart:308`](lib/src/views/timer_view.dart:308): A unified method to save or update today's history entry, preventing duplicates.
+  - `initState()` [`lib/src/views/timer_view.dart:117`](lib/src/views/timer_view.dart:117): Initializes the timer state and enables fullscreen mode.
+  - `dispose()` [`lib/src/views/timer_view.dart:173`](lib/src/views/timer_view.dart:173): Cleans up resources, cancels timers, and disables fullscreen mode.
+  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:395`](lib/src/views/timer_view.dart:395): Renders the main UI with a responsive timer, info text, comment field, and controls. Includes the screen dimmer overlay.
+  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:471`](lib/src/views/timer_view.dart:471): Builds the main timer display using Roboto Mono monospace font, LayoutBuilder and FittedBox to maximize its size.
+  - `_buildCommentField()` [`lib/src/views/timer_view.dart:507`](lib/src/views/timer_view.dart:507): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
+  - `_getButtonText()` [`lib/src/views/timer_view.dart:457`](lib/src/views/timer_view.dart:457): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
+  - `_buildTopInfoRow()` [`lib/src/views/timer_view.dart:525`](lib/src/views/timer_view.dart:525): Builds the top row with the item name and screen dimmer menu (three vertical dots).
 
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.

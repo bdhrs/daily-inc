@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:daily_inc/src/views/widgets/timer_painter.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -43,6 +44,12 @@ class _TimerViewState extends State<TimerView> {
 
   late double _todaysTargetMinutes;
   late double _initialTargetSeconds;
+
+  // Screen dimmer variables
+  bool _dimScreenMode = false;
+  bool _isDimming = false;
+  Timer? _dimTimer;
+  double _dimOpacity = 0.0;
 
   double get _currentElapsedTimeInMinutes {
     if (_isOvertime) {
@@ -80,6 +87,68 @@ class _TimerViewState extends State<TimerView> {
     return '$mm:$ss';
   }
 
+  Future<void> _loadDimScreenPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _dimScreenMode = prefs.getBool('dimScreenMode') ?? false;
+    });
+  }
+
+  Future<void> _saveDimScreenPreference(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dimScreenMode', value);
+  }
+
+  void _toggleDimScreenMode() {
+    setState(() {
+      _dimScreenMode = !_dimScreenMode;
+    });
+    _saveDimScreenPreference(_dimScreenMode);
+    
+    // If the timer is running and we're now in dim mode, start dimming immediately
+    if (!_isPaused && _dimScreenMode) {
+      _startDimmingProcess();
+    }
+    // If we're turning off dim mode, restore screen brightness
+    else if (!_dimScreenMode) {
+      _restoreScreenBrightness();
+    }
+  }
+
+  void _startDimmingProcess() {
+    // Check if we should dim the screen
+    if (!_dimScreenMode || _isDimming || _isPaused) return;
+
+    _isDimming = true;
+    // Reset opacity when starting dimming process
+    setState(() {
+      _dimOpacity = 0.0;
+    });
+    
+    const totalDimmingTime = 10.0; // 10 seconds
+    const updateInterval = 50; // milliseconds
+    final opacityStep = 1.0 / (totalDimmingTime * 1000 / updateInterval);
+
+    _dimTimer = Timer.periodic(Duration(milliseconds: updateInterval), (timer) {
+      setState(() {
+        _dimOpacity += opacityStep;
+        if (_dimOpacity >= 1.0) {
+          _dimOpacity = 1.0;
+          _isDimming = false;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _restoreScreenBrightness() {
+    _isDimming = false;
+    _dimTimer?.cancel();
+    setState(() {
+      _dimOpacity = 0.0;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +163,9 @@ class _TimerViewState extends State<TimerView> {
       _isPaused = true;
       _hasStarted = true;
     }
+
+    // Load dim screen mode preference
+    _loadDimScreenPreference();
     _log.info('--- TIMER INITIALIZATION START ---');
     _log.info('Item Name: ${widget.item.name}');
     _log.info('Item Type: ${widget.item.itemType}');
@@ -157,6 +229,7 @@ class _TimerViewState extends State<TimerView> {
     // Disable fullscreen mode when exiting the timer view
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _timer?.cancel();
+    _dimTimer?.cancel();
     _commentController.dispose();
     _commentFocusNode.dispose();
     WakelockPlus.disable();
@@ -171,6 +244,12 @@ class _TimerViewState extends State<TimerView> {
         _log.info('Timer started, enabling wakelock.');
         _hasStarted = true;
         WakelockPlus.enable();
+        
+        // Start dimming process if enabled
+        if (_dimScreenMode) {
+          _startDimmingProcess();
+        }
+
         final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
         _log.info(
             'isFinished: $isFinished, _remainingSeconds: $_remainingSeconds, _isOvertime: $_isOvertime');
@@ -270,6 +349,11 @@ class _TimerViewState extends State<TimerView> {
   void _onTimerComplete() async {
     _log.info('onTimerComplete called');
 
+    // Restore screen brightness when timer completes
+    if (_dimScreenMode) {
+      _restoreScreenBrightness();
+    }
+
     // Play the bell sound immediately for instant feedback
     _playTimerCompleteNotification();
 
@@ -294,8 +378,14 @@ class _TimerViewState extends State<TimerView> {
         'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _isOvertime=$_isOvertime');
 
     _timer?.cancel();
+    _dimTimer?.cancel(); // Cancel dimming timer if active
     _log.info('Timer stopped');
     WakelockPlus.disable();
+
+    // Restore screen brightness when exiting
+    if (_dimScreenMode) {
+      _restoreScreenBrightness();
+    }
 
     // If exiting during overtime, the 'done' state is already saved.
     // We just need to update with the final overtime value.
@@ -472,53 +562,81 @@ class _TimerViewState extends State<TimerView> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildTopInfoRow(context),
-                const SizedBox(height: 4),
-                Text(
-                  _isOvertime
-                      ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
-                      : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color:
-                        ColorPalette.lightText.withAlpha((255 * 0.7).round()),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                Expanded(
-                  child: _isOvertime
-                      ? _buildOvertimeView()
-                      : _buildCountdownView(),
-                ),
-                const SizedBox(height: 8),
-                _buildCommentField(),
-                const SizedBox(height: 12),
-                Row(
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _toggleTimer,
-                        child: Text(
-                          _getButtonText(),
-                        ),
+                    _buildTopInfoRow(context),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isOvertime
+                          ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
+                          : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            ColorPalette.lightText.withAlpha((255 * 0.7).round()),
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(width: 16),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: _exitTimerDisplay,
-                        child: const Text('Exit'),
-                      ),
+                      child: _isOvertime
+                          ? _buildOvertimeView()
+                          : _buildCountdownView(),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCommentField(),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _toggleTimer,
+                            child: Text(
+                              _getButtonText(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _exitTimerDisplay,
+                            child: const Text('Exit'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              // Dimming overlay
+              if (_dimScreenMode && _dimOpacity > 0.0)
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () {
+                      // Cancel any existing dimming timer
+                      _dimTimer?.cancel();
+                      // Temporarily restore visibility when tapped
+                      setState(() {
+                        _dimOpacity = 0.0;
+                        _isDimming = false;
+                      });
+                      // Restart dimming after a delay if still in dim mode and timer is running
+                      Future.delayed(const Duration(seconds: 3), () {
+                        if (!_isPaused && _dimScreenMode && mounted) {
+                          _startDimmingProcess();
+                        }
+                      });
+                    },
+                    child: Container(
+                      color: Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -659,6 +777,8 @@ class _TimerViewState extends State<TimerView> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Empty container to balance the menu on the right
+        const SizedBox(width: 40),
         Expanded(
           child: Text(
             widget.item.name,
@@ -671,6 +791,29 @@ class _TimerViewState extends State<TimerView> {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(
+            Icons.more_vert,
+            color: ColorPalette.lightText,
+          ),
+          onSelected: (String result) {
+            if (result == 'toggle') {
+              _toggleDimScreenMode();
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(
+              value: 'toggle',
+              child: Row(
+                children: [
+                  Icon(_dimScreenMode ? Icons.brightness_high : Icons.brightness_low),
+                  const SizedBox(width: 8),
+                  Text(_dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
