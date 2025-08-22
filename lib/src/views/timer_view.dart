@@ -549,16 +549,19 @@ class _TimerViewState extends State<TimerView> {
             height: constraints.maxHeight,
             child: FittedBox(
               fit: BoxFit.contain,
-              child: Text(
-                _formatMinutesToMmSs(
-                    (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
-                        .clamp(0.0, double.infinity)),
-                style: GoogleFonts.robotoMono(
-                  fontWeight: FontWeight.bold,
-                  color: ColorPalette.lightText,
+              child: GestureDetector(
+                onTap: _toggleTimer,
+                child: Text(
+                  _formatMinutesToMmSs(
+                      (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
+                          .clamp(0.0, double.infinity)),
+                  style: GoogleFonts.robotoMono(
+                    fontWeight: FontWeight.bold,
+                    color: ColorPalette.lightText,
+                  ),
+                  textAlign: TextAlign.center,
+                  softWrap: false,
                 ),
-                textAlign: TextAlign.center,
-                softWrap: false,
               ),
             ),
           ),
@@ -580,14 +583,17 @@ class _TimerViewState extends State<TimerView> {
           height: constraints.maxHeight,
           child: FittedBox(
             fit: BoxFit.contain,
-            child: Text(
-              _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
-              style: GoogleFonts.robotoMono(
-                fontWeight: FontWeight.bold,
-                color: ColorPalette.lightText,
+            child: GestureDetector(
+              onTap: _toggleTimer,
+              child: Text(
+                _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
+                style: GoogleFonts.robotoMono(
+                  fontWeight: FontWeight.bold,
+                  color: ColorPalette.lightText,
+                ),
+                textAlign: TextAlign.center,
+                softWrap: false,
               ),
-              textAlign: TextAlign.center,
-              softWrap: false,
             ),
           ),
         ),
