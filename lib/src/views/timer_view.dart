@@ -579,6 +579,55 @@ class _TimerViewState extends State<TimerView> {
         await _exitTimerDisplay();
       },
       child: Scaffold(
+        appBar: AppBar(
+          actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (String result) {
+                if (result == 'toggle') {
+                  _toggleDimScreenMode();
+                } else if (result == 'edit') {
+                  _editItem();
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'toggle',
+                  child: Row(
+                    children: [
+                      Icon(_dimScreenMode
+                          ? Icons.brightness_high
+                          : Icons.brightness_low),
+                      const SizedBox(width: 8),
+                      Text(_dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.edit),
+                      const SizedBox(width: 8),
+                      const Text('Edit Item'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          title: Text(
+            widget.item.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          centerTitle: true,
+          elevation: 0,
+        ),
         body: SafeArea(
           child: Stack(
             children: [
@@ -587,8 +636,6 @@ class _TimerViewState extends State<TimerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildTopInfoRow(context),
-                    const SizedBox(height: 4),
                     Text(
                       _isOvertime
                           ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
@@ -861,65 +908,5 @@ class _TimerViewState extends State<TimerView> {
         }
       }
     }
-  }
-
-  Widget _buildTopInfoRow(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Empty container to balance the menu on the right
-        const SizedBox(width: 40),
-        Expanded(
-          child: Text(
-            widget.item.name,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: ColorPalette.lightText,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        PopupMenuButton<String>(
-          icon: Icon(
-            Icons.more_vert,
-            color: ColorPalette.lightText,
-          ),
-          onSelected: (String result) {
-            if (result == 'toggle') {
-              _toggleDimScreenMode();
-            } else if (result == 'edit') {
-              _editItem();
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'toggle',
-              child: Row(
-                children: [
-                  Icon(_dimScreenMode ? Icons.brightness_high : Icons.brightness_low),
-                  const SizedBox(width: 8),
-                  Text(_dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
-                ],
-              ),
-            ),
-            const PopupMenuDivider(),
-            PopupMenuItem<String>(
-              value: 'edit',
-              child: Row(
-                children: [
-                  const Icon(Icons.edit),
-                  const SizedBox(width: 8),
-                  const Text('Edit Item'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }
