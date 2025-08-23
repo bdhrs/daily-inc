@@ -1,9 +1,11 @@
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/services/backup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -28,14 +30,22 @@ class _SettingsViewState extends State<SettingsView> {
   // Screen dimmer setting
   bool _dimScreenMode = false;
 
+  // Backup settings
+  bool _backupEnabled = false;
+  String _backupLocation = '';
+  int _backupRetentionDays = 30;
+  DateTime? _lastBackupTime;
+
   late TextEditingController _startOfDayMessageController;
   late TextEditingController _completionMessageController;
+  late TextEditingController _backupLocationController;
 
   @override
   void initState() {
     super.initState();
     _startOfDayMessageController = TextEditingController();
     _completionMessageController = TextEditingController();
+    _backupLocationController = TextEditingController();
     _loadSettings();
   }
 
@@ -43,6 +53,7 @@ class _SettingsViewState extends State<SettingsView> {
   void dispose() {
     _startOfDayMessageController.dispose();
     _completionMessageController.dispose();
+    _backupLocationController.dispose();
     super.dispose();
   }
 
@@ -57,7 +68,18 @@ class _SettingsViewState extends State<SettingsView> {
           prefs.getString('completionMessageText') ?? 'Well done! You did it!';
       _gracePeriodDays =
           prefs.getInt('gracePeriodDays') ?? 1; // Default to 1 day
-      _dimScreenMode = prefs.getBool('dimScreenMode') ?? false; // Load dim screen mode
+      _dimScreenMode =
+          prefs.getBool('dimScreenMode') ?? false; // Load dim screen mode
+
+      // Load backup settings
+      _backupEnabled = prefs.getBool('backupEnabled') ?? false;
+      _backupLocation = prefs.getString('backupLocation') ?? '';
+      _backupRetentionDays = prefs.getInt('backupRetentionDays') ?? 30;
+
+      final lastBackupTimestamp = prefs.getInt('lastBackupTime');
+      _lastBackupTime = lastBackupTimestamp != null
+          ? DateTime.fromMillisecondsSinceEpoch(lastBackupTimestamp)
+          : null;
     });
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
@@ -65,6 +87,7 @@ class _SettingsViewState extends State<SettingsView> {
     // Update controllers after loading settings
     _startOfDayMessageController.text = _startOfDayMessageText;
     _completionMessageController.text = _completionMessageText;
+    _backupLocationController.text = _backupLocation;
   }
 
   Future<void> _saveSettings() async {
@@ -74,10 +97,73 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setBool('showCompletionMessage', _showCompletionMessage);
     await prefs.setString('completionMessageText', _completionMessageText);
     await prefs.setInt('gracePeriodDays', _gracePeriodDays);
-    await prefs.setBool('dimScreenMode', _dimScreenMode); // Save dim screen mode
+    await prefs.setBool(
+        'dimScreenMode', _dimScreenMode); // Save dim screen mode
+
+    // Save backup settings
+    await prefs.setBool('backupEnabled', _backupEnabled);
+    await prefs.setString('backupLocation', _backupLocation);
+    await prefs.setInt('backupRetentionDays', _backupRetentionDays);
+
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
     _log.info('Settings saved');
+  }
+
+  Future<void> _selectBackupLocation() async {
+    try {
+      final String? selectedDirectory =
+          await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'Select Backup Location',
+      );
+
+      if (selectedDirectory != null) {
+        setState(() {
+          _backupLocation = selectedDirectory;
+          _backupLocationController.text = selectedDirectory;
+        });
+        await _saveSettings();
+        _log.info('Backup location selected: $selectedDirectory');
+      }
+    } catch (e, s) {
+      _log.warning('Error selecting backup location', e, s);
+    }
+  }
+
+  Future<void> _createManualBackup() async {
+    try {
+      final backupService = BackupService();
+      final dataManager = DataManager();
+      final items = await dataManager.loadData();
+
+      final success = await backupService.createBackup(items);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'Backup created successfully!'
+                : 'Backup failed. Check backup settings.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        if (success) {
+          // Reload settings to update last backup time
+          await _loadSettings();
+        }
+      }
+    } catch (e, s) {
+      _log.warning('Error creating manual backup', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Backup error: ${e.toString()}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _resetAllData() async {
@@ -254,7 +340,8 @@ class _SettingsViewState extends State<SettingsView> {
           const SizedBox(height: 16),
           SwitchListTile(
             title: const Text('Dim screen during timer'),
-            subtitle: const Text('Fade to black after 10 seconds to save battery'),
+            subtitle:
+                const Text('Fade to black after 10 seconds to save battery'),
             value: _dimScreenMode,
             onChanged: (value) {
               setState(() {
@@ -263,6 +350,88 @@ class _SettingsViewState extends State<SettingsView> {
               _saveSettings();
             },
           ),
+          const SizedBox(height: 16),
+
+          // Backup Settings Section
+          const Text(
+            'Automatic Backups',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Automatically save backups whenever your data changes:',
+          ),
+          const SizedBox(height: 8),
+
+          SwitchListTile(
+            title: const Text('Enable automatic backups'),
+            value: _backupEnabled,
+            onChanged: (value) {
+              setState(() {
+                _backupEnabled = value;
+              });
+              _saveSettings();
+            },
+          ),
+
+          if (_backupEnabled) ...[
+            const SizedBox(height: 8),
+            const Text('Backup location:'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _backupLocationController,
+                    decoration: const InputDecoration(
+                      hintText: 'Select backup directory...',
+                      border: OutlineInputBorder(),
+                    ),
+                    readOnly: true,
+                    onTap: _selectBackupLocation,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: _selectBackupLocation,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Keep backups for:'),
+            Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _backupRetentionDays.toDouble(),
+                    min: 7,
+                    max: 365,
+                    divisions: 12,
+                    label: '$_backupRetentionDays days',
+                    onChanged: (value) {
+                      setState(() {
+                        _backupRetentionDays = value.toInt();
+                      });
+                      _saveSettings();
+                    },
+                  ),
+                ),
+                Text('$_backupRetentionDays days'),
+              ],
+            ),
+            if (_lastBackupTime != null)
+              Text(
+                'Last backup: ${_lastBackupTime!.toString().split(' ')[0]} ${_lastBackupTime!.toString().split(' ')[1].substring(0, 5)}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.backup),
+              label: const Text('Create Backup Now'),
+              onPressed: _createManualBackup,
+            ),
+          ],
+
+          const Divider(),
           const SizedBox(height: 16),
 
           // Reset Data Section

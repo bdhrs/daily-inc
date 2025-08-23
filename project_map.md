@@ -93,6 +93,20 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/models/item_type.dart
 - `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, or check.
 
+## lib/src/services/backup_service.dart
+- `BackupService` class [`lib/src/services/backup_service.dart:9`](lib/src/services/backup_service.dart:9): Handles automatic backups with user-configurable settings.
+  - `isBackupEnabled()` [`lib/src/services/backup_service.dart:22`](lib/src/services/backup_service.dart:22): Checks if automatic backups are enabled.
+  - `setBackupEnabled(bool enabled)` [`lib/src/services/backup_service.dart:28`](lib/src/services/backup_service.dart:28): Enables or disables automatic backups.
+  - `getBackupLocation()` [`lib/src/services/backup_service.dart:35`](lib/src/services/backup_service.dart:35): Gets the backup directory path.
+  - `setBackupLocation(String path)` [`lib/src/services/backup_service.dart:41`](lib/src/services/backup_service.dart:41): Sets the backup directory path.
+  - `getBackupRetentionDays()` [`lib/src/services/backup_service.dart:48`](lib/src/services/backup_service.dart:48): Gets backup retention days setting.
+  - `setBackupRetentionDays(int days)` [`lib/src/services/backup_service.dart:55`](lib/src/services/backup_service.dart:55): Sets backup retention days.
+  - `createBackup(List<DailyThing> items)` [`lib/src/services/backup_service.dart:77`](lib/src/services/backup_service.dart:77): Creates timestamped backup and always keeps a "_latest" version.
+  - `_cleanupOldBackups(Directory backupDir)` [`lib/src/services/backup_service.dart:129`](lib/src/services/backup_service.dart:129): Cleans up old backups while preserving the latest file.
+  - `getAvailableBackups()` [`lib/src/services/backup_service.dart:158`](lib/src/services/backup_service.dart:158): Gets list of available backups.
+  - `restoreFromBackup(File backupFile)` [`lib/src/services/backup_service.dart:176`](lib/src/services/backup_service.dart:176): Restores from a specific backup file.
+  - `getDefaultBackupDirectory()` [`lib/src/services/backup_service.dart:196`](lib/src/services/backup_service.dart:196): Gets default backup directory.
+
 ## lib/src/services/update_service.dart
 - `UpdateService` class [`lib/src/services/update_service.dart:14`](lib/src/services/update_service.dart:14): Handles app update checks, downloads, and installation.
   - `getLatestRelease()` [`lib/src/services/update_service.dart:11`](lib/src/services/update_service.dart:11): Fetches release details from the GitHub API.
@@ -202,15 +216,18 @@ This document provides a map of the project, listing the location of all functio
   - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/reps_input_dialog.dart:61`](lib/src/views/reps_input_dialog.dart:61): Validates and saves reps for today, then calls success.
 
 ## lib/src/views/settings_view.dart
-- `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters and data actions.
-- `_SettingsViewState` class [`lib/src/views/settings_view.dart:14`](lib/src/views/settings_view.dart:14): Loads preferences and handles save/reset.
-  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:19`](lib/src/views/settings_view.dart:19): Controls for customizable motivational messages.
+- `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters, data actions, and backup configuration.
+- `_SettingsViewState` class [`lib/src/views/settings_view.dart:15`](lib/src/views/settings_view.dart:15): Loads preferences and handles save/reset.
+  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:20`](lib/src/views/settings_view.dart:20): Controls for customizable motivational messages.
   - State variable for grace period: `_gracePeriodDays` [`lib/src/views/settings_view.dart:26`](lib/src/views/settings_view.dart:26): Controls the number of days before penalties are applied.
   - State variable for screen dimmer: `_dimScreenMode` [`lib/src/views/settings_view.dart:29`](lib/src/views/settings_view.dart:29): Controls whether the screen dims during timer sessions.
-  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:34`](lib/src/views/settings_view.dart:34): Initializes and fetches stored values.
-  - `_saveSettings()` [`lib/src/views/settings_view.dart:52`](lib/src/views/settings_view.dart:52): Persists motivational message settings, grace period, and screen dimmer preference.
-  - `_resetAllData()` [`lib/src/views/settings_view.dart:66`](lib/src/views/settings_view.dart:66): Clears stored data and confirms.
-- `build(BuildContext context)` [`lib/src/views/settings_view.dart:136`](lib/src/views/settings_view.dart:136): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, and warning icon on reset button.
+  - State variables for backup settings: `_backupEnabled`, `_backupLocation`, `_backupRetentionDays`, `_lastBackupTime` [`lib/src/views/settings_view.dart:33`](lib/src/views/settings_view.dart:33): Controls for automatic backup configuration.
+  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:44`](lib/src/views/settings_view.dart:44): Initializes and fetches stored values including backup settings.
+  - `_saveSettings()` [`lib/src/views/settings_view.dart:93`](lib/src/views/settings_view.dart:93): Persists all settings including backup configuration.
+  - `_selectBackupLocation()` [`lib/src/views/settings_view.dart:113`](lib/src/views/settings_view.dart:113): Opens directory picker for backup location selection.
+  - `_createManualBackup()` [`lib/src/views/settings_view.dart:133`](lib/src/views/settings_view.dart:133): Creates a manual backup on demand.
+  - `_resetAllData()` [`lib/src/views/settings_view.dart:169`](lib/src/views/settings_view.dart:169): Clears stored data and confirms.
+- `build(BuildContext context)` [`lib/src/views/settings_view.dart:224`](lib/src/views/settings_view.dart:224): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, backup configuration section, and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/services/backup_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -143,6 +144,9 @@ class DataManager {
       raw['meta'] = (raw['meta'] as Map<String, dynamic>? ?? {});
       await _writeRawStore(raw);
       _log.info('Saved data to file-based storage.');
+
+      // Trigger automatic backup
+      await _triggerAutomaticBackup(items);
     } catch (e, s) {
       _log.severe('Error saving data to file', e, s);
     }
@@ -302,5 +306,16 @@ class DataManager {
     meta['lastCompletionShownDate'] = yyyymmdd;
     raw['meta'] = meta;
     await _writeRawStore(raw);
+  }
+
+  /// Trigger automatic backup after data is saved
+  Future<void> _triggerAutomaticBackup(List<DailyThing> items) async {
+    try {
+      final backupService = BackupService();
+      await backupService.createBackup(items);
+    } catch (e, s) {
+      _log.warning('Automatic backup failed', e, s);
+      // Don't rethrow - backup failure shouldn't prevent data saving
+    }
   }
 }
