@@ -233,11 +233,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
       // Set start date to today
       final today = DateTime.now();
       final startDate = DateTime(today.year, today.month, today.day);
-      
+
       final duplicatedItem = DailyThing(
         name: item.name,
         itemType: item.itemType,
-        startDate: startDate, // Use today's date instead of the original item's start date
+        startDate:
+            startDate, // Use today's date instead of the original item's start date
         startValue: item.startValue,
         duration: item.duration,
         endValue: item.endValue,
@@ -359,6 +360,51 @@ class _DailyThingsViewState extends State<DailyThingsView>
                   color: ColorPalette.primaryBlue,
                 ),
                 textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Licensed under Creative Commons',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () async {
+                final url = Uri.parse(
+                    'https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en');
+                if (await launchUrl(url)) {
+                  _log.info('Opened license URL in browser');
+                } else {
+                  _log.warning('Could not launch license URL');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not open license page.'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image(
+                    image: NetworkImage(
+                        'https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png'),
+                    width: 88,
+                    height: 31,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'CC BY-NC-SA 4.0',
+                    style: TextStyle(
+                      color: ColorPalette.primaryBlue,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
