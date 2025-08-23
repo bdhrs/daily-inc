@@ -40,6 +40,7 @@ class _TimerViewState extends State<TimerView> {
   int _overtimeSeconds = 0;
   int _completedSubdivisions = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _subdivisionAudioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
@@ -107,7 +108,7 @@ class _TimerViewState extends State<TimerView> {
       _dimScreenMode = !_dimScreenMode;
     });
     _saveDimScreenPreference(_dimScreenMode);
-    
+
     // If the timer is running and we're now in dim mode, start dimming immediately
     if (!_isPaused && _dimScreenMode) {
       _startDimmingProcess();
@@ -127,7 +128,7 @@ class _TimerViewState extends State<TimerView> {
     setState(() {
       _dimOpacity = 0.0;
     });
-    
+
     const totalDimmingTime = 10.0; // 10 seconds
     const updateInterval = 50; // milliseconds
     final opacityStep = 1.0 / (totalDimmingTime * 1000 / updateInterval);
@@ -221,10 +222,12 @@ class _TimerViewState extends State<TimerView> {
       // Calculate already completed subdivisions
       if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
         final totalSeconds = (_todaysTargetMinutes * 60).round();
-        final subdivisionInterval = (totalSeconds / widget.item.subdivisions!).round();
+        final subdivisionInterval =
+            (totalSeconds / widget.item.subdivisions!).round();
         if (subdivisionInterval > 0) {
           final elapsedSeconds = totalSeconds - _remainingSeconds;
-          _completedSubdivisions = (elapsedSeconds / subdivisionInterval).floor();
+          _completedSubdivisions =
+              (elapsedSeconds / subdivisionInterval).floor();
         }
       }
     } else {
@@ -245,6 +248,7 @@ class _TimerViewState extends State<TimerView> {
     _dimTimer?.cancel();
     _commentController.dispose();
     _commentFocusNode.dispose();
+    _subdivisionAudioPlayer.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -257,7 +261,7 @@ class _TimerViewState extends State<TimerView> {
         _log.info('Timer started, enabling wakelock.');
         _hasStarted = true;
         WakelockPlus.enable();
-        
+
         // Start dimming process if enabled
         if (_dimScreenMode) {
           _startDimmingProcess();
@@ -648,8 +652,8 @@ class _TimerViewState extends State<TimerView> {
                           : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
                       style: TextStyle(
                         fontSize: 16,
-                        color:
-                            ColorPalette.lightText.withAlpha((255 * 0.7).round()),
+                        color: ColorPalette.lightText
+                            .withAlpha((255 * 0.7).round()),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -714,7 +718,8 @@ class _TimerViewState extends State<TimerView> {
                       });
                     },
                     child: Container(
-                      color: Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
+                      color:
+                          Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
                     ),
                   ),
                 ),
@@ -847,8 +852,10 @@ class _TimerViewState extends State<TimerView> {
       final bellPath =
           (widget.item.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
               .replaceFirst('assets/', '');
+      // Stop any currently playing subdivision bell to ensure the new one plays
+      await _subdivisionAudioPlayer.stop();
       // Don't await the play operation - let it run in background
-      _audioPlayer.play(AssetSource(bellPath));
+      _subdivisionAudioPlayer.play(AssetSource(bellPath));
     } catch (e) {
       _log.warning('Failed to play subdivision bell sound: $e');
     }
@@ -856,18 +863,18 @@ class _TimerViewState extends State<TimerView> {
 
   void _editItem() async {
     _log.info('Editing item: ${widget.item.name}');
-    
+
     // Cancel any running timer
     _timer?.cancel();
-    
+
     // Restore screen brightness if dimming is active
     if (_dimScreenMode) {
       _restoreScreenBrightness();
     }
-    
+
     // Disable wakelock
     WakelockPlus.disable();
-    
+
     final updatedItem = await Navigator.push<DailyThing>(
       context,
       MaterialPageRoute(
@@ -883,7 +890,7 @@ class _TimerViewState extends State<TimerView> {
 
     if (updatedItem != null) {
       _log.info('Item updated: ${updatedItem.name}');
-      
+
       // Update the widget with the new item
       if (mounted) {
         Navigator.pushReplacement(
@@ -899,14 +906,14 @@ class _TimerViewState extends State<TimerView> {
       }
     } else {
       _log.info('Edit cancelled.');
-      
+
       // Resume timer if it was running before editing
       if (!_isPaused && mounted) {
         WakelockPlus.enable();
         if (_dimScreenMode) {
           _startDimmingProcess();
         }
-        
+
         if (_isOvertime) {
           _runOvertime();
         } else {
