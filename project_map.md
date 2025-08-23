@@ -140,6 +140,7 @@ This document provides a map of the project, listing the location of all functio
   - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
   - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
   - Subdivisions onChanged handler [`lib/src/views/add_edit_daily_item_view.dart:882`](lib/src/views/add_edit_daily_item_view.dart:882): Automatically sets bell3 as default subdivision bell when subdivisions > 1.
+  - Subdivision calculation display [`lib/src/views/add_edit_daily_item_view.dart:950`](lib/src/views/add_edit_daily_item_view.dart:950): Shows subdivision calculation using TimeConverter for proper MM:SS formatting (e.g., "2 x 1:09 = 2:18").
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.
 
 ## lib/src/views/category_graph_view.dart

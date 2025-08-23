@@ -947,7 +947,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 12.0),
                           child: Text(
-                            '${_subdivisionsController.text} x ${(_subdivisionsController.text.isNotEmpty && int.tryParse(_subdivisionsController.text) != null && int.parse(_subdivisionsController.text) > 0) ? (_todayValue / int.parse(_subdivisionsController.text)).toStringAsFixed(2) : '0.00'} = ${_todayValue.toStringAsFixed(2)}',
+                            '${_subdivisionsController.text} x ${(_subdivisionsController.text.isNotEmpty && int.tryParse(_subdivisionsController.text) != null && int.parse(_subdivisionsController.text) > 0) ? TimeConverter.toMmSsString(_todayValue / int.parse(_subdivisionsController.text)) : '0:00'} = ${TimeConverter.toMmSsString(_todayValue)}',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
