@@ -6,6 +6,7 @@ import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
 import 'package:daily_inc/src/views/history_view.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
+import 'package:daily_inc/src/core/time_converter.dart';
 
 class DailyThingItem extends StatefulWidget {
   final DailyThing item;
@@ -44,13 +45,7 @@ class DailyThingItem extends StatefulWidget {
 class _DailyThingItemState extends State<DailyThingItem> {
   String _formatValue(double value, ItemType itemType) {
     if (itemType == ItemType.minutes) {
-      if (value.truncateToDouble() == value) {
-        return '${value.toInt()}m';
-      } else {
-        final minutes = value.truncate();
-        final seconds = ((value - minutes) * 60).round();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}';
-      }
+      return TimeConverter.toSmartString(value);
     } else if (itemType == ItemType.reps) {
       return '${value.round()}x';
     } else {
@@ -460,6 +455,16 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   final inc = widget.item.increment;
                                   final sign = inc < 0 ? '-' : '+';
                                   final absVal = inc.abs();
+
+                                  // Format as minutes:seconds for MINUTES items
+                                  if (widget.item.itemType ==
+                                      ItemType.minutes) {
+                                    final formatted =
+                                        TimeConverter.toMmSsString(absVal);
+                                    return '$sign$formatted';
+                                  }
+
+                                  // Keep decimal format for REPS items
                                   String numStr = absVal.toStringAsFixed(2);
                                   numStr =
                                       numStr.replaceFirst(RegExp(r'\.00$'), '');

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:daily_inc/src/views/widgets/custom_bell_selector.dart'; // Import the new dialog
+import 'package:daily_inc/src/core/time_converter.dart';
 
 class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
@@ -185,7 +186,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   void _updateTodayValue() {
     try {
-      final startDate = DateFormat('yyyy-MM-dd').parse(_startDateController.text);
+      final startDate =
+          DateFormat('yyyy-MM-dd').parse(_startDateController.text);
       final startValue = double.tryParse(_startValueController.text) ?? 0.0;
       final endValue = double.tryParse(_endValueController.text) ?? 0.0;
       final duration = int.tryParse(_durationController.text) ?? 1;
@@ -237,10 +239,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   }
 
   void _updateIncrementMinutesAndSecondsFields(double increment) {
-    final minutes = increment.truncate();
-    final seconds = ((increment - minutes) * 60).round();
-    _incrementMinutesController.text = minutes.toString();
-    _incrementSecondsController.text = seconds.toString();
+    final components = TimeConverter.fromDecimalMinutes(increment);
+    _incrementMinutesController.text = components.minutes.toString();
+    _incrementSecondsController.text = components.seconds.toString();
   }
 
   void _updateDurationFromIncrement() {
@@ -248,7 +249,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     try {
       final minutes = int.tryParse(_incrementMinutesController.text) ?? 0;
       final seconds = int.tryParse(_incrementSecondsController.text) ?? 0;
-      final increment = minutes + (seconds / 60.0);
+      final increment = TimeConverter.toDecimalMinutes(minutes, seconds);
 
       if (increment == 0) {
         _isUpdatingFromIncrement = false;
@@ -933,7 +934,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                                   _selectedSubdivisionBellSoundPath == null) {
                                 _selectedSubdivisionBellSoundPath =
                                     'assets/bells/bell3.mp3';
-                                _subdivisionBellSoundController.text = 'bell3.mp3';
+                                _subdivisionBellSoundController.text =
+                                    'bell3.mp3';
                               }
                             }
                             setState(() {});

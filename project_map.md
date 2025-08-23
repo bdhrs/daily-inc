@@ -8,6 +8,22 @@ This document provides a map of the project, listing the location of all functio
   - `build(BuildContext context)` method [`lib/main.dart:65`](lib/main.dart:65): Builds the MaterialApp with themes and the home screen.
   - Keyboard shortcut Ctrl/Cmd+Q: quits the app on desktop or pops on mobile [`lib/main.dart:69`](lib/main.dart:69): Handy quick-exit key handler.
 
+## lib/src/core/time_converter.dart
+- `TimeConverter` class [`lib/src/core/time_converter.dart:1`](lib/src/core/time_converter.dart:1): Handles conversions between decimal minutes and minutes/seconds components.
+  - `fromDecimalMinutes(double decimalMinutes)` [`lib/src/core/time_converter.dart:7`](lib/src/core/time_converter.dart:7): Converts decimal minutes to TimeComponents object.
+  - `toDecimalMinutes(int minutes, int seconds)` [`lib/src/core/time_converter.dart:32`](lib/src/core/time_converter.dart:32): Converts minutes and seconds to decimal format.
+  - `toMmSsString(double decimalMinutes, {bool padZeroes = false})` [`lib/src/core/time_converter.dart:42`](lib/src/core/time_converter.dart:42): Formats decimal minutes as MM:SS string.
+  - `toSmartString(double decimalMinutes)` [`lib/src/core/time_converter.dart:47`](lib/src/core/time_converter.dart:47): Smart formatting (5m for whole, 5:30 for fractional).
+  - `toTotalSeconds(double decimalMinutes)` [`lib/src/core/time_converter.dart:57`](lib/src/core/time_converter.dart:57): Converts decimal minutes to total seconds.
+  - `fromTotalSeconds(int totalSeconds)` [`lib/src/core/time_converter.dart:62`](lib/src/core/time_converter.dart:62): Converts total seconds to decimal minutes.
+  - `validateMinutes(int minutes)` [`lib/src/core/time_converter.dart:67`](lib/src/core/time_converter.dart:67): Validates minutes value.
+  - `validateSeconds(int seconds)` [`lib/src/core/time_converter.dart:72`](lib/src/core/time_converter.dart:72): Validates seconds value (0-59).
+
+- `TimeComponents` class [`lib/src/core/time_converter.dart:77`](lib/src/core/time_converter.dart:77): Data class representing minutes and seconds components.
+  - `toString({bool padZeroes = false})` [`lib/src/core/time_converter.dart:85`](lib/src/core/time_converter.dart:85): Returns formatted string.
+  - `toDecimal()` [`lib/src/core/time_converter.dart:94`](lib/src/core/time_converter.dart:94): Converts to decimal minutes.
+  - `toTotalSeconds()` [`lib/src/core/time_converter.dart:99`](lib/src/core/time_converter.dart:99): Converts to total seconds.
+
 ## lib/src/core/increment_calculator.dart
 - `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:9`](lib/src/core/increment_calculator.dart:9): Calculates targets, display values, and status for daily items.
   - Static variable `_gracePeriodDays` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Stores the configurable grace period.

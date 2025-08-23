@@ -12,6 +12,7 @@ import 'package:daily_inc/src/views/widgets/timer_painter.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daily_inc/src/core/time_converter.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -85,10 +86,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   String _formatMinutesToMmSs(double minutesValue) {
-    final totalSeconds = (minutesValue * 60).round();
-    final mm = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-    final ss = (totalSeconds % 60).toString().padLeft(2, '0');
-    return '$mm:$ss';
+    return TimeConverter.toMmSsString(minutesValue, padZeroes: true);
   }
 
   Future<void> _loadDimScreenPreference() async {
