@@ -38,6 +38,7 @@ class _TimerViewState extends State<TimerView> {
   Timer? _timer;
   bool _isOvertime = false;
   int _overtimeSeconds = 0;
+  int _completedSubdivisions = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
@@ -215,6 +216,16 @@ class _TimerViewState extends State<TimerView> {
         final remainingMinutes = dailyTarget - completedMinutes;
         _remainingSeconds = (remainingMinutes * 60).round();
       }
+
+      // Calculate already completed subdivisions
+      if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+        final totalSeconds = (_todaysTargetMinutes * 60).round();
+        final subdivisionInterval = (totalSeconds / widget.item.subdivisions!).round();
+        if (subdivisionInterval > 0) {
+          final elapsedSeconds = totalSeconds - _remainingSeconds;
+          _completedSubdivisions = (elapsedSeconds / subdivisionInterval).floor();
+        }
+      }
     } else {
       _remainingSeconds = _initialTargetSeconds.round();
     }
@@ -322,6 +333,9 @@ class _TimerViewState extends State<TimerView> {
               _remainingSeconds > 0 &&
               _remainingSeconds % subdivisionInterval == 0) {
             _playSubdivisionBell();
+            setState(() {
+              _completedSubdivisions++;
+            });
           }
         });
       });
@@ -361,6 +375,9 @@ class _TimerViewState extends State<TimerView> {
     // Update UI state immediately to show completion
     setState(() {
       _isPaused = true;
+      if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+        _completedSubdivisions = widget.item.subdivisions!;
+      }
       _log.info('Timer paused in onTimerComplete');
     });
 
@@ -583,6 +600,17 @@ class _TimerViewState extends State<TimerView> {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    if (widget.item.subdivisions != null &&
+                        widget.item.subdivisions! > 1)
+                      Text(
+                        '$_completedSubdivisions / ${widget.item.subdivisions}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: ColorPalette.lightText
+                              .withAlpha((255 * 0.7).round()),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     Expanded(
                       child: _isOvertime
                           ? _buildOvertimeView()
