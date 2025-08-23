@@ -43,6 +43,7 @@ class _TimerViewState extends State<TimerView> {
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
+  bool _showSubdivisions = true;
 
   late double _todaysTargetMinutes;
   late double _initialTargetSeconds;
@@ -263,6 +264,11 @@ class _TimerViewState extends State<TimerView> {
         }
 
         final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
+        if (isFinished) {
+          setState(() {
+            _showSubdivisions = false;
+          });
+        }
         _log.info(
             'isFinished: $isFinished, _remainingSeconds: $_remainingSeconds, _isOvertime: $_isOvertime');
         if (isFinished) {
@@ -736,7 +742,7 @@ class _TimerViewState extends State<TimerView> {
           painter: TimerPainter(
             totalTime: _todaysTargetMinutes,
             elapsedTime: _currentElapsedTimeInMinutes,
-            subdivisions: widget.item.subdivisions ?? 0,
+            subdivisions: _showSubdivisions ? widget.item.subdivisions ?? 0 : 0,
           ),
           child: SizedBox(
             width: constraints.maxWidth,
@@ -770,7 +776,7 @@ class _TimerViewState extends State<TimerView> {
         painter: TimerPainter(
           totalTime: _todaysTargetMinutes,
           elapsedTime: _currentElapsedTimeInMinutes,
-          subdivisions: widget.item.subdivisions ?? 0,
+          subdivisions: _showSubdivisions ? widget.item.subdivisions ?? 0 : 0,
         ),
         child: SizedBox(
           width: constraints.maxWidth,

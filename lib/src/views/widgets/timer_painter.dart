@@ -53,7 +53,7 @@ class TimerPainter extends CustomPainter {
     }
 
     // Spokes
-    if (subdivisions > 0 && elapsedTime < totalTime) {
+    if (subdivisions > 0) {
       final spokePaint = Paint()
         ..color = ColorPalette.secondaryText.withAlpha((255 * 0.5).round())
         ..strokeWidth = 2;
