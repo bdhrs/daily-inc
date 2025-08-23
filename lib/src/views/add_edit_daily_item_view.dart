@@ -1,3 +1,4 @@
+import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/core/value_converter.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/data/history_manager.dart';
@@ -58,6 +59,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   String? _selectedBellSoundPath; // New state variable for bell sound
   String? _selectedSubdivisionBellSoundPath;
   bool _isUpdatingFromIncrement = false;
+  double _todayValue = 0.0;
 
   @override
   void initState() {
@@ -95,6 +97,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _durationController.addListener(_updateIncrementField);
     _incrementMinutesController.addListener(_updateDurationFromIncrement);
     _incrementSecondsController.addListener(_updateDurationFromIncrement);
+    _startDateController.addListener(_updateTodayValue);
+    _startValueController.addListener(_updateTodayValue);
+    _endValueController.addListener(_updateTodayValue);
+    _durationController.addListener(_updateTodayValue);
 
     // Set initial increment value after all controllers are initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,6 +108,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _incrementController!.text = increment;
       _updateIncrementMinutesAndSecondsFields(
           double.tryParse(increment) ?? 0.0);
+      _updateTodayValue();
     });
 
     if (existingItem != null) {
@@ -154,6 +161,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _startValueController.removeListener(_updateIncrementField);
     _endValueController.removeListener(_updateIncrementField);
     _durationController.removeListener(_updateIncrementField);
+    _startDateController.removeListener(_updateTodayValue);
+    _startValueController.removeListener(_updateTodayValue);
+    _endValueController.removeListener(_updateTodayValue);
+    _durationController.removeListener(_updateTodayValue);
     _iconController.dispose();
     _nameController.dispose();
     _startDateController.dispose();
@@ -170,6 +181,33 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _incrementMinutesController.dispose();
     _incrementSecondsController.dispose();
     super.dispose();
+  }
+
+  void _updateTodayValue() {
+    try {
+      final startDate = DateFormat('yyyy-MM-dd').parse(_startDateController.text);
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+      final duration = int.tryParse(_durationController.text) ?? 1;
+
+      final tempItem = DailyThing(
+        name: _nameController.text,
+        itemType: _selectedItemType,
+        startDate: startDate,
+        startValue: startValue,
+        duration: duration,
+        endValue: endValue,
+        history: widget.dailyThing?.history ?? [],
+      );
+
+      setState(() {
+        _todayValue = IncrementCalculator.calculateTodayValue(tempItem);
+      });
+    } catch (e) {
+      setState(() {
+        _todayValue = 0.0;
+      });
+    }
   }
 
   String _calculateIncrement() {
@@ -865,36 +903,54 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   ),
                 if (_selectedItemType == ItemType.minutes) ...[
                   const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _subdivisionsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Subdivisions',
-                      hintText: 'e.g. 2',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        final subdivisions = int.tryParse(value);
-                        if (subdivisions == null || subdivisions < 1) {
-                          return 'Must be a positive number';
-                        }
-                      }
-                      return null;
-                    },
-                    onChanged: (value) {
-                      // Automatically set bell3 as default subdivision bell when subdivisions > 1
-                      if (value.isNotEmpty) {
-                        final subdivisions = int.tryParse(value);
-                        if (subdivisions != null &&
-                            subdivisions > 1 &&
-                            _selectedSubdivisionBellSoundPath == null) {
-                          _selectedSubdivisionBellSoundPath =
-                              'assets/bells/bell3.mp3';
-                          _subdivisionBellSoundController.text = 'bell3.mp3';
-                        }
-                      }
-                      setState(() {});
-                    },
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: TextFormField(
+                          controller: _subdivisionsController,
+                          decoration: const InputDecoration(
+                            labelText: 'Subdivisions',
+                            hintText: 'e.g. 2',
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty) {
+                              final subdivisions = int.tryParse(value);
+                              if (subdivisions == null || subdivisions < 1) {
+                                return 'Must be a positive number';
+                              }
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            // Automatically set bell3 as default subdivision bell when subdivisions > 1
+                            if (value.isNotEmpty) {
+                              final subdivisions = int.tryParse(value);
+                              if (subdivisions != null &&
+                                  subdivisions > 1 &&
+                                  _selectedSubdivisionBellSoundPath == null) {
+                                _selectedSubdivisionBellSoundPath =
+                                    'assets/bells/bell3.mp3';
+                                _subdivisionBellSoundController.text = 'bell3.mp3';
+                              }
+                            }
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Text(
+                            '${_subdivisionsController.text} x ${(_subdivisionsController.text.isNotEmpty && int.tryParse(_subdivisionsController.text) != null && int.parse(_subdivisionsController.text) > 0) ? (_todayValue / int.parse(_subdivisionsController.text)).toStringAsFixed(2) : '0.00'} = ${_todayValue.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   if (int.tryParse(_subdivisionsController.text) != null &&
                       (int.tryParse(_subdivisionsController.text) ?? 0) > 1)
