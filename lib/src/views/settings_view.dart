@@ -332,6 +332,9 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 16),
 
+          const Divider(),
+          const SizedBox(height: 16),
+
           // Screen Dimmer Section
           const Text(
             'Screen Dimmer',
@@ -350,6 +353,9 @@ class _SettingsViewState extends State<SettingsView> {
               _saveSettings();
             },
           ),
+          const SizedBox(height: 16),
+
+          const Divider(),
           const SizedBox(height: 16),
 
           // Backup Settings Section
