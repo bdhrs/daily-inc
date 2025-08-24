@@ -52,7 +52,7 @@ flutter test && flutter analyze
 flutter build apk --release
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
-
+ 
 ### Linux AppImage:
 ```bash
 flutter build linux
