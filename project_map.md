@@ -134,9 +134,10 @@ This document provides a map of the project, listing the location of all functio
   - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values, including automatic bell3 assignment for new items with subdivisions > 1.
   - `didChangeDependencies()` [`lib/src/views/add_edit_daily_item_view.dart:108`](lib/src/views/add_edit_daily_item_view.dart:108): Formats the time field when context is ready.
   - `dispose()` [`lib/src/views/add_edit_daily_item_view.dart:120`](lib/src/views/add_edit_daily_item_view.dart:120): Disposes controllers to avoid leaks.
-  - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment from inputs.
+  - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment from inputs, considering interval type and frequency.
   - `_updateIncrementField()` [`lib/src/views/add_edit_daily_item_view.dart:154`](lib/src/views/add_edit_daily_item_view.dart:154): Updates increment when duration changes.
-  - `_updateDurationFromIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:160`](lib/src/views/add_edit_daily_item_view.dart:160): Updates duration when increment changes.
+  - `_updateDurationFromIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:160`](lib/src/views/add_edit_daily_item_view.dart:160): Updates duration when increment changes, considering interval type and frequency.
+  - `_buildDescriptionText()` [`lib/src/views/add_edit_daily_item_view.dart:458`](lib/src/views/add_edit_daily_item_view.dart:458): Generates descriptive text explaining the increment calculation logic for the user.
   - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
   - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
   - Subdivisions onChanged handler [`lib/src/views/add_edit_daily_item_view.dart:882`](lib/src/views/add_edit_daily_item_view.dart:882): Automatically sets bell3 as default subdivision bell when subdivisions > 1.
@@ -258,8 +259,9 @@ This document provides a map of the project, listing the location of all functio
   - `_toggleTimer()` [`lib/src/views/timer_view.dart:177`](lib/src/views/timer_view.dart:177): Starts, pauses, or continues the timer. Starts overtime mode when 'Continue' is pressed after timer finishes. Initiates screen dimming when enabled.
   - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:216`](lib/src/views/timer_view.dart:216): Main timer loops for countdown and overtime, run by `_toggleTimer`.
   - `_onTimerComplete()` [`lib/src/views/timer_view.dart:233`](lib/src/views/timer_view.dart:233): Plays a sound, pauses the timer, restores screen brightness, and automatically saves the completed progress.
-  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:245`](lib/src/views/timer_view.dart:245): Handles exiting the screen, restores screen brightness, shows a dialog for partial progress or updating the final overtime value.
+  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:245`](lib/src/views/timer_view.dart:245): Handles exiting the screen, restores screen brightness, shows a dialog for partial progress or updating the final overtime value. Pauses timer before showing dialogs.
   - `_saveProgress()` [`lib/src/views/timer_view.dart:308`](lib/src/views/timer_view.dart:308): A unified method to save or update today's history entry, preventing duplicates.
+  - System back button handler [`lib/src/views/timer_view.dart:591`](lib/src/views/timer_view.dart:591): Pauses timer before exiting when back button is pressed.
   - `initState()` [`lib/src/views/timer_view.dart:117`](lib/src/views/timer_view.dart:117): Initializes the timer state and enables fullscreen mode.
   - `dispose()` [`lib/src/views/timer_view.dart:173`](lib/src/views/timer_view.dart:173): Cleans up resources, cancels timers, and disables fullscreen mode.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:395`](lib/src/views/timer_view.dart:395): Renders the main UI with a responsive timer, info text, comment field, and controls. Includes the screen dimmer overlay.
