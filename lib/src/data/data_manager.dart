@@ -15,10 +15,23 @@ class DataManager {
   Future<List<DailyThing>> loadFromFile() async {
     _log.info('loadFromFile called');
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
+      FilePickerResult? result;
+      
+      // Use different file picker configuration based on platform
+      if (Platform.isLinux) {
+        // On Linux, use ANY file type to avoid the "custom" issue
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.any,
+          dialogTitle: 'Select JSON File',
+        );
+      } else {
+        // On other platforms, use custom type with JSON extension
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['json'],
+          dialogTitle: 'Select JSON File',
+        );
+      }
 
       if (result != null) {
         _log.info('File picked: ${result.files.single.path}');
@@ -44,6 +57,7 @@ class DataManager {
                   targetValue: entry.targetValue,
                   doneToday: entry.doneToday,
                   actualValue: entry.targetValue,
+                  comment: entry.comment,
                 ));
               } else {
                 fixedHistory.add(entry);
@@ -213,13 +227,26 @@ class DataManager {
       final bytes = utf8.encode(jsonString);
 
       _log.info('Opening file picker to save file.');
-      final String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save History Data',
-        fileName: 'daily_inc_history.json',
-        allowedExtensions: ['json'],
-        type: FileType.custom,
-        bytes: bytes,
-      );
+      String? outputFile;
+      
+      if (Platform.isLinux) {
+        // On Linux, use ANY file type
+        outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save History Data',
+          fileName: 'daily_inc_history.json',
+          type: FileType.any,
+          bytes: bytes,
+        );
+      } else {
+        // On other platforms, use custom type with JSON extension
+        outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save History Data',
+          fileName: 'daily_inc_history.json',
+          allowedExtensions: ['json'],
+          type: FileType.custom,
+          bytes: bytes,
+        );
+      }
 
       if (outputFile != null) {
         _log.info('History saved successfully to $outputFile.');
@@ -252,13 +279,26 @@ class DataManager {
       final bytes = utf8.encode(jsonString);
 
       _log.info('Opening file picker to save template.');
-      final String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save Template Data',
-        fileName: 'daily_inc_template.json',
-        allowedExtensions: ['json'],
-        type: FileType.custom,
-        bytes: bytes,
-      );
+      String? outputFile;
+      
+      if (Platform.isLinux) {
+        // On Linux, use ANY file type
+        outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Template Data',
+          fileName: 'daily_inc_template.json',
+          type: FileType.any,
+          bytes: bytes,
+        );
+      } else {
+        // On other platforms, use custom type with JSON extension
+        outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Template Data',
+          fileName: 'daily_inc_template.json',
+          allowedExtensions: ['json'],
+          type: FileType.custom,
+          bytes: bytes,
+        );
+      }
 
       if (outputFile != null) {
         _log.info('Template saved successfully to $outputFile.');

@@ -88,16 +88,31 @@ Future<bool> saveJsonToFile({
   try {
     final jsonString = const JsonEncoder.withIndent('  ').convert(json);
     final bytes = utf8.encode(jsonString);
-    final String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save History Data',
-      fileName: defaultFileName,
-      allowedExtensions: const ['json'],
-      type: FileType.custom,
-      bytes: bytes,
-    );
+    
+    String? outputFile;
+    
+    if (Platform.isLinux) {
+      // On Linux, use ANY file type
+      outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Data',
+        fileName: defaultFileName,
+        type: FileType.any,
+        bytes: bytes,
+      );
+    } else {
+      // On other platforms, use custom type with JSON extension
+      outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Data',
+        fileName: defaultFileName,
+        allowedExtensions: const ['json'],
+        type: FileType.custom,
+        bytes: bytes,
+      );
+    }
+    
     if (outputFile != null || Platform.isAndroid || Platform.isIOS) {
       showThemedSnackBar(
-          context: context, message: 'History saved successfully');
+          context: context, message: 'File saved successfully');
       return true;
     }
     return false;
