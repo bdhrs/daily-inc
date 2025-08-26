@@ -95,6 +95,13 @@ class BackupService {
       return false;
     }
 
+    // Check if backups are already enabled - if so, no need to prompt
+    final backupEnabled =
+        prefs.getBool(_prefsKeyBackupEnabled) ?? _defaultBackupEnabled;
+    if (backupEnabled) {
+      return false;
+    }
+
     final firstUseString = prefs.getString(_prefsKeyFirstAppUseDate);
     if (firstUseString == null) {
       return false;

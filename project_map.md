@@ -101,6 +101,7 @@ This document provides a map of the project, listing the location of all functio
   - `setBackupLocation(String path)` [`lib/src/services/backup_service.dart:41`](lib/src/services/backup_service.dart:41): Sets the backup directory path.
   - `getBackupRetentionDays()` [`lib/src/services/backup_service.dart:48`](lib/src/services/backup_service.dart:48): Gets backup retention days setting.
   - `setBackupRetentionDays(int days)` [`lib/src/services/backup_service.dart:55`](lib/src/services/backup_service.dart:55): Sets backup retention days.
+  - `shouldShowBackupPrompt()` [`lib/src/services/backup_service.dart:90`](lib/src/services/backup_service.dart:90): Checks if backup prompt should be shown (after 1 day of first use, but not if backups are already enabled).
   - `createBackup(List<DailyThing> items)` [`lib/src/services/backup_service.dart:77`](lib/src/services/backup_service.dart:77): Creates timestamped backup and always keeps a "_latest" version.
   - `_cleanupOldBackups(Directory backupDir)` [`lib/src/services/backup_service.dart:129`](lib/src/services/backup_service.dart:129): Cleans up old backups while preserving the latest file.
   - `getAvailableBackups()` [`lib/src/services/backup_service.dart:158`](lib/src/services/backup_service.dart:158): Gets list of available backups.
