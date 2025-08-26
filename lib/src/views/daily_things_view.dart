@@ -462,33 +462,25 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
-  Future<void> _maybeShowBackupPrompt() async {
+  Future<void> _resetAllData() async {
+    _log.info('Resetting all data from main view...');
     try {
-      final shouldShow = await _backupService.shouldShowBackupPrompt();
-      if (!shouldShow || !mounted) return;
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-
-      // ignore: use_build_context_synchronously
-      final configureBackups =
-          await _backupService.showBackupSetupDialog(context);
-
-      if (configureBackups == true) {
-        // User wants to configure backups - navigate to settings
-        // ignore: use_build_context_synchronously
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SettingsView()),
-        ).then((_) {
-          _refreshDisplay();
-        });
-      }
-
-      // Mark prompt as shown regardless of user choice
-      await _backupService.markBackupPromptShown();
+      await _dataManager.resetAllData();
+      // Clear the in-memory list
+      setState(() {
+        _dailyThings = [];
+      });
+      _log.info('Data reset completed and UI cleared');
     } catch (e, s) {
-      _log.severe('Error showing backup prompt', e, s);
+      _log.severe('Error resetting data from main view', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error resetting data: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -561,6 +553,26 @@ class _DailyThingsViewState extends State<DailyThingsView>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save history: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveTemplateToFile() async {
+    _log.info('Attempting to save template to file.');
+    try {
+      final ok = await _dataManager.saveTemplateToFile();
+      if (!ok) {
+        _log.info('Save template operation cancelled or failed.');
+      }
+    } catch (e, s) {
+      _log.severe('Failed to save template', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save template: $e'),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -696,6 +708,93 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
+  Future<void> _loadTemplateFromFile() async {
+    _log.info('Attempting to load template from file.');
+    try {
+      // Use DataManager's loadFromFile method which includes the fix for missing actual_value
+      final loadedTemplateThings = await _dataManager.loadFromFile();
+
+      if (loadedTemplateThings.isNotEmpty) {
+        // Ask user whether to add or replace
+        if (mounted) {
+          final choice = await showDialog<String>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Load Template'),
+              content: const Text('Do you want to add the template items to your existing items, or replace all your current items with the template?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('add'),
+                  child: const Text('Add'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('replace'),
+                  child: const Text('Replace'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('cancel'),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          );
+
+          if (choice == 'cancel' || choice == null) {
+            _log.info('User cancelled template loading.');
+            return;
+          }
+
+          // Create new items with today's date and no history
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+          
+          final newItems = loadedTemplateThings.map((templateItem) {
+            return templateItem.copyWith(
+              id: null, // Generate new IDs
+              startDate: todayDate, // Set start date to today
+              history: [], // Clear history
+            );
+          }).toList();
+
+          setState(() {
+            if (choice == 'replace') {
+              _dailyThings = newItems;
+            } else { // add
+              _dailyThings.addAll(newItems);
+            }
+          });
+
+          // Save the loaded data to the default storage
+          await _dataManager.saveData(_dailyThings);
+          _log.info('Template loaded and saved to default storage successfully.');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Template ${choice == 'replace' ? 'replaced' : 'added'} successfully'),
+                duration: const Duration(seconds: 2),
+                backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } else {
+        _log.info('No template items loaded from file or file selection was cancelled.');
+      }
+    } catch (e, s) {
+      _log.severe('Failed to load template', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load template: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -772,6 +871,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
         onExpandAllVisibleItems: _expandAllVisibleItems,
         onLoadHistoryFromFile: _loadHistoryFromFile,
         onSaveHistoryToFile: _saveHistoryToFile,
+        onLoadTemplateFromFile: _loadTemplateFromFile,
+        onSaveTemplateToFile: _saveTemplateToFile,
         dailyThings: _dailyThings,
         hideWhenDone: _hideWhenDone,
         allExpanded: _allExpanded,

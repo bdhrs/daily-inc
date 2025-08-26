@@ -17,6 +17,8 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback onExpandAllVisibleItems;
   final Future<void> Function() onLoadHistoryFromFile;
   final Future<void> Function() onSaveHistoryToFile;
+  final Future<void> Function() onLoadTemplateFromFile;
+  final Future<void> Function() onSaveTemplateToFile;
   final List<DailyThing> dailyThings;
   final bool hideWhenDone;
   final bool allExpanded;
@@ -34,6 +36,8 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onExpandAllVisibleItems,
     required this.onLoadHistoryFromFile,
     required this.onSaveHistoryToFile,
+    required this.onLoadTemplateFromFile,
+    required this.onSaveTemplateToFile,
     required this.dailyThings,
     required this.hideWhenDone,
     required this.allExpanded,
@@ -174,6 +178,12 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
               case 'save_history':
                 widget.onSaveHistoryToFile();
                 break;
+              case 'load_template':
+                widget.onLoadTemplateFromFile();
+                break;
+              case 'save_template':
+                widget.onSaveTemplateToFile();
+                break;
               case 'about':
                 widget.onShowAboutDialog();
                 break;
@@ -232,6 +242,26 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                   Icon(Icons.save_alt),
                   SizedBox(width: 8),
                   Text('Save History'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'load_template',
+              child: Row(
+                children: [
+                  Icon(Icons.folder_open),
+                  SizedBox(width: 8),
+                  Text('Load Template'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'save_template',
+              child: Row(
+                children: [
+                  Icon(Icons.save_alt),
+                  SizedBox(width: 8),
+                  Text('Save Template'),
                 ],
               ),
             ),

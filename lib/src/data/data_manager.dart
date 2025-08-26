@@ -66,6 +66,9 @@ class DataManager {
               intervalType: thing.intervalType,
               intervalValue: thing.intervalValue,
               intervalWeekdays: thing.intervalWeekdays,
+              bellSoundPath: thing.bellSoundPath,
+              subdivisions: thing.subdivisions,
+              subdivisionBellSoundPath: thing.subdivisionBellSoundPath,
             ));
           } else {
             fixedThings.add(thing);
@@ -227,6 +230,45 @@ class DataManager {
       }
     } catch (e, s) {
       _log.severe('Failed to save history', e, s);
+      return false;
+    }
+  }
+
+  Future<bool> saveTemplateToFile() async {
+    _log.info('saveTemplateToFile called to save template data to a file.');
+    try {
+      final items = await loadData();
+      // Create template items without history
+      final templateItems = items.map((thing) {
+        return thing.copyWith(history: []);
+      }).toList();
+      
+      final jsonData = {
+        'dailyThings': templateItems.map((thing) => thing.toJson()).toList(),
+        'savedAt': DateTime.now().toIso8601String(),
+        'isTemplate': true,
+      };
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+      final bytes = utf8.encode(jsonString);
+
+      _log.info('Opening file picker to save template.');
+      final String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Template Data',
+        fileName: 'daily_inc_template.json',
+        allowedExtensions: ['json'],
+        type: FileType.custom,
+        bytes: bytes,
+      );
+
+      if (outputFile != null) {
+        _log.info('Template saved successfully to $outputFile.');
+        return true;
+      } else {
+        _log.info('Save template operation cancelled.');
+        return false;
+      }
+    } catch (e, s) {
+      _log.severe('Failed to save template', e, s);
       return false;
     }
   }
