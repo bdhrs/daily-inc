@@ -462,6 +462,36 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
+  Future<void> _maybeShowBackupPrompt() async {
+    try {
+      final shouldShow = await _backupService.shouldShowBackupPrompt();
+      if (!shouldShow || !mounted) return;
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+
+      // ignore: use_build_context_synchronously
+      final configureBackups =
+          await _backupService.showBackupSetupDialog(context);
+
+      if (configureBackups == true) {
+        // User wants to configure backups - navigate to settings
+        // ignore: use_build_context_synchronously
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SettingsView()),
+        ).then((_) {
+          _refreshDisplay();
+        });
+      }
+
+      // Mark prompt as shown regardless of user choice
+      await _backupService.markBackupPromptShown();
+    } catch (e, s) {
+      _log.severe('Error showing backup prompt', e, s);
+    }
+  }
+
   Future<void> _resetAllData() async {
     _log.info('Resetting all data from main view...');
     try {
@@ -873,6 +903,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
         onSaveHistoryToFile: _saveHistoryToFile,
         onLoadTemplateFromFile: _loadTemplateFromFile,
         onSaveTemplateToFile: _saveTemplateToFile,
+        onResetAllData: _resetAllData,
         dailyThings: _dailyThings,
         hideWhenDone: _hideWhenDone,
         allExpanded: _allExpanded,

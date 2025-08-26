@@ -53,12 +53,13 @@ This document provides a map of the project, listing the location of all functio
   - `updateDailyThing(DailyThing updatedItem)` [`lib/src/data/data_manager.dart:164`](lib/src/data/data_manager.dart:164): Updates an existing item and saves.
   - `resetAllData()` [`lib/src/data/data_manager.dart:178`](lib/src/data/data_manager.dart:178): Deletes the stored data file to start fresh.
   - `saveHistoryToFile()` [`lib/src/data/data_manager.dart:194`](lib/src/data/data_manager.dart:194): Exports all current data to a JSON file via a save dialog.
-  - `getUniqueCategories()` [`lib/src/data/data_manager.dart:227`](lib/src/data/data_manager.dart:227): Lists all unique categories (except "None").
-  - `getUniqueCategoriesForType(ItemType type)` [`lib/src/data/data_manager.dart:244`](lib/src/data/data_manager.dart:244): Lists unique categories only for the given type.
-  - `getLastMotivationShownDate()` [`lib/src/data/data_manager.dart:262`](lib/src/data/data_manager.dart:262): Reads the date when the motivation dialog was last shown.
-  - `setLastMotivationShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:272`](lib/src/data/data_manager.dart:272): Stores today's date as the last shown motivation.
-  - `getLastCompletionShownDate()` [`lib/src/data/data_manager.dart:287`](lib/src/data/data_manager.dart:287): Reads the date when the completion dialog was last shown.
-  - `setLastCompletionShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:297`](lib/src/data/data_manager.dart:297): Stores today's date as the last shown completion message.
+  - `saveTemplateToFile()` [`lib/src/data/data_manager.dart:215`](lib/src/data/data_manager.dart:215): Exports all current data without history to a JSON template file via a save dialog.
+  - `getUniqueCategories()` [`lib/src/data/data_manager.dart:245`](lib/src/data/data_manager.dart:245): Lists all unique categories (except "None").
+  - `getUniqueCategoriesForType(ItemType type)` [`lib/src/data/data_manager.dart:262`](lib/src/data/data_manager.dart:262): Lists unique categories only for the given type.
+  - `getLastMotivationShownDate()` [`lib/src/data/data_manager.dart:280`](lib/src/data/data_manager.dart:280): Reads the date when the motivation dialog was last shown.
+  - `setLastMotivationShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:290`](lib/src/data/data_manager.dart:290): Stores today's date as the last shown motivation.
+  - `getLastCompletionShownDate()` [`lib/src/data/data_manager.dart:305`](lib/src/data/data_manager.dart:305): Reads the date when the completion dialog was last shown.
+  - `setLastCompletionShownDate(String yyyymmdd)` [`lib/src/data/data_manager.dart:315`](lib/src/data/data_manager.dart:315): Stores today's date as the last shown completion message.
 
 ## lib/src/data/history_manager.dart
 - `HistoryManager` class [`lib/src/data/history_manager.dart:6`](lib/src/data/history_manager.dart:6): Safely updates future targets when plan settings change without altering past records.
@@ -80,12 +81,14 @@ This document provides a map of the project, listing the location of all functio
   - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:154`](lib/src/models/daily_thing.dart:154): Determines if this item should be shown in the list based on due status and completion.
   - `toJson()` [`lib/src/models/daily_thing.dart:112`](lib/src/models/daily_thing.dart:112): Converts this item to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:131`](lib/src/models/daily_thing.dart:131): Builds the item from a JSON map.
+  - `copyWith({...})` [`lib/src/models/daily_thing.dart:185`](lib/src/models/daily_thing.dart:185): Creates a copy of the item with specified fields updated.
 
 ## lib/src/models/history_entry.dart
 - `_logger` variable [`lib/src/models/history_entry.dart:3`](lib/src/models/history_entry.dart:3): Logs parsing warnings for history.
 - `HistoryEntry` class [`lib/src/models/history_entry.dart:5`](lib/src/models/history_entry.dart:5): A single day's record of target and actual progress.
   - `toJson()` [`lib/src/models/history_entry.dart:18`](lib/src/models/history_entry.dart:18): Converts the entry to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/history_entry.dart:27`](lib/src/models/history_entry.dart:27): Parses a JSON map into an entry with safe fallbacks.
+  - `copyWith({...})` [`lib/src/models/history_entry.dart:72`](lib/src/models/history_entry.dart:72): Creates a copy of the entry with specified fields updated.
 
 ## lib/src/models/interval_type.dart
 - `IntervalType` enum [`lib/src/models/interval_type.dart:1`](lib/src/models/interval_type.dart:1): Defines whether an item repeats by a number of days or on specific weekdays.
@@ -181,13 +184,16 @@ This document provides a map of the project, listing the location of all functio
   - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:265`](lib/src/views/daily_things_view.dart:265): Opens the minutes timer in full screen.
   - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:427`](lib/src/views/daily_things_view.dart:427): Prompts to enter reps and saves them.
   - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:439`](lib/src/views/daily_things_view.dart:439): Exports all items/history to JSON.
-  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:522`](lib/src/views/daily_things_view.dart:522): Checks for updates and shows a pulsing icon.
-  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:538`](lib/src/views/daily_things_view.dart:538): Manages the multi-step update process with user feedback.
-  - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:463`](lib/src/views/daily_things_view.dart:463): Finds the next not-done item's index.
-  - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:467`](lib/src/views/daily_things_view.dart:467): Toggles expansion for filtered items.
-  - `_checkAndShowCompletionSnackbar()` [`lib/src/views/daily_things_view.dart:486`](lib/src/views/daily_things_view.dart:486): Shows a message when all tasks are done.
-  - `_maybeShowCompletionDialog()` [`lib/src/views/daily_things_view.dart:517`](lib/src/views/daily_things_view.dart:517): Shows customizable completion dialog once per day.
-  - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:550`](lib/src/views/daily_things_view.dart:550): Imports tasks from a JSON file and saves them.
+  - `_saveTemplateToFile()` [`lib/src/views/daily_things_view.dart:452`](lib/src/views/daily_things_view.dart:452): Exports all items without history to a template JSON file.
+  - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:465`](lib/src/views/daily_things_view.dart:465): Imports tasks from a JSON file and saves them.
+  - `_loadTemplateFromFile()` [`lib/src/views/daily_things_view.dart:485`](lib/src/views/daily_things_view.dart:485): Imports template tasks from a JSON file, adjusts dates to today, and adds or replaces existing items.
+  - `_resetAllData()` [`lib/src/views/daily_things_view.dart:535`](lib/src/views/daily_things_view.dart:535): Resets all data and clears the UI immediately.
+  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:550`](lib/src/views/daily_things_view.dart:550): Checks for updates and shows a pulsing icon.
+  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:566`](lib/src/views/daily_things_view.dart:566): Manages the multi-step update process with user feedback.
+  - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:505`](lib/src/views/daily_things_view.dart:505): Finds the next not-done item's index.
+  - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:509`](lib/src/views/daily_things_view.dart:509): Toggles expansion for filtered items.
+  - `_checkAndShowCompletionSnackbar()` [`lib/src/views/daily_things_view.dart:528`](lib/src/views/daily_things_view.dart:528): Shows a message when all tasks are done.
+  - `_maybeShowCompletionDialog()` [`lib/src/views/daily_things_view.dart:559`](lib/src/views/daily_things_view.dart:559): Shows customizable completion dialog once per day.
   - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:592`](lib/src/views/daily_things_view.dart:592): Re-triggers motivation when app resumes.
   - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
 
@@ -205,9 +211,9 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/app_bar.dart
 - `DailyThingsAppBar` class [`lib/src/views/app_bar.dart:12`](lib/src/views/app_bar.dart:12): A custom AppBar widget that manages the app's main actions and overflow menu.
-  - Props `updateAvailable`, `onOpenAddDailyItemPopup`, `onRefreshHideWhenDoneSetting`, `onRefreshDisplay`, `onExpandAllVisibleItems`, `onLoadHistoryFromFile`, `onSaveHistoryToFile`, `dailyThings`, `hideWhenDone`, `allExpanded`, `showOnlyDueItems`, `onShowAboutDialog`, `onToggleShowOnlyDueItems`, `log` [`lib/src/views/app_bar.dart:13`](lib/src/views/app_bar.dart:13): Inputs and callbacks for the AppBar behavior.
-- `_DailyThingsAppBarState` class [`lib/src/views/app_bar.dart:53`](lib/src/views/app_bar.dart:53): Manages the state and rendering of the AppBar.
-  - `build(BuildContext context)` [`lib/src/views/app_bar.dart:55`](lib/src/views/app_bar.dart:55): Renders the AppBar with actions and overflow menu.
+  - Props `updateAvailable`, `onOpenAddDailyItemPopup`, `onRefreshHideWhenDoneSetting`, `onRefreshDisplay`, `onExpandAllVisibleItems`, `onLoadHistoryFromFile`, `onSaveHistoryToFile`, `onLoadTemplateFromFile`, `onSaveTemplateToFile`, `onResetAllData`, `dailyThings`, `hideWhenDone`, `allExpanded`, `showOnlyDueItems`, `onShowAboutDialog`, `onToggleShowOnlyDueItems`, `log` [`lib/src/views/app_bar.dart:13`](lib/src/views/app_bar.dart:13): Inputs and callbacks for the AppBar behavior.
+- `_DailyThingsAppBarState` class [`lib/src/views/app_bar.dart:65`](lib/src/views/app_bar.dart:65): Manages the state and rendering of the AppBar.
+  - `build(BuildContext context)` [`lib/src/views/app_bar.dart:67`](lib/src/views/app_bar.dart:67): Renders the AppBar with actions and overflow menu.
 
 ## lib/src/views/help_view.dart
 - `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.

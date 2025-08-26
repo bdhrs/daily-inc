@@ -8,7 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 
 class SettingsView extends StatefulWidget {
-  const SettingsView({super.key});
+  final VoidCallback? onResetAllData;
+
+  const SettingsView({super.key, this.onResetAllData});
 
   @override
   State<SettingsView> createState() => _SettingsViewState();
@@ -198,13 +200,19 @@ class _SettingsViewState extends State<SettingsView> {
       try {
         await _dataManager.resetAllData();
         if (mounted) {
-          navigator.pop();
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('All data has been reset'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          // Call the callback to reset data in the main view
+          widget.onResetAllData?.call();
+          // Pop back to the main screen
+          navigator.popUntil((route) => route.isFirst);
+          // Show snackbar after navigation
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('All data has been reset'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          });
         }
       } catch (e) {
         _log.warning('Error resetting data: $e');

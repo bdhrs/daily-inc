@@ -19,6 +19,7 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final Future<void> Function() onSaveHistoryToFile;
   final Future<void> Function() onLoadTemplateFromFile;
   final Future<void> Function() onSaveTemplateToFile;
+  final VoidCallback onResetAllData;
   final List<DailyThing> dailyThings;
   final bool hideWhenDone;
   final bool allExpanded;
@@ -38,6 +39,7 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onSaveHistoryToFile,
     required this.onLoadTemplateFromFile,
     required this.onSaveTemplateToFile,
+    required this.onResetAllData,
     required this.dailyThings,
     required this.hideWhenDone,
     required this.allExpanded,
@@ -160,7 +162,9 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SettingsView(),
+                    builder: (context) => SettingsView(
+                      onResetAllData: widget.onResetAllData,
+                    ),
                   ),
                 ).then((_) => widget.onRefreshHideWhenDoneSetting());
                 break;
