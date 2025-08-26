@@ -216,11 +216,17 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     try {
       final startValue = double.tryParse(_startValueController.text) ?? 0.0;
       final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-      final duration = int.tryParse(_durationController.text);
+      final durationInDays = int.tryParse(_durationController.text);
 
-      if (duration == null || duration <= 0) return '0.0';
+      if (durationInDays == null || durationInDays <= 0) return '0.0';
 
-      final increment = (endValue - startValue) / duration;
+      final numIncrements = _selectedIntervalType == IntervalType.byDays
+          ? (durationInDays / _intervalValue).round()
+          : durationInDays;
+
+      if (numIncrements <= 0) return '0.0';
+
+      final increment = (endValue - startValue) / numIncrements;
       return increment.toStringAsFixed(2);
     } catch (e) {
       return '0.0';
@@ -263,9 +269,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
       if (increment == 0) return;
 
-      final newDuration = ((endValue - startValue) / increment).round();
-      if (newDuration > 0) {
-        _durationController.text = newDuration.toString();
+      final numIncrements = ((endValue - startValue) / increment).round();
+      if (numIncrements > 0) {
+        final durationInDays = _selectedIntervalType == IntervalType.byDays
+            ? numIncrements * _intervalValue
+            : numIncrements;
+        _durationController.text = durationInDays.toString();
         setState(() {});
       }
     } catch (e) {
