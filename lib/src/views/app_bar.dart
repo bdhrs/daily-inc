@@ -249,6 +249,7 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 ],
               ),
             ),
+            const PopupMenuDivider(),
             const PopupMenuItem<String>(
               value: 'load_template',
               child: Row(
