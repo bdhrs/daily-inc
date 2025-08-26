@@ -512,7 +512,7 @@ void main() {
         );
 
         final todayValue = IncrementCalculator.calculateTodayValue(item);
-        expect(todayValue, equals(15.0));
+        expect(todayValue, equals(17.0)); // 15 + 2 (frequency-aware increment)
       });
 
       test('bounds clamping - increasing progression', () {

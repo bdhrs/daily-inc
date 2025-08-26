@@ -2,9 +2,6 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
-import 'package:logging/logging.dart';
-
-final _logger = Logger('IncrementCalculator');
 
 class IncrementCalculator {
   static int _gracePeriodDays = 1; // Default to 1 day
@@ -20,9 +17,19 @@ class IncrementCalculator {
   }
 
   /// Calculate the daily increment value for a DailyThing
+  /// For frequency-based items, the increment is adjusted based on the interval
   static double calculateIncrement(DailyThing item) {
     if (item.duration <= 0) return 0.0;
-    return (item.endValue - item.startValue) / item.duration;
+
+    final double baseIncrement =
+        (item.endValue - item.startValue) / item.duration;
+
+    // For frequency-based items, adjust the increment to account for the interval
+    if (item.intervalType == IntervalType.byDays && item.intervalValue > 1) {
+      return baseIncrement * item.intervalValue;
+    }
+
+    return baseIncrement;
   }
 
   /// Get the last completed date from history (last day with doneToday == true)
@@ -68,14 +75,11 @@ class IncrementCalculator {
     while (checkDate.isBefore(date) || checkDate.isAtSameMomentAs(date)) {
       bool wasDue = false;
       if (item.intervalType == IntervalType.byDays) {
-        if (checkDate.difference(lastDone).inDays >= item.intervalValue) {
-          wasDue = true;
-        }
+        final daysDiff = checkDate.difference(lastDone).inDays;
+        wasDue = daysDiff >= item.intervalValue;
       } else {
         // byWeekdays
-        if (item.intervalWeekdays.contains(checkDate.weekday)) {
-          wasDue = true;
-        }
+        wasDue = item.intervalWeekdays.contains(checkDate.weekday);
       }
 
       if (wasDue) {
@@ -150,6 +154,7 @@ class IncrementCalculator {
 
     // Determine days since last doneToday
     final lastDoneDate = getLastCompletedDate(item.history);
+
     final int daysSinceDone = (lastDoneDate == null)
         ? todayDate
             .difference(DateTime(
@@ -162,23 +167,23 @@ class IncrementCalculator {
     if (daysSinceDone == 0) {
       // already done today
       newValue = baseTarget;
-      _logger
-          .fine('No change (already done today) for "${item.name}": $newValue');
     } else if (daysSinceDone == 1) {
       // increment by increment
       newValue = baseTarget + increment;
-      _logger.fine('Increment (+$increment) for "${item.name}": $newValue');
     } else if (daysSinceDone <= getGracePeriod() + 1) {
-      // no change during grace period
-      newValue = baseTarget;
-      _logger.fine(
-          'No change ($daysSinceDone days since done) for "${item.name}" during grace period: $newValue');
+      // Check if we're exactly on the frequency interval
+      if (item.intervalType == IntervalType.byDays &&
+          daysSinceDone == item.intervalValue) {
+        // Exactly on frequency interval - increment
+        newValue = baseTarget + increment;
+      } else {
+        // no change during grace period
+        newValue = baseTarget;
+      }
     } else {
       // after grace period: decrement by increment * (days - 1)
       final penalty = increment * (daysSinceDone - 1);
       newValue = baseTarget - penalty;
-      _logger.fine(
-          'Penalty (${daysSinceDone - 1} * $increment = $penalty) for "${item.name}": $newValue');
     }
 
     // Clamp with start anchored bound per spec
