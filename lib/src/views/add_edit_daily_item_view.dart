@@ -458,11 +458,67 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
   }
 
+  String _buildDescriptionText() {
+    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+    final incrementValue =
+        double.tryParse(_incrementController?.text ?? '0.0') ?? 0.0;
+    final duration = int.tryParse(_durationController.text) ?? 0;
+
+    if (_selectedItemType != ItemType.minutes &&
+        _selectedItemType != ItemType.reps) {
+      return '';
+    }
+
+    final increasingOrDecreasing =
+        endValue > startValue ? 'Increasing' : 'Decreasing';
+
+    String incrementText;
+    String unitText;
+
+    if (_selectedItemType == ItemType.minutes) {
+      incrementText = TimeConverter.toMmSsString(incrementValue.abs());
+      unitText = '';
+    } else { // reps
+      final incrementValueAbs = incrementValue.abs();
+      incrementText = incrementValueAbs.toStringAsFixed(2);
+      unitText = incrementValueAbs == 1.0 ? ' rep' : ' reps';
+    }
+
+    String intervalText = '';
+    if (_selectedIntervalType == IntervalType.byDays) {
+      intervalText =
+          _intervalValue == 1 ? 'per day' : 'every $_intervalValue days';
+    } else {
+      if (_selectedWeekdays.isNotEmpty) {
+        intervalText = 'on ${_selectedWeekdays.length} selected weekdays';
+      } else {
+        intervalText = 'weekly';
+      }
+    }
+
+    return '$increasingOrDecreasing $incrementText$unitText $intervalText over the course of $duration days';
+  }
+
   @override
   Widget build(BuildContext context) {
     _log.info('build called');
     final theme = Theme.of(context);
     final hintDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final descriptionTextStyle = Theme.of(context).textTheme.bodyMedium;
+
+    final String startLabel;
+    final String goalLabel;
+    if (_selectedItemType == ItemType.minutes) {
+      startLabel = 'Start (min)';
+      goalLabel = 'Goal (min)';
+    } else if (_selectedItemType == ItemType.reps) {
+      startLabel = 'Start (reps)';
+      goalLabel = 'Goal (reps)';
+    } else {
+      startLabel = 'Start Value';
+      goalLabel = 'End Value';
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -625,6 +681,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       _intervalValue = value ?? 1;
                       _selectedWeekdays = weekdays ?? [];
                     });
+                    _updateIncrementField();
                   },
                 ),
                 const SizedBox(height: 24),
@@ -677,8 +734,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       Expanded(
                         child: TextFormField(
                           controller: _startValueController,
-                          decoration: const InputDecoration(
-                            labelText: 'Start Value',
+                          decoration: InputDecoration(
+                            labelText: startLabel,
                             hintText: '0.0',
                           ),
                           keyboardType: TextInputType.number,
@@ -697,8 +754,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       Expanded(
                         child: TextFormField(
                           controller: _endValueController,
-                          decoration: const InputDecoration(
-                            labelText: 'End Value',
+                          decoration: InputDecoration(
+                            labelText: goalLabel,
                             hintText: '0.0',
                           ),
                           keyboardType: TextInputType.number,
@@ -823,6 +880,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         ),
                       ],
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _buildDescriptionText(),
+                    style: descriptionTextStyle,
+                    textAlign: TextAlign.left,
                   ),
                 ],
                 const SizedBox(height: 16),
