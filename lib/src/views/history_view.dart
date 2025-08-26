@@ -441,6 +441,10 @@ class _HistoryViewState extends State<HistoryView> {
                           onChanged: (value) {
                             setState(() {
                               _newDoneToday = value ?? false;
+                              if (_newDoneToday) {
+                                _newActualValueController.text =
+                                    _newTargetValueController.text;
+                              }
                             });
                           },
                         ),
@@ -537,8 +541,23 @@ class _HistoryViewState extends State<HistoryView> {
                           onChanged: (value) {
                             setState(() {
                               _isDirty = true;
-                              _history[index] =
-                                  entry.copyWith(doneToday: value);
+                              final currentEntry = _history[index];
+                              if (value == true) {
+                                final targetValue = currentEntry.targetValue;
+                                _history[index] = currentEntry.copyWith(
+                                  doneToday: true,
+                                  actualValue: targetValue,
+                                );
+                                final controller =
+                                    _actualControllers[_getEntryKey(currentEntry)];
+                                if (controller != null) {
+                                  controller.text =
+                                      _numberFormat.format(targetValue);
+                                }
+                              } else {
+                                _history[index] =
+                                    currentEntry.copyWith(doneToday: false);
+                              }
                             });
                           },
                         ),

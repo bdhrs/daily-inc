@@ -241,6 +241,8 @@ This document provides a map of the project, listing the location of all functio
   - `_saveNewEntry()` [`lib/src/views/history_view.dart:103`](lib/src/views/history_view.dart:103): Validates and saves a new entry.
   - `_cancelAddingEntry()` [`lib/src/views/history_view.dart:133`](lib/src/views/history_view.dart:133): Cancels the process of adding a new entry.
   - `build(BuildContext context)` [`lib/src/views/history_view.dart:55`](lib/src/views/history_view.dart:55): Renders the history list with editable fields.
+  - "Done" checkbox `onChanged` handler for new entries [`lib/src/views/history_view.dart:450`](lib/src/views/history_view.dart:450): Copies target value to actual value when a new entry is marked as done.
+  - "Done" checkbox `onChanged` handler for existing entries [`lib/src/views/history_view.dart:550`](lib/src/views/history_view.dart:550): Copies target value to actual value when an entry is marked as done.
 
 
 ## lib/src/views/timer_view.dart
