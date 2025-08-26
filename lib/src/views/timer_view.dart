@@ -403,6 +403,13 @@ class _TimerViewState extends State<TimerView> {
     _log.info(
         'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _isOvertime=$_isOvertime');
 
+    // Pause the timer and update the UI before showing any dialogs
+    if (!_isPaused) {
+      setState(() {
+        _isPaused = true;
+      });
+    }
+
     _timer?.cancel();
     _dimTimer?.cancel(); // Cancel dimming timer if active
     _log.info('Timer stopped');
@@ -584,6 +591,11 @@ class _TimerViewState extends State<TimerView> {
       onPopInvokedWithResult: (bool didPop, Object? result) async {
         if (didPop) return;
         _log.info('System back button pressed');
+
+        // If timer is running, pause it first, then exit.
+        if (!_isPaused) {
+          _toggleTimer();
+        }
         await _exitTimerDisplay();
       },
       child: Scaffold(
