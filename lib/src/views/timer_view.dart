@@ -743,8 +743,9 @@ class _TimerViewState extends State<TimerView> {
                               ? Icons.brightness_high
                               : Icons.brightness_low),
                           const SizedBox(width: 8),
-                          Text(
-                              _dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
+                          Text(_dimScreenMode
+                              ? 'Dim Screen Off'
+                              : 'Dim Screen On'),
                         ],
                       ),
                     ),
