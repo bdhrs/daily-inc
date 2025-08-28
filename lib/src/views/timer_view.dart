@@ -13,6 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/core/time_converter.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -232,6 +233,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   void _restoreScreenBrightness() {
+    ScreenBrightness.instance.resetApplicationScreenBrightness();
     _isDimming = false;
     _dimTimer?.cancel();
     setState(() {
@@ -712,9 +714,8 @@ class _TimerViewState extends State<TimerView> {
                               ? Icons.brightness_high
                               : Icons.brightness_low),
                           const SizedBox(width: 8),
-                          Text(_dimScreenMode
-                              ? 'Keep Screen On'
-                              : 'Dim Screen'),
+                          Text(
+                              _dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
                         ],
                       ),
                     ),
@@ -835,8 +836,7 @@ class _TimerViewState extends State<TimerView> {
                   });
                 },
                 child: Container(
-                  color:
-                      Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
+                  color: Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
                 ),
               ),
             ),
