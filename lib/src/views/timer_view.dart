@@ -56,6 +56,9 @@ class _TimerViewState extends State<TimerView> {
   bool _isDimming = false;
   Timer? _dimTimer;
   double _dimOpacity = 0.0;
+  
+  // Minimalist mode variable
+  bool _minimalistMode = false;
 
   double get _currentElapsedTimeInMinutes {
     if (_isOvertime) {
@@ -100,6 +103,18 @@ class _TimerViewState extends State<TimerView> {
   Future<void> _saveDimScreenPreference(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('dimScreenMode', value);
+  }
+  
+  Future<void> _loadMinimalistModePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _minimalistMode = prefs.getBool('minimalistMode') ?? false;
+    });
+  }
+
+  Future<void> _saveMinimalistModePreference(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('minimalistMode', value);
   }
 
   void _showNoteDialog() {
@@ -205,6 +220,13 @@ class _TimerViewState extends State<TimerView> {
       _restoreScreenBrightness();
     }
   }
+  
+  void _toggleMinimalistMode() {
+    setState(() {
+      _minimalistMode = !_minimalistMode;
+    });
+    _saveMinimalistModePreference(_minimalistMode);
+  }
 
   void _startDimmingProcess() {
     // Check if we should dim the screen
@@ -258,6 +280,8 @@ class _TimerViewState extends State<TimerView> {
 
     // Load dim screen mode preference
     _loadDimScreenPreference();
+    // Load minimalist mode preference
+    _loadMinimalistModePreference();
     _log.info('--- TIMER INITIALIZATION START ---');
     _log.info('Item Name: ${widget.item.name}');
     _log.info('Item Type: ${widget.item.itemType}');
@@ -536,6 +560,9 @@ class _TimerViewState extends State<TimerView> {
       _log.info('No save condition met, exiting.');
     }
 
+    // Save the minimalist mode preference when exiting
+    await _saveMinimalistModePreference(_minimalistMode);
+
     widget.onExitCallback();
     if (mounted) {
       Navigator.of(context).pop();
@@ -698,6 +725,8 @@ class _TimerViewState extends State<TimerView> {
                   onSelected: (String result) {
                     if (result == 'toggle') {
                       _toggleDimScreenMode();
+                    } else if (result == 'minimalist') {
+                      _toggleMinimalistMode();
                     } else if (result == 'edit') {
                       _editItem();
                     } else if (result == 'view_note') {
@@ -716,6 +745,20 @@ class _TimerViewState extends State<TimerView> {
                           const SizedBox(width: 8),
                           Text(
                               _dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'minimalist',
+                      child: Row(
+                        children: [
+                          Icon(_minimalistMode
+                              ? Icons.fullscreen
+                              : Icons.aspect_ratio),
+                          const SizedBox(width: 8),
+                          Text(_minimalistMode
+                              ? 'Minimalist Mode Off'
+                              : 'Minimalist Mode On'),
                         ],
                       ),
                     ),
@@ -744,15 +787,17 @@ class _TimerViewState extends State<TimerView> {
                   ],
                 ),
               ],
-              title: Text(
-                widget.item.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              title: _minimalistMode
+                  ? null
+                  : Text(
+                      widget.item.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
               centerTitle: true,
               elevation: 0,
             ),
@@ -762,54 +807,88 @@ class _TimerViewState extends State<TimerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      _isOvertime
-                          ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
-                          : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: ColorPalette.lightText
-                            .withAlpha((255 * 0.7).round()),
-                      ),
-                      textAlign: TextAlign.center,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: !_minimalistMode
+                          ? Column(
+                              key: const ValueKey('full_mode'),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _isOvertime
+                                      ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
+                                      : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: ColorPalette.lightText
+                                        .withAlpha((255 * 0.7).round()),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                if (widget.item.subdivisions != null &&
+                                    widget.item.subdivisions! > 1)
+                                  Text(
+                                    '$_completedSubdivisions / ${widget.item.subdivisions}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: ColorPalette.lightText
+                                          .withAlpha((255 * 0.7).round()),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                              ],
+                            )
+                          : const SizedBox.shrink(key: ValueKey('minimalist_mode')),
                     ),
-                    if (widget.item.subdivisions != null &&
-                        widget.item.subdivisions! > 1)
-                      Text(
-                        '$_completedSubdivisions / ${widget.item.subdivisions}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: ColorPalette.lightText
-                              .withAlpha((255 * 0.7).round()),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
                     Expanded(
                       child: _isOvertime
                           ? _buildOvertimeView()
                           : _buildCountdownView(),
                     ),
-                    const SizedBox(height: 8),
-                    _buildCommentField(),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _toggleTimer,
-                            child: Text(
-                              _getButtonText(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _exitTimerDisplay,
-                            child: const Text('Exit'),
-                          ),
-                        ),
-                      ],
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: !_minimalistMode
+                          ? Column(
+                              key: const ValueKey('full_mode_controls'),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 8),
+                                _buildCommentField(),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: _toggleTimer,
+                                        child: Text(
+                                          _getButtonText(),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: _exitTimerDisplay,
+                                        child: const Text('Exit'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(key: ValueKey('minimalist_mode_controls')),
                     ),
                   ],
                 ),
