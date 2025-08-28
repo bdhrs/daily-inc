@@ -686,73 +686,77 @@ class _TimerViewState extends State<TimerView> {
         }
         await _exitTimerDisplay();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (String result) {
-                if (result == 'toggle') {
-                  _toggleDimScreenMode();
-                } else if (result == 'edit') {
-                  _editItem();
-                } else if (result == 'view_note') {
-                  _showNoteDialog();
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                PopupMenuItem<String>(
-                  value: 'toggle',
-                  child: Row(
-                    children: [
-                      Icon(_dimScreenMode
-                          ? Icons.brightness_high
-                          : Icons.brightness_low),
-                      const SizedBox(width: 8),
-                      Text(_dimScreenMode ? 'Keep Screen On' : 'Dim Screen'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.edit),
-                      const SizedBox(width: 8),
-                      const Text('Edit Item'),
-                    ],
-                  ),
-                ),
-                if (widget.item.notes != null && widget.item.notes!.isNotEmpty)
-                  PopupMenuItem<String>(
-                    value: 'view_note',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.note),
-                        const SizedBox(width: 8),
-                        const Text('View Note'),
-                      ],
+      child: Stack(
+        children: [
+          Scaffold(
+            appBar: AppBar(
+              actions: [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (String result) {
+                    if (result == 'toggle') {
+                      _toggleDimScreenMode();
+                    } else if (result == 'edit') {
+                      _editItem();
+                    } else if (result == 'view_note') {
+                      _showNoteDialog();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(_dimScreenMode
+                              ? Icons.brightness_high
+                              : Icons.brightness_low),
+                          const SizedBox(width: 8),
+                          Text(_dimScreenMode
+                              ? 'Keep Screen On'
+                              : 'Dim Screen'),
+                        ],
+                      ),
                     ),
-                  ),
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit),
+                          const SizedBox(width: 8),
+                          const Text('Edit Item'),
+                        ],
+                      ),
+                    ),
+                    if (widget.item.notes != null &&
+                        widget.item.notes!.isNotEmpty)
+                      PopupMenuItem<String>(
+                        value: 'view_note',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.note),
+                            const SizedBox(width: 8),
+                            const Text('View Note'),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ],
+              title: Text(
+                widget.item.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              centerTitle: true,
+              elevation: 0,
             ),
-          ],
-          title: Text(
-            widget.item.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          centerTitle: true,
-          elevation: 0,
-        ),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Padding(
+            body: SafeArea(
+              child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -809,34 +813,34 @@ class _TimerViewState extends State<TimerView> {
                   ],
                 ),
               ),
-              // Dimming overlay
-              if (_dimScreenMode && _dimOpacity > 0.0)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () {
-                      // Cancel any existing dimming timer
-                      _dimTimer?.cancel();
-                      // Temporarily restore visibility when tapped
-                      setState(() {
-                        _dimOpacity = 0.0;
-                        _isDimming = false;
-                      });
-                      // Restart dimming after a delay if still in dim mode and timer is running
-                      Future.delayed(const Duration(seconds: 3), () {
-                        if (!_isPaused && _dimScreenMode && mounted) {
-                          _startDimmingProcess();
-                        }
-                      });
-                    },
-                    child: Container(
-                      color:
-                          Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
+          // Dimming overlay
+          if (_dimScreenMode && _dimOpacity > 0.0)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  // Cancel any existing dimming timer
+                  _dimTimer?.cancel();
+                  // Temporarily restore visibility when tapped
+                  setState(() {
+                    _dimOpacity = 0.0;
+                    _isDimming = false;
+                  });
+                  // Restart dimming after a delay if still in dim mode and timer is running
+                  Future.delayed(const Duration(seconds: 3), () {
+                    if (!_isPaused && _dimScreenMode && mounted) {
+                      _startDimmingProcess();
+                    }
+                  });
+                },
+                child: Container(
+                  color:
+                      Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
