@@ -101,6 +101,94 @@ class _TimerViewState extends State<TimerView> {
     await prefs.setBool('dimScreenMode', value);
   }
 
+  void _showNoteDialog() {
+    final notesController = TextEditingController(text: widget.item.notes);
+    bool isEditing = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Note'),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calculate a dynamic font size based on the available height
+                    final double fontSize = constraints.maxHeight / 20;
+
+                    return SingleChildScrollView(
+                      child: isEditing
+                          ? TextField(
+                              controller: notesController,
+                              autofocus: true,
+                              decoration: const InputDecoration(
+                                  hintText: 'Enter your note...'),
+                              maxLines: null,
+                              keyboardType: TextInputType.multiline,
+                              style: TextStyle(fontSize: fontSize),
+                            )
+                          : Text(
+                              notesController.text.isEmpty
+                                  ? 'No note for this item.'
+                                  : notesController.text,
+                              style: TextStyle(fontSize: fontSize),
+                            ),
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                if (isEditing) ...[
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isEditing = false;
+                        // Reset controller to original text if user cancels
+                        notesController.text = widget.item.notes ?? '';
+                      });
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final updatedItem =
+                          widget.item.copyWith(notes: notesController.text);
+                      await widget.dataManager.updateDailyThing(updatedItem);
+                      // No need to call setState in the main widget,
+                      // as the underlying data has changed and will be reflected
+                      // if the widget rebuilds for other reasons.
+                      setState(() {
+                        isEditing = false;
+                      });
+                    },
+                    child: const Text('Save'),
+                  ),
+                ] else ...[
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isEditing = true;
+                      });
+                    },
+                    child: const Text('Edit'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ]
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _toggleDimScreenMode() {
     setState(() {
       _dimScreenMode = !_dimScreenMode;
@@ -608,6 +696,8 @@ class _TimerViewState extends State<TimerView> {
                   _toggleDimScreenMode();
                 } else if (result == 'edit') {
                   _editItem();
+                } else if (result == 'view_note') {
+                  _showNoteDialog();
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -633,6 +723,17 @@ class _TimerViewState extends State<TimerView> {
                     ],
                   ),
                 ),
+                if (widget.item.notes != null && widget.item.notes!.isNotEmpty)
+                  PopupMenuItem<String>(
+                    value: 'view_note',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.note),
+                        const SizedBox(width: 8),
+                        const Text('View Note'),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ],

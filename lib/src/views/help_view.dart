@@ -291,6 +291,11 @@ class HelpView extends StatelessWidget {
             subtitle: Text('Manually edit or view the history of this task.'),
           ),
           const ListTile(
+            leading: Icon(Icons.note_add_outlined),
+            title: Text('Edit Note'),
+            subtitle: Text('Add or edit a note for this task.'),
+          ),
+          const ListTile(
             leading: Icon(Icons.pause),
             title: Text('Pause Increments'),
             subtitle: Text(

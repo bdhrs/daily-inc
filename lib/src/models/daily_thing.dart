@@ -28,6 +28,7 @@ class DailyThing {
   final String? bellSoundPath; // New field for bell sound path
   final int? subdivisions;
   final String? subdivisionBellSoundPath;
+  final String? notes;
 
   DailyThing({
     String? id,
@@ -49,6 +50,7 @@ class DailyThing {
     this.bellSoundPath, // Initialize new field
     this.subdivisions,
     this.subdivisionBellSoundPath,
+    this.notes,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -207,6 +209,7 @@ class DailyThing {
       'bellSoundPath': bellSoundPath, // Add to toJson
       'subdivisions': subdivisions,
       'subdivisionBellSoundPath': subdivisionBellSoundPath,
+      'notes': notes,
     };
   }
 
@@ -262,6 +265,7 @@ class DailyThing {
       bellSoundPath: json['bellSoundPath'] as String?, // Add to fromJson
       subdivisions: json['subdivisions'] as int?,
       subdivisionBellSoundPath: json['subdivisionBellSoundPath'] as String?,
+      notes: json['notes'] as String?,
     );
   }
 
@@ -285,6 +289,7 @@ class DailyThing {
     String? bellSoundPath, // Add to copyWith
     int? subdivisions,
     String? subdivisionBellSoundPath,
+    String? notes,
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -307,6 +312,7 @@ class DailyThing {
       subdivisions: subdivisions ?? this.subdivisions,
       subdivisionBellSoundPath:
           subdivisionBellSoundPath ?? this.subdivisionBellSoundPath,
+      notes: notes ?? this.notes,
     );
   }
 }

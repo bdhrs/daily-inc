@@ -43,6 +43,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _bellSoundController; // New bell sound controller
   late TextEditingController _subdivisionsController;
   late TextEditingController _subdivisionBellSoundController;
+  late TextEditingController _notesController;
   TextEditingController? _incrementController;
   late TextEditingController _incrementMinutesController;
   late TextEditingController _incrementSecondsController;
@@ -139,6 +140,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
     _subdivisionBellSoundController = TextEditingController(
         text: _selectedSubdivisionBellSoundPath?.split('/').last);
+    _notesController = TextEditingController(text: existingItem?.notes);
 
     // Load unique categories for autofill (type-specific)
     _loadUniqueCategoriesForSelectedType();
@@ -178,6 +180,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _bellSoundController.dispose(); // Dispose bell sound controller
     _subdivisionsController.dispose();
     _subdivisionBellSoundController.dispose();
+    _notesController.dispose();
     _incrementController?.dispose();
     _incrementMinutesController.dispose();
     _incrementSecondsController.dispose();
@@ -432,6 +435,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               _selectedBellSoundPath, // Pass the selected bell sound path
           subdivisions: int.tryParse(_subdivisionsController.text),
           subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
+          notes: _notesController.text,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -479,7 +483,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     if (_selectedItemType == ItemType.minutes) {
       incrementText = TimeConverter.toMmSsString(incrementValue.abs());
       unitText = '';
-    } else { // reps
+    } else {
+      // reps
       final incrementValueAbs = incrementValue.abs();
       incrementText = incrementValueAbs.toStringAsFixed(2);
       unitText = incrementValueAbs == 1.0 ? ' rep' : ' reps';
@@ -1081,6 +1086,17 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ],
                     ),
                 ],
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    hintText: 'Add any notes here...',
+                  ),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  textCapitalization: TextCapitalization.sentences,
+                ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

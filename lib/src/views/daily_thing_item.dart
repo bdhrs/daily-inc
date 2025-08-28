@@ -43,6 +43,43 @@ class DailyThingItem extends StatefulWidget {
 }
 
 class _DailyThingItemState extends State<DailyThingItem> {
+  void _showEditNoteDialog(BuildContext context, DailyThing item) {
+    final notesController = TextEditingController(text: item.notes);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Note'),
+          content: TextField(
+            controller: notesController,
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Enter your note...'),
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final updatedItem = item.copyWith(notes: notesController.text);
+                await widget.dataManager.updateDailyThing(updatedItem);
+                if (mounted) {
+                  setState(() {});
+                }
+                widget.onItemChanged?.call();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _formatValue(double value, ItemType itemType) {
     if (itemType == ItemType.minutes) {
       return TimeConverter.toSmartString(value);
@@ -337,6 +374,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               },
                             ),
                             IconButton(
+                              tooltip: 'edit note',
+                              icon: const Icon(Icons.note_add_outlined),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () =>
+                                  _showEditNoteDialog(context, widget.item),
+                            ),
+                            IconButton(
                               tooltip: widget.item.isPaused
                                   ? 'resume increments'
                                   : 'pause increments',
@@ -523,6 +569,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   ),
                                 );
                               },
+                            ),
+                            IconButton(
+                              tooltip: 'edit note',
+                              icon: const Icon(Icons.note_add_outlined),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () =>
+                                  _showEditNoteDialog(context, widget.item),
                             ),
                             IconButton(
                               tooltip: widget.item.isPaused

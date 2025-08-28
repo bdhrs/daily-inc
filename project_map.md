@@ -68,7 +68,7 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/models/daily_thing.dart
 - `_logger` variable [`lib/src/models/daily_thing.dart:7`](lib/src/models/daily_thing.dart:7): Logs messages for this model.
 - `DailyThing` class [`lib/src/models/daily_thing.dart:9`](lib/src/models/daily_thing.dart:9): Represents a daily task with rules, history, and settings.
-  - Fields like `id`, `icon`, `name`, `itemType`, `startDate`, `startValue`, `duration`, `endValue`, `history`, `nagTime`, `nagMessage`, `frequencyInDays`, `category`, `isPaused` [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Store the task's basic info and behavior. History entries now support optional comments.
+  - Fields like `id`, `icon`, `name`, `itemType`, `startDate`, `startValue`, `duration`, `endValue`, `history`, `nagTime`, `nagMessage`, `frequencyInDays`, `category`, `isPaused`, `notes` [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Store the task's basic info and behavior. History entries now support optional comments.
   - `increment` getter [`lib/src/models/daily_thing.dart:43`](lib/src/models/daily_thing.dart:43): Gives the per-day change for this task.
   - `todayValue` getter [`lib/src/models/daily_thing.dart:47`](lib/src/models/daily_thing.dart:47): Gives today's target for this task.
   - `displayValue` getter [`lib/src/models/daily_thing.dart:51`](lib/src/models/daily_thing.dart:51): Gives what to show in the UI today.
@@ -134,7 +134,7 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
 - `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:26`](lib/src/views/add_edit_daily_item_view.dart:26): Handles form state and input controllers.
-  - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController`, `_bellSoundController`, `_subdivisionsController`, `_subdivisionBellSoundController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
+  - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController`, `_bellSoundController`, `_subdivisionsController`, `_subdivisionBellSoundController`, `_notesController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
   - Selections: `_selectedItemType`, `_selectedNagTime`, `_uniqueCategories`, `_selectedBellSoundPath`, `_selectedSubdivisionBellSoundPath` [`lib/src/views/add_edit_daily_item_view.dart:39`](lib/src/views/add_edit_daily_item_view.dart:39): Track current type/time, category options, and bell sounds.
   - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values, including automatic bell3 assignment for new items with subdivisions > 1.
   - `didChangeDependencies()` [`lib/src/views/add_edit_daily_item_view.dart:108`](lib/src/views/add_edit_daily_item_view.dart:108): Formats the time field when context is ready.
@@ -159,6 +159,7 @@ This document provides a map of the project, listing the location of all functio
   - `initState()`, `didUpdateWidget(...)` [`lib/src/views/daily_thing_item.dart:47`](lib/src/views/daily_thing_item.dart:47): Syncs expansion state with parent.
   - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:62`](lib/src/views/daily_thing_item.dart:62): Formats minutes, reps, or check for display.
   - `_hasIncompleteProgress(DailyThing item)` [`lib/src/views/daily_thing_item.dart:78`](lib/src/views/daily_thing_item.dart:78): Detects if a timer was started but not finished today.
+  - `_showEditNoteDialog(BuildContext context, DailyThing item)`: Shows a dialog to edit the note for an item.
   - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:101`](lib/src/views/daily_thing_item.dart:101): Draws the row UI and handles tap actions (timer/check/reps).
 
 ## lib/src/views/daily_things_view.dart
@@ -258,6 +259,7 @@ This document provides a map of the project, listing the location of all functio
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.
   - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
+  - `_showNoteDialog()`: Shows a dialog to view and edit the note for an item.
   - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:46`](lib/src/views/timer_view.dart:46): Calculates the total time elapsed, including persisted history and the current session.
   - State variables for screen dimmer: `_dimScreenMode`, `_isDimming`, `_dimTimer`, `_dimOpacity` [`lib/src/views/timer_view.dart:54`](lib/src/views/timer_view.dart:54): Controls for the screen dimmer feature.
   - `_loadDimScreenPreference()` / `_saveDimScreenPreference()` [`lib/src/views/timer_view.dart:61`](lib/src/views/timer_view.dart:61): Loads and saves the screen dimmer preference.
