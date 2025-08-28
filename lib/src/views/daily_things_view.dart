@@ -912,28 +912,31 @@ class _DailyThingsViewState extends State<DailyThingsView>
         onToggleShowOnlyDueItems: _toggleShowOnlyDueItems,
         log: _log,
       ),
-      body: ReorderableListView(
-        onReorder: (oldIndex, newIndex) {
-          setState(() {
-            _dailyThings = reorderDailyThings(
-              fullList: _dailyThings,
-              displayedItems: displayedItems,
-              oldIndex: oldIndex,
-              newIndex: newIndex,
+      body: SafeArea(
+        child: ReorderableListView(
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              _dailyThings = reorderDailyThings(
+                fullList: _dailyThings,
+                displayedItems: displayedItems,
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              );
+            });
+            _dataManager.saveData(_dailyThings);
+          },
+          children: displayedItems.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return Padding(
+              key: ValueKey(item.id),
+              padding: const EdgeInsets.symmetric(vertical: 3.0),
+              child:
+                  _buildItemRow(item, index, nextUndoneIndex, allTasksCompleted),
             );
-          });
-          _dataManager.saveData(_dailyThings);
-        },
-        children: displayedItems.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          return Padding(
-            key: ValueKey(item.id),
-            padding: const EdgeInsets.symmetric(vertical: 3.0),
-            child:
-                _buildItemRow(item, index, nextUndoneIndex, allTasksCompleted),
-          );
-        }).toList(),
+          }).toList(),
+          padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
+        ),
       ),
     );
   }
