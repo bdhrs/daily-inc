@@ -91,8 +91,6 @@ class _DailyThingItemState extends State<DailyThingItem> {
   }
 
   bool _hasIncompleteProgress(DailyThing item) {
-    if (item.itemType != ItemType.minutes) return false;
-
     final today = DateTime(
       DateTime.now().year,
       DateTime.now().month,
@@ -108,9 +106,21 @@ class _DailyThingItemState extends State<DailyThingItem> {
           HistoryEntry(date: DateTime(0), targetValue: 0, doneToday: false),
     );
 
-    return todayEntry.date.year != 0 &&
-        (todayEntry.actualValue ?? 0) > 0 &&
-        !todayEntry.doneToday;
+    // For minutes items: check if timer was started but not finished
+    if (item.itemType == ItemType.minutes) {
+      return todayEntry.date.year != 0 &&
+          (todayEntry.actualValue ?? 0) > 0 &&
+          !todayEntry.doneToday;
+    }
+
+    // For reps items: check if reps were entered but target wasn't met
+    if (item.itemType == ItemType.reps) {
+      return todayEntry.date.year != 0 &&
+          todayEntry.actualValue != null &&
+          !todayEntry.doneToday;
+    }
+
+    return false;
   }
 
   @override
@@ -513,9 +523,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   // Keep decimal format for REPS items
                                   String numStr = absVal.toStringAsFixed(2);
                                   numStr =
-                                      numStr.replaceFirst(RegExp(r'\.00$'), '');
+                                      numStr.replaceFirst(RegExp(r'\.00'), '');
                                   numStr =
-                                      numStr.replaceFirst(RegExp(r'0$'), '');
+                                      numStr.replaceFirst(RegExp(r'0'), '');
                                   return '$sign$numStr';
                                 })(),
                                 style: TextStyle(
