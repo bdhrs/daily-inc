@@ -718,7 +718,9 @@ class _TimerViewState extends State<TimerView> {
       child: Stack(
         children: [
           Scaffold(
+            backgroundColor: ColorPalette.darkBackground,
             appBar: AppBar(
+              backgroundColor: ColorPalette.darkBackground,
               actions: [
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert),
