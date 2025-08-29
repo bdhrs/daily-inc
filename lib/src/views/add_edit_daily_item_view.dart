@@ -106,10 +106,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
     // Set initial increment value after all controllers are initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final increment = _calculateIncrement();
-      _incrementController!.text = increment;
-      _updateIncrementMinutesAndSecondsFields(
-          double.tryParse(increment) ?? 0.0);
+      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+      
+      if (startValue == endValue) {
+        // If values are the same, just update the display without changing the actual values
+        _updateIncrementMinutesAndSecondsFields(
+            double.tryParse(_incrementController?.text ?? '0.0') ?? 0.0);
+      } else {
+        final increment = _calculateIncrement();
+        _incrementController!.text = increment;
+        _updateIncrementMinutesAndSecondsFields(
+            double.tryParse(increment) ?? 0.0);
+      }
       _updateTodayValue();
     });
 
@@ -238,6 +247,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   void _updateIncrementField() {
     if (_isUpdatingFromIncrement) return;
+    
+    // Check if start and end values are the same
+    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+    
+    if (startValue == endValue) {
+      // If values are the same, just update the display without changing the actual values
+      _updateIncrementMinutesAndSecondsFields(
+          double.tryParse(_incrementController?.text ?? '0.0') ?? 0.0);
+      setState(() {});
+      return;
+    }
+    
     if (_incrementController != null) {
       final increment = _calculateIncrement();
       _incrementController!.text = increment;
@@ -254,6 +276,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   }
 
   void _updateDurationFromIncrement() {
+    // Check if start and end values are the same
+    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+    
+    if (startValue == endValue) {
+      // If values are the same, don't update duration
+      return;
+    }
+    
     _isUpdatingFromIncrement = true;
     try {
       final minutes = int.tryParse(_incrementMinutesController.text) ?? 0;
@@ -287,6 +318,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   }
 
   void _updateDurationFromIncrementReps() {
+    // Check if start and end values are the same
+    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+    
+    if (startValue == endValue) {
+      // If values are the same, don't update duration
+      return;
+    }
+    
     _isUpdatingFromIncrement = true;
     try {
       final increment = double.tryParse(_incrementController!.text) ?? 0.0;
@@ -472,6 +512,41 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     if (_selectedItemType != ItemType.minutes &&
         _selectedItemType != ItemType.reps) {
       return '';
+    }
+
+    // If start and end values are the same, show a simpler message
+    if (startValue == endValue) {
+      if (_selectedItemType == ItemType.minutes) {
+        final valueText = TimeConverter.toMmSsString(startValue);
+        String intervalText = '';
+        if (_selectedIntervalType == IntervalType.byDays) {
+          intervalText =
+              _intervalValue == 1 ? 'per day' : 'every $_intervalValue days';
+        } else {
+          if (_selectedWeekdays.isNotEmpty) {
+            intervalText = 'on ${_selectedWeekdays.length} selected weekdays';
+          } else {
+            intervalText = 'weekly';
+          }
+        }
+        return '$valueText $intervalText';
+      } else {
+        // reps
+        final valueText = startValue.toStringAsFixed(0);
+        String intervalText = '';
+        if (_selectedIntervalType == IntervalType.byDays) {
+          intervalText =
+              _intervalValue == 1 ? 'per day' : 'every $_intervalValue days';
+        } else {
+          if (_selectedWeekdays.isNotEmpty) {
+            intervalText = 'on ${_selectedWeekdays.length} selected weekdays';
+          } else {
+            intervalText = 'weekly';
+          }
+        }
+        final unitText = startValue == 1.0 ? ' rep' : ' reps';
+        return '$valueText$unitText $intervalText';
+      }
     }
 
     final increasingOrDecreasing =
@@ -783,10 +858,20 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       Expanded(
                         child: TextFormField(
                           controller: _durationController,
-                          decoration: const InputDecoration(
+                          enabled: () {
+                            final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                            final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                            return startValue != endValue;
+                          }(),
+                          decoration: InputDecoration(
                             labelText: 'Duration (days)',
                             hintText: '30',
-                            prefixIcon: Icon(Icons.schedule),
+                            prefixIcon: const Icon(Icons.schedule),
+                            enabled: () {
+                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                              return startValue != endValue;
+                            }(),
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
@@ -799,6 +884,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             }
                           },
                           validator: (value) {
+                            final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                            final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                            
+                            // Skip validation if start and end values are the same
+                            if (startValue == endValue) return null;
+                            
                             if (value == null || value.isEmpty) {
                               return 'Please enter a duration';
                             }
@@ -821,9 +912,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _incrementMinutesController,
-                                  decoration: const InputDecoration(
+                                  enabled: () {
+                                    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                                    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                    return startValue != endValue;
+                                  }(),
+                                  decoration: InputDecoration(
                                     labelText: 'Incr. Min',
                                     hintText: '0',
+                                    enabled: () {
+                                      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                                      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                      return startValue != endValue;
+                                    }(),
                                   ),
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
@@ -839,9 +940,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _incrementSecondsController,
-                                  decoration: const InputDecoration(
+                                  enabled: () {
+                                    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                                    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                    return startValue != endValue;
+                                  }(),
+                                  decoration: InputDecoration(
                                     labelText: 'Sec',
                                     hintText: '0',
+                                    enabled: () {
+                                      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                                      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                      return startValue != endValue;
+                                    }(),
                                   ),
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
@@ -860,9 +971,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         Expanded(
                           child: TextFormField(
                             controller: _incrementController,
-                            decoration: const InputDecoration(
+                            enabled: () {
+                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                              return startValue != endValue;
+                            }(),
+                            decoration: InputDecoration(
                               labelText: 'Increment',
                               hintText: '0.0',
+                              enabled: () {
+                                final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                                final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                return startValue != endValue;
+                              }(),
                             ),
                             keyboardType: TextInputType.number,
                             onChanged: (value) {
@@ -873,6 +994,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                               }
                             },
                             validator: (value) {
+                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                              
+                              // Skip validation if start and end values are the same
+                              if (startValue == endValue) return null;
+                              
                               if (value == null || value.isEmpty) {
                                 return 'Please enter an increment';
                               }
