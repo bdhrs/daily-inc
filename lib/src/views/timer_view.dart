@@ -703,6 +703,18 @@ class _TimerViewState extends State<TimerView> {
 
   @override
   Widget build(BuildContext context) {
+    double elapsedMinutesInCurrentSubdivision = 0;
+    double totalMinutesInCurrentSubdivision = 0;
+    if (!_isOvertime && widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+      final double subdivisionDurationInMinutes =
+          _todaysTargetMinutes / widget.item.subdivisions!;
+      final double elapsedMinutesInCompletedSubdivisions =
+          _completedSubdivisions * subdivisionDurationInMinutes;
+      elapsedMinutesInCurrentSubdivision =
+          _currentElapsedTimeInMinutes - elapsedMinutesInCompletedSubdivisions;
+      totalMinutesInCurrentSubdivision = subdivisionDurationInMinutes;
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -819,34 +831,90 @@ class _TimerViewState extends State<TimerView> {
                         );
                       },
                       child: !_minimalistMode
-                          ? Column(
-                              key: const ValueKey('full_mode'),
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _isOvertime
-                                      ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
-                                      : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: ColorPalette.lightText
-                                        .withAlpha((255 * 0.7).round()),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                if (widget.item.subdivisions != null &&
-                                    widget.item.subdivisions! > 1)
-                                  Text(
-                                    '$_completedSubdivisions / ${widget.item.subdivisions}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: ColorPalette.lightText
-                                          .withAlpha((255 * 0.7).round()),
+                          ? _isOvertime
+                              ? Column(
+                                  key: const ValueKey('full_mode_overtime'),
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: ColorPalette.lightText
+                                            .withAlpha(
+                                                (255 * 0.7).round()),
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                              ],
-                            )
+                                    if (widget.item.subdivisions != null &&
+                                        widget.item.subdivisions! > 1)
+                                      Text(
+                                        '$_completedSubdivisions / ${widget.item.subdivisions}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: ColorPalette.lightText
+                                              .withAlpha(
+                                                  (255 * 0.7).round()),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                  ],
+                                )
+                              : (widget.item.subdivisions != null &&
+                                      widget.item.subdivisions! > 1)
+                                  ? Stack(
+                                      key: const ValueKey(
+                                          'full_mode_subdivisions'),
+                                      children: [
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: ColorPalette.lightText
+                                                  .withAlpha(
+                                                      (255 * 0.7).round()),
+                                            ),
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            '$_completedSubdivisions / ${widget.item.subdivisions}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: ColorPalette.lightText
+                                                  .withAlpha(
+                                                      (255 * 0.7).round()),
+                                            ),
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            '${_formatMinutesToMmSs(elapsedMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(totalMinutesInCurrentSubdivision)}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: ColorPalette.lightText
+                                                  .withAlpha(
+                                                      (255 * 0.7).round()),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+                                      key:
+                                          const ValueKey('full_mode_normal'),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: ColorPalette.lightText
+                                            .withAlpha((255 * 0.7).round()),
+                                      ),
+                                    )
                           : const SizedBox.shrink(key: ValueKey('minimalist_mode')),
                     ),
                     Expanded(
