@@ -31,6 +31,9 @@ class _SettingsViewState extends State<SettingsView> {
 
   // Screen dimmer setting
   bool _dimScreenMode = false;
+  
+  // Minimalist mode setting
+  bool _minimalistMode = false;
 
   // Backup settings
   bool _backupEnabled = false;
@@ -72,6 +75,8 @@ class _SettingsViewState extends State<SettingsView> {
           prefs.getInt('gracePeriodDays') ?? 1; // Default to 1 day
       _dimScreenMode =
           prefs.getBool('dimScreenMode') ?? false; // Load dim screen mode
+      _minimalistMode =
+          prefs.getBool('minimalistMode') ?? false; // Load minimalist mode
 
       // Load backup settings
       _backupEnabled = prefs.getBool('backupEnabled') ?? false;
@@ -101,6 +106,8 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setInt('gracePeriodDays', _gracePeriodDays);
     await prefs.setBool(
         'dimScreenMode', _dimScreenMode); // Save dim screen mode
+    await prefs.setBool(
+        'minimalistMode', _minimalistMode); // Save minimalist mode
 
     // Save backup settings
     await prefs.setBool('backupEnabled', _backupEnabled);
@@ -343,9 +350,9 @@ class _SettingsViewState extends State<SettingsView> {
           const Divider(),
           const SizedBox(height: 16),
 
-          // Screen Dimmer Section
+          // Timer Options Section
           const Text(
-            'Screen Dimmer',
+            'Timer Options',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -357,6 +364,17 @@ class _SettingsViewState extends State<SettingsView> {
             onChanged: (value) {
               setState(() {
                 _dimScreenMode = value;
+              });
+              _saveSettings();
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Minimalist mode'),
+            subtitle: const Text('Show only timer and comment when finished'),
+            value: _minimalistMode,
+            onChanged: (value) {
+              setState(() {
+                _minimalistMode = value;
               });
               _saveSettings();
             },
