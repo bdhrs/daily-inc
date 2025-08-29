@@ -658,11 +658,34 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 DropdownButtonFormField<ItemType>(
                   initialValue: _selectedItemType,
                   items: ItemType.values.map((type) {
+                    IconData icon;
+                    String name;
+                    
+                    switch (type) {
+                      case ItemType.minutes:
+                        icon = Icons.timer;
+                        name = 'Countdown Timer';
+                        break;
+                      case ItemType.reps:
+                        icon = Icons.repeat;
+                        name = 'Repetitions';
+                        break;
+                      case ItemType.check:
+                        icon = Icons.check_circle;
+                        name = 'Checkmark';
+                        break;
+                    }
+                    
                     return DropdownMenuItem(
-                        value: type,
-                        child: Text(
-                          type.toString().split('.').last.toUpperCase(),
-                        ));
+                      value: type,
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 20),
+                          const SizedBox(width: 8),
+                          Text(name),
+                        ],
+                      ),
+                    );
                   }).toList(),
                   onChanged: (value) async {
                     if (value == null) return;
