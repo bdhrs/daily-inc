@@ -854,6 +854,11 @@ class _TimerViewState extends State<TimerView> {
                           ? _buildOvertimeView()
                           : _buildCountdownView(),
                     ),
+                    // Comment field - always present in layout but visibility controlled by logic
+                    SizedBox(
+                      height: 50, // Fixed height to prevent layout shifts
+                      child: _buildCommentField(),
+                    ),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       transitionBuilder: (child, animation) {
@@ -867,8 +872,6 @@ class _TimerViewState extends State<TimerView> {
                               key: const ValueKey('full_mode_controls'),
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const SizedBox(height: 8),
-                                _buildCommentField(),
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
@@ -1004,26 +1007,35 @@ class _TimerViewState extends State<TimerView> {
   }
 
   Widget _buildCommentField() {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).requestFocus(_commentFocusNode);
-      },
-      child: TextField(
-        controller: _commentController,
-        focusNode: _commentFocusNode,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'add a comment',
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          border:
-              _commentFocusNode.hasFocus || _commentController.text.isNotEmpty
-                  ? const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
-                    )
-                  : InputBorder.none,
+    // In minimalist mode, only show comment field when timer is finished (at 0 seconds) or in overtime
+    final bool showCommentField = !_minimalistMode || _isOvertime || (_remainingSeconds <= 0 && !_isOvertime);
+    
+    return Opacity(
+      opacity: showCommentField ? 1.0 : 0.0,
+      child: IgnorePointer(
+        ignoring: !showCommentField,
+        child: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).requestFocus(_commentFocusNode);
+          },
+          child: TextField(
+            controller: _commentController,
+            focusNode: _commentFocusNode,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'add a comment',
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border:
+                  _commentFocusNode.hasFocus || _commentController.text.isNotEmpty
+                      ? const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        )
+                      : InputBorder.none,
+            ),
+          ),
         ),
       ),
     );
