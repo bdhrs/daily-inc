@@ -746,8 +746,8 @@ class _TimerViewState extends State<TimerView> {
                               : Icons.brightness_low),
                           const SizedBox(width: 8),
                           Text(_dimScreenMode
-                              ? 'Dim Screen Off'
-                              : 'Dim Screen On'),
+                              ? 'Turn Dim Screen Off'
+                              : 'Turn Dim Screen On'),
                         ],
                       ),
                     ),
@@ -760,8 +760,8 @@ class _TimerViewState extends State<TimerView> {
                               : Icons.aspect_ratio),
                           const SizedBox(width: 8),
                           Text(_minimalistMode
-                              ? 'Minimalist Mode Off'
-                              : 'Minimalist Mode On'),
+                              ? 'Turn Minimalist Mode Off'
+                              : 'Turn Minimalist Mode On'),
                         ],
                       ),
                     ),
