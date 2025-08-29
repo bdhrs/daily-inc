@@ -63,26 +63,43 @@ class IncrementCalculator {
   /// Determine if a task is due on a given date
   static bool isDue(DailyThing item, DateTime date) {
     final lastDone = getLastCompletedDate(item.history);
+    final startDate =
+        DateTime(item.startDate.year, item.startDate.month, item.startDate.day);
 
+    DateTime checkStartDate;
     if (lastDone == null) {
-      // If never done, it's due if the start date is today or in the past
-      return !date.isBefore(item.startDate);
+      checkStartDate = startDate;
+    } else {
+      final lastDoneDate =
+          DateTime(lastDone.year, lastDone.month, lastDone.day);
+      // If start date is after last done date, start checking from start date.
+      checkStartDate = lastDoneDate.isBefore(startDate)
+          ? startDate
+          : lastDoneDate.add(const Duration(days: 1));
     }
 
-    // Check for missed days carry-over
-    DateTime checkDate = DateTime(lastDone.year, lastDone.month, lastDone.day)
-        .add(const Duration(days: 1));
+    // If the date to check is before our check period starts, it can't be due.
+    if (date.isBefore(checkStartDate)) {
+      return false;
+    }
+
+    DateTime checkDate = checkStartDate;
     while (checkDate.isBefore(date) || checkDate.isAtSameMomentAs(date)) {
-      bool wasDue = false;
+      bool wasDueToday = false;
       if (item.intervalType == IntervalType.byDays) {
-        final daysDiff = checkDate.difference(lastDone).inDays;
-        wasDue = daysDiff >= item.intervalValue;
+        final referenceDate = lastDone ?? startDate;
+        final daysDiff = checkDate.difference(referenceDate).inDays;
+        if (lastDone == null) {
+          wasDueToday = daysDiff >= 0 && (daysDiff % item.intervalValue == 0);
+        } else {
+          wasDueToday = daysDiff >= item.intervalValue;
+        }
       } else {
         // byWeekdays
-        wasDue = item.intervalWeekdays.contains(checkDate.weekday);
+        wasDueToday = item.intervalWeekdays.contains(checkDate.weekday);
       }
 
-      if (wasDue) {
+      if (wasDueToday) {
         // Check if it was done on that day
         final entryOnDay = item.history.where((e) {
           final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
@@ -90,7 +107,7 @@ class IncrementCalculator {
         }).toList();
 
         if (entryOnDay.isEmpty || !entryOnDay.first.doneToday) {
-          return true; // Carried over from a missed day
+          return true; // Due because it was missed or is due today and not done
         }
       }
       checkDate = checkDate.add(const Duration(days: 1));
