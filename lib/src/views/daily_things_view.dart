@@ -2,6 +2,7 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
@@ -284,6 +285,52 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
+  Future<bool> _handleSnooze(DailyThing item) {
+    _log.info('Handling snooze for: ${item.name}');
+
+    final itemIndex = _dailyThings.indexWhere((d) => d.id == item.id);
+    if (itemIndex == -1) return Future.value(false);
+
+    final currentItem = _dailyThings[itemIndex];
+    final todayEntry = currentItem.todayHistoryEntry;
+
+    final bool wasSnoozed = todayEntry?.snoozed ?? false;
+
+    HistoryEntry updatedEntry;
+    if (todayEntry != null) {
+      updatedEntry = todayEntry.copyWith(snoozed: !wasSnoozed);
+    } else {
+      updatedEntry = HistoryEntry(
+        date: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        targetValue: currentItem.todayValue,
+        doneToday: false,
+        snoozed: true,
+      );
+    }
+
+    setState(() {
+      final history = List<HistoryEntry>.from(currentItem.history);
+      final entryIndex = history.indexWhere((e) => e.date == updatedEntry.date);
+
+      if (entryIndex != -1) {
+        history[entryIndex] = updatedEntry;
+      } else {
+        history.add(updatedEntry);
+      }
+      _dailyThings[itemIndex] = currentItem.copyWith(history: history);
+    });
+
+    _dataManager.updateDailyThing(_dailyThings[itemIndex]);
+    _checkAndShowCompletionSnackbar();
+
+    final bool willBeSnoozed = !wasSnoozed;
+    if (willBeSnoozed && _hideWhenDone) {
+      return Future.value(true);
+    } else {
+      return Future.value(false);
+    }
+  }
+
   void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
     _log.info('Showing fullscreen timer for: ${item.name}');
     Navigator.push(
@@ -526,6 +573,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       onEdit: _editDailyThing,
       onDelete: _deleteDailyThing,
       onDuplicate: _duplicateItem,
+      onConfirmSnooze: _handleSnooze,
       showFullscreenTimer: _showFullscreenTimer,
       showRepsInputDialog: _showRepsInputDialog,
       checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,
@@ -857,6 +905,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
     List<DailyThing> displayedItems = dueItems;
     if (_hideWhenDone) {
       displayedItems = dueItems.where((item) {
+        if (item.isSnoozedForToday) {
+          return false; // Always hide snoozed items when this filter is on
+        }
+
         final today = DateTime.now();
         final todayDate = DateTime(today.year, today.month, today.day);
 
@@ -881,10 +933,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
             return actual > 0.0 || entry.doneToday;
           });
           if (hasProgressToday) return false; // hide minutes if partial or done
-          return !item.completedForToday;
         }
 
-        // For CHECK items, maintain existing behavior
+        // For CHECK items and fallback for others, use the original logic
         return !item.completedForToday;
       }).toList();
     }
@@ -931,8 +982,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
             return Padding(
               key: ValueKey(item.id),
               padding: const EdgeInsets.symmetric(vertical: 3.0),
-              child:
-                  _buildItemRow(item, index, nextUndoneIndex, allTasksCompleted),
+              child: _buildItemRow(
+                  item, index, nextUndoneIndex, allTasksCompleted),
             );
           }).toList(),
           padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),

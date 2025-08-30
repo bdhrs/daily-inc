@@ -75,9 +75,11 @@ This document provides a map of the project, listing the location of all functio
   - `determineStatus(double currentValue)` [`lib/src/models/daily_thing.dart:55`](lib/src/models/daily_thing.dart:55): Returns green/red status for the current value.
   - `isDone(double currentValue)` [`lib/src/models/daily_thing.dart:59`](lib/src/models/daily_thing.dart:59): Tells if today is completed for this task.
   - `lastCompletedDate` getter [`lib/src/models/daily_thing.dart:63`](lib/src/models/daily_thing.dart:63): Finds when you last finished this task.
+  - `todayHistoryEntry` getter: Gets the history entry for today, if it exists.
+  - `isSnoozedForToday` getter: Checks if the task has been marked as snoozed for today.
   - `isDueToday` getter [`lib/src/models/daily_thing.dart:67`](lib/src/models/daily_thing.dart:67): Says if the task needs doing today based on its frequency.
-  - `completedForToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if today counts as done for this task.
-  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today's history entry is marked as done.
+  - `completedForToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if today counts as done (if not due, it's considered done).
+  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today's history entry is explicitly marked as done.
   - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:154`](lib/src/models/daily_thing.dart:154): Determines if this item should be shown in the list based on due status and completion.
   - `toJson()` [`lib/src/models/daily_thing.dart:112`](lib/src/models/daily_thing.dart:112): Converts this item to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:131`](lib/src/models/daily_thing.dart:131): Builds the item from a JSON map.
@@ -85,7 +87,7 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/models/history_entry.dart
 - `_logger` variable [`lib/src/models/history_entry.dart:3`](lib/src/models/history_entry.dart:3): Logs parsing warnings for history.
-- `HistoryEntry` class [`lib/src/models/history_entry.dart:5`](lib/src/models/history_entry.dart:5): A single day's record of target and actual progress.
+- `HistoryEntry` class [`lib/src/models/history_entry.dart:5`](lib/src/models/history_entry.dart:5): A single day's record of target/actual progress, with optional comment and snoozed status.
   - `toJson()` [`lib/src/models/history_entry.dart:18`](lib/src/models/history_entry.dart:18): Converts the entry to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/history_entry.dart:27`](lib/src/models/history_entry.dart:27): Parses a JSON map into an entry with safe fallbacks.
   - `copyWith({...})` [`lib/src/models/history_entry.dart:72`](lib/src/models/history_entry.dart:72): Creates a copy of the entry with specified fields updated.
@@ -237,7 +239,7 @@ This document provides a map of the project, listing the location of all functio
   - `_saveSettings()` [`lib/src/views/settings_view.dart:93`](lib/src/views/settings_view.dart:93): Persists all settings including backup configuration.
   - `_selectBackupLocation()` [`lib/src/views/settings_view.dart:113`](lib/src/views/settings_view.dart:113): Opens directory picker for backup location selection.
   - `_createManualBackup()` [`lib/src/views/settings_view.dart:133`](lib/src/views/settings_view.dart:133): Creates a manual backup on demand.
-  - `_resetAllData()` [`lib/src/views/settings_view.dart:169`](lib/src/views/settings_view.dart:169): Clears stored data and confirms.
+  - `_resetAllData()` [`lib//src/views/settings_view.dart:169`](lib/src/views/settings_view.dart:169): Clears stored data and confirms.
 - `build(BuildContext context)` [`lib/src/views/settings_view.dart:224`](lib/src/views/settings_view.dart:224): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, backup configuration section, and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
@@ -316,3 +318,54 @@ This document provides a map of the project, listing the location of all functio
   - "patch-from-main" option: Increments the PATCH version number for releases from the main branch
   - "major-from-dev" option: Increments the MAJOR version number for releases from the dev branch
   - "minor-from-dev" option: Increments the MINOR version number for releases from the dev branch
+
+## .github/workflows/dev-test.yml
+- Dev Test workflow [`/.github/workflows/dev-test.yml`](/.github/workflows/dev-test.yml): GitHub Actions workflow for running tests and analysis on the dev branch.
+  - Runs `flutter test` and `flutter analyze` on every push to the dev branch.
+  - Uses `actions/checkout@v4` and `subosito/flutter-action@v2`.
+  - Caches Flutter dependencies for faster builds.
+  - Includes a step to install `flutter_launcher_icons`.
+
+## specs/increment_logic.md
+- Increment Logic specification [`/specs/increment_logic.md`](/specs/increment_logic.md): Detailed specification for how the increment logic should work.
+  - Defines how `todayValue` is calculated based on `lastCompletedDate`, `gracePeriod`, and `frequencyInDays`.
+  - Includes scenarios for completed yesterday, missed within grace period, missed beyond grace period, and start date is today.
+  - The logic is implemented in `lib/src/core/increment_calculator.dart`.
+
+## specs/display_value.md
+- Display Value specification [`/specs/display_value.md`](/specs/display_value.md): Detailed specification for how the display value should be calculated.
+  - Defines how `displayValue` is calculated for each `ItemType`.
+  - For `MINUTES`, it shows `todayValue` if the timer hasn't started, or the actual elapsed minutes if the timer has been started/completed.
+  - For `REPS`, it shows the `actualValue` entered for today if it exists, otherwise shows the `todayValue`.
+  - For `CHECK`, it shows the `todayValue` (0.0 for not done, 1.0 for done).
+  - The logic is implemented in `lib/src/core/increment_calculator.dart`.
+
+## specs/timer_value.md
+- Timer Value specification [`/specs/timer_value.md`](/specs/timer_value.md): Detailed specification for how the timer value should be calculated.
+  - Defines how the timer value is calculated based on `todayValue` and `actualValue`.
+  - The timer starts with `todayValue - actualValue`.
+  - The logic is implemented in `lib/src/views/timer_view.dart`.
+
+## specs/intervals.md
+- Intervals specification [`/specs/intervals.md`](/specs/intervals.md): Detailed specification for how intervals should work.
+  - Defines how `isDueToday` is calculated based on `intervalType` and `frequencyInDays` or `weekdays`.
+  - The logic is implemented in `lib/src/models/daily_thing.dart`.
+
+## specs/dimmer.md
+- Dimmer specification [`/specs/dimmer.md`](/specs/dimmer.md): Detailed specification for how the screen dimmer should work.
+  - Defines how the screen dimmer should be implemented in `lib/src/views/timer_view.dart`.
+  - The dimmer should be a user-configurable setting.
+  - The dimmer should gradually dim the screen over 10 seconds.
+  - The dimmer should restore the screen brightness when the timer is paused or finished.
+
+## specs/graph.md
+- Graph specification [`/specs/graph.md`](/specs/graph.md): Detailed specification for how the graph should work.
+  - Defines how the graph should be implemented in `lib/src/views/graph_view.dart`.
+  - The graph should be a step line chart.
+  - The graph should show the `actualValue` for each day.
+  - The graph should have a configurable time range.
+
+## specs/ANDROID_SIGNING_FIX.md
+- Android Signing Fix specification [`/specs/ANDROID_SIGNING_FIX.md`](/specs/ANDROID_SIGNING_FIX.md): Detailed specification for how to fix the Android signing issue.
+  - Defines how to create a new keystore and update the `key.properties` file.
+  - The logic is implemented in `android/app/build.gradle.kts`.

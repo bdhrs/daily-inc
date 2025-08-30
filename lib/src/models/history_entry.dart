@@ -8,6 +8,7 @@ class HistoryEntry {
   final bool doneToday;
   final double? actualValue; // Actual performed value
   final String? comment;
+  final bool snoozed;
 
   HistoryEntry({
     required this.date,
@@ -15,6 +16,7 @@ class HistoryEntry {
     required this.doneToday,
     this.actualValue,
     this.comment,
+    this.snoozed = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -24,6 +26,7 @@ class HistoryEntry {
       'done_today': doneToday,
       'actual_value': actualValue,
       'comment': comment,
+      'snoozed': snoozed,
     };
     _logger.fine('HistoryEntry toJson: $json');
     return json;
@@ -70,12 +73,16 @@ class HistoryEntry {
       // Parse comment (nullable)
       final String? comment = json['comment'] as String?;
 
+      // Parse snoozed with fallback to false
+      final bool snoozed = json['snoozed'] as bool? ?? false;
+
       return HistoryEntry(
         date: date,
         targetValue: targetValue,
         doneToday: doneToday,
         actualValue: actualValue,
         comment: comment,
+        snoozed: snoozed,
       );
     } catch (e) {
       _logger.warning('Error parsing HistoryEntry: $e');
@@ -85,6 +92,7 @@ class HistoryEntry {
         doneToday: false,
         actualValue: null,
         comment: null,
+        snoozed: false,
       );
     }
   }
@@ -95,6 +103,7 @@ class HistoryEntry {
     bool? doneToday,
     double? actualValue,
     String? comment,
+    bool? snoozed,
   }) {
     return HistoryEntry(
       date: date ?? this.date,
@@ -102,6 +111,7 @@ class HistoryEntry {
       doneToday: doneToday ?? this.doneToday,
       actualValue: actualValue ?? this.actualValue,
       comment: comment ?? this.comment,
+      snoozed: snoozed ?? this.snoozed,
     );
   }
 }

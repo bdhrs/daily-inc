@@ -217,11 +217,8 @@ class HelpView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-              "Here is an example of a task. Tap it to reveal more controls. Long hold and drag to reorder tasks"),
+              "Here is an example of a task. \n\n- Tap it to reveal more controls. \n\n- Long hold and drag to reorder tasks. \n\n- Swipe right to snooze a task until tomorrow. "),
           const SizedBox(height: 8),
-          const Text(
-            '(Exercise) is this task\'s category.',
-          ),
           const SizedBox(height: 16),
           // This is a non-functional representation for display only.
           DailyThingItem(
@@ -230,6 +227,7 @@ class HelpView extends StatelessWidget {
             onEdit: (_) {},
             onDelete: (_) {},
             onDuplicate: (_) {},
+            onConfirmSnooze: (_) => Future.value(false),
             showFullscreenTimer: (item, {startInOvertime = false}) {},
             showRepsInputDialog: (_) {},
             checkAndShowCompletionSnackbar: () {},

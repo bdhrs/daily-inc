@@ -77,6 +77,18 @@ class DailyThing {
     return IncrementCalculator.getLastCompletedDate(history);
   }
 
+  HistoryEntry? get todayHistoryEntry {
+    final todayDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    return history.cast<HistoryEntry?>().firstWhere(
+          (entry) => entry != null && DateTime(entry.date.year, entry.date.month, entry.date.day) == todayDate,
+      orElse: () => null,
+    );
+  }
+
+  bool get isSnoozedForToday {
+    return todayHistoryEntry?.snoozed ?? false;
+  }
+
   bool get isDueToday {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -146,27 +158,7 @@ class DailyThing {
   }
 
   bool get hasBeenDoneLiterallyToday {
-    final todayDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
-
-    // Find the most recent entry for today
-    HistoryEntry? todayEntry;
-    for (final entry in history) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate == todayDate) {
-        todayEntry = entry;
-        break; // Found today's entry
-      }
-    }
-
-    if (todayEntry != null) {
-      return todayEntry.doneToday;
-    }
-    return false; // No entry for today, so not done today
+    return todayHistoryEntry?.doneToday ?? false;
   }
 
   /// Determines if this item should be shown in the list.
