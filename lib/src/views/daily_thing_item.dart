@@ -403,24 +403,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               visualDensity: const VisualDensity(
                                   horizontal: -3, vertical: -3),
                               onPressed: () async {
-                                final updated = DailyThing(
-                                  id: widget.item.id,
-                                  icon: widget.item.icon,
-                                  name: widget.item.name,
-                                  itemType: widget.item.itemType,
-                                  startDate: widget.item.startDate,
-                                  startValue: widget.item.startValue,
-                                  duration: widget.item.duration,
-                                  endValue: widget.item.endValue,
-                                  history: widget.item.history,
-                                  nagTime: widget.item.nagTime,
-                                  nagMessage: widget.item.nagMessage,
-                                  category: widget.item.category,
+                                final updated = widget.item.copyWith(
                                   isPaused: !widget.item.isPaused,
-                                  intervalType: widget.item.intervalType,
-                                  intervalValue: widget.item.intervalValue,
-                                  intervalWeekdays:
-                                      widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);
@@ -600,24 +584,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               visualDensity: const VisualDensity(
                                   horizontal: -3, vertical: -3),
                               onPressed: () async {
-                                final updated = DailyThing(
-                                  id: widget.item.id,
-                                  icon: widget.item.icon,
-                                  name: widget.item.name,
-                                  itemType: widget.item.itemType,
-                                  startDate: widget.item.startDate,
-                                  startValue: widget.item.startValue,
-                                  duration: widget.item.duration,
-                                  endValue: widget.item.endValue,
-                                  history: widget.item.history,
-                                  nagTime: widget.item.nagTime,
-                                  nagMessage: widget.item.nagMessage,
-                                  category: widget.item.category,
+                                final updated = widget.item.copyWith(
                                   isPaused: !widget.item.isPaused,
-                                  intervalType: widget.item.intervalType,
-                                  intervalValue: widget.item.intervalValue,
-                                  intervalWeekdays:
-                                      widget.item.intervalWeekdays,
                                 );
                                 await widget.dataManager
                                     .updateDailyThing(updated);

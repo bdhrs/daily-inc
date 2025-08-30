@@ -698,6 +698,7 @@ class _TimerViewState extends State<TimerView> {
       bellSoundPath: widget.item.bellSoundPath, // Pass the bell sound path
       subdivisions: widget.item.subdivisions,
       subdivisionBellSoundPath: widget.item.subdivisionBellSoundPath,
+      notes: widget.item.notes,
     );
   }
 

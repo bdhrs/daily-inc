@@ -468,14 +468,19 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           category: _categoryController.text.isEmpty
               ? 'None'
               : _categoryController.text,
+          isPaused: widget.dailyThing?.isPaused ?? false, // Preserve pause state
           intervalType: finalIntervalType,
           intervalValue: finalIntervalValue,
           intervalWeekdays: finalIntervalWeekdays,
           bellSoundPath:
               _selectedBellSoundPath, // Pass the selected bell sound path
-          subdivisions: int.tryParse(_subdivisionsController.text),
-          subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
-          notes: _notesController.text,
+          subdivisions: int.tryParse(_subdivisionsController.text) ??
+              widget.dailyThing?.subdivisions, // Preserve subdivisions
+          subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath ??
+              widget.dailyThing?.subdivisionBellSoundPath, // Preserve subdivision bell
+          notes: _notesController.text.isNotEmpty
+              ? _notesController.text
+              : widget.dailyThing?.notes, // Preserve notes
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
