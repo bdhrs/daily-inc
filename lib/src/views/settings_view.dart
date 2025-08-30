@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:file_picker/file_picker.dart';
+
 
 class SettingsView extends StatefulWidget {
   final VoidCallback? onResetAllData;
@@ -64,6 +64,9 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final backupService = BackupService();
+    final defaultBackupPath = await backupService.getDefaultBackupDirectory();
+
     setState(() {
       _showStartOfDayMessage = prefs.getBool('showStartOfDayMessage') ?? false;
       _startOfDayMessageText = prefs.getString('startOfDayMessageText') ??
@@ -80,7 +83,8 @@ class _SettingsViewState extends State<SettingsView> {
 
       // Load backup settings
       _backupEnabled = prefs.getBool('backupEnabled') ?? false;
-      _backupLocation = prefs.getString('backupLocation') ?? '';
+      // Always use the default backup location
+      _backupLocation = defaultBackupPath;
       _backupRetentionDays = prefs.getInt('backupRetentionDays') ?? 30;
 
       final lastBackupTimestamp = prefs.getInt('lastBackupTime');
@@ -111,32 +115,12 @@ class _SettingsViewState extends State<SettingsView> {
 
     // Save backup settings
     await prefs.setBool('backupEnabled', _backupEnabled);
-    await prefs.setString('backupLocation', _backupLocation);
+    // No need to save backupLocation as it's always the default
     await prefs.setInt('backupRetentionDays', _backupRetentionDays);
 
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
     _log.info('Settings saved');
-  }
-
-  Future<void> _selectBackupLocation() async {
-    try {
-      final String? selectedDirectory =
-          await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select Backup Location',
-      );
-
-      if (selectedDirectory != null) {
-        setState(() {
-          _backupLocation = selectedDirectory;
-          _backupLocationController.text = selectedDirectory;
-        });
-        await _saveSettings();
-        _log.info('Backup location selected: $selectedDirectory');
-      }
-    } catch (e, s) {
-      _log.warning('Error selecting backup location', e, s);
-    }
   }
 
   Future<void> _createManualBackup() async {
@@ -409,24 +393,10 @@ class _SettingsViewState extends State<SettingsView> {
           if (_backupEnabled) ...[
             const SizedBox(height: 8),
             const Text('Backup location:'),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _backupLocationController,
-                    decoration: const InputDecoration(
-                      hintText: 'Select backup directory...',
-                      border: OutlineInputBorder(),
-                    ),
-                    readOnly: true,
-                    onTap: _selectBackupLocation,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.folder_open),
-                  onPressed: _selectBackupLocation,
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              _backupLocation,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 16),
             const Text('Keep backups for:'),

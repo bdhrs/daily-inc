@@ -157,7 +157,7 @@ class BackupService {
     );
   }
 
-  /// Create a backup with timestamped filename and always keep a "_latest" version
+  /// Create a backup with timestamped filename and always keep a "latest" version
   Future<bool> createBackup(List<DailyThing> items) async {
     try {
       final backupEnabled = await isBackupEnabled();
@@ -166,19 +166,26 @@ class BackupService {
         return false;
       }
 
-      final backupLocation = await getBackupLocation();
-      if (backupLocation == null || backupLocation.isEmpty) {
-        _log.warning('Backup skipped - no backup location configured');
-        return false;
-      }
+      // Always use the default backup directory to avoid permission issues on Android
+      final backupLocation = await getDefaultBackupDirectory();
+      await setBackupLocation(backupLocation); // Ensure setting is updated
 
-      // Create backup directory if it doesn't exist
       final backupDir = Directory(backupLocation);
       if (!backupDir.existsSync()) {
         backupDir.createSync(recursive: true);
         _log.info('Created backup directory: $backupLocation');
       }
 
+      return await _createBackupInDirectory(backupDir, items);
+    } catch (e, s) {
+      _log.severe('Error creating backup', e, s);
+      return false;
+    }
+  }
+
+  /// Create a backup in the specified directory
+  Future<bool> _createBackupInDirectory(Directory backupDir, List<DailyThing> items) async {
+    try {
       // Generate backup filenames
       final timestamp = DateTime.now();
       final timestampedFilename =
@@ -208,8 +215,8 @@ class BackupService {
       // Always write/overwrite the latest backup
       await latestBackupFile.writeAsString(jsonString);
 
-      _log.info('Backup created successfully: ${timestampedBackupFile.path}');
-      _log.info('Latest backup updated: ${latestBackupFile.path}');
+      _log.fine('Backup created successfully: ${timestampedBackupFile.path}');
+      _log.fine('Latest backup updated: ${latestBackupFile.path}');
 
       await _setLastBackupTime(timestamp);
 
@@ -218,7 +225,7 @@ class BackupService {
 
       return true;
     } catch (e, s) {
-      _log.severe('Error creating backup', e, s);
+      _log.severe('Error creating backup in directory: ${backupDir.path}', e, s);
       return false;
     }
   }

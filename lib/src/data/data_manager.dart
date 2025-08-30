@@ -226,7 +226,6 @@ class DataManager {
       final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
       final bytes = utf8.encode(jsonString);
 
-      _log.info('Opening file picker to save file.');
       String? outputFile;
       
       if (Platform.isLinux) {
@@ -249,7 +248,7 @@ class DataManager {
       }
 
       if (outputFile != null) {
-        _log.info('History saved successfully to $outputFile.');
+        _log.fine('History saved successfully to $outputFile.');
         return true;
       } else {
         _log.info('Save file operation cancelled.');
@@ -278,7 +277,6 @@ class DataManager {
       final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
       final bytes = utf8.encode(jsonString);
 
-      _log.info('Opening file picker to save template.');
       String? outputFile;
       
       if (Platform.isLinux) {
@@ -301,7 +299,7 @@ class DataManager {
       }
 
       if (outputFile != null) {
-        _log.info('Template saved successfully to $outputFile.');
+        _log.fine('Template saved successfully to $outputFile.');
         return true;
       } else {
         _log.info('Save template operation cancelled.');

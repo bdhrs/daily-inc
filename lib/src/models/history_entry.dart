@@ -28,7 +28,7 @@ class HistoryEntry {
       'comment': comment,
       'snoozed': snoozed,
     };
-    _logger.fine('HistoryEntry toJson: $json');
+    
     return json;
   }
 
