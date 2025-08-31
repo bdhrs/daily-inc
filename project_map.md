@@ -25,24 +25,22 @@ This document provides a map of the project, listing the location of all functio
   - `toTotalSeconds()` [`lib/src/core/time_converter.dart:99`](lib/src/core/time_converter.dart:99): Converts to total seconds.
 
 ## lib/src/core/value_converter.dart
-- `ValueConverter` class [`lib/src/core/value_converter.dart:1`](lib/src/core/value_converter.dart:1): Handles conversions between different item types when changing task types.
-  - `convert(DailyThing original, ItemType newType)` [`lib/src/core/value_converter.dart:5`](lib/src/core/value_converter.dart:5): Converts a DailyThing from one type to another, handling value conversions appropriately. Now includes PERCENTAGE type conversions: from percentage to check (100% = done), from minutes/reps to percentage (non-zero = 100%), and preserves percentage values when converting to minutes/reps.
+- `ValueConverter` class [`lib/src/core/value_converter.dart:4`](lib/src/core/value_converter.dart:4): Handles conversions between different item types when changing task types.
+  - `convert(DailyThing original, ItemType newType)` [`lib/src/core/value_converter.dart:5`](lib/src/core/value_converter.dart:5): Converts a DailyThing from one type to another, handling value conversions appropriately. Now includes PERCENTAGE and TREND type conversions.
 
 ## lib/src/core/increment_calculator.dart
-- `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:9`](lib/src/core/increment_calculator.dart:9): Calculates targets, display values, and status for daily items.
-  - Static variable `_gracePeriodDays` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Stores the configurable grace period.
-  - `setGracePeriod(int days)` [`lib/src/core/increment_calculator.dart:13`](lib/src/core/increment_calculator.dart:13): Sets the grace period.
-  - `getGracePeriod()` [`lib/src/core/increment_calculator.dart:18`](lib/src/core/increment_calculator.dart:18): Gets the current grace period.
-  - `calculateIncrement(DailyThing item)` [`lib/src/core/increment_calculator.dart:22`](lib/src/core/increment_calculator.dart:22): Finds the per-day change from start to end over the duration.
-  - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:28`](lib/src/core/increment_calculator.dart:28): Gets the most recent day you marked the task as done.
-  - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:41`](lib/src/core/increment_calculator.dart:41): Finds the date of the latest history record.
-  - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:50`](lib/src/core/increment_calculator.dart:50): Counts how many days were skipped since the last entry.
-  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:98`](lib/src/core/increment_calculator.dart:98): Computes today's target based on progress rules and gaps. Returns start value when start date is today or in the future. Now properly handles frequency intervals during grace period.
-  - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:188`](lib/src/core/increment_calculator.dart:188): Chooses what number to show today (target or actual) depending on type.
-  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:250`](lib/src/core/increment_calculator.dart:250): Tells if today's goal is met for the item.
-  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:271`](lib/src/core/increment_calculator.dart:271): Returns green or red status based on today's target.
-
-- `Status` enum [`lib/src/core/increment_calculator.dart:244`](lib/src/core/increment_calculator.dart:244): Simple green or red state for display.
+- `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:7`](lib/src/core/increment_calculator.dart:7): Calculates targets, display values, and status for daily items.
+  - `setGracePeriod(int days)` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Sets the grace period.
+  - `getGracePeriod()` [`lib/src/core/increment_calculator.dart:15`](lib/src/core/increment_calculator.dart:15): Gets the current grace period.
+  - `calculateIncrement(DailyThing item)` [`lib/src/core/increment_calculator.dart:20`](lib/src/core/increment_calculator.dart:20): Finds the per-day change from start to end over the duration.
+  - `getLastCompletedDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:32`](lib/src/core/increment_calculator.dart:32): Gets the most recent day you marked the task as done.
+  - `getLastEntryDate(List<HistoryEntry> history)` [`lib/src/core/increment_calculator.dart:45`](lib/src/core/increment_calculator.dart:45): Finds the date of the latest history record.
+  - `calculateDaysMissed(DateTime lastEntryDate, DateTime todayDate)` [`lib/src/core/increment_calculator.dart:54`](lib/src/core/increment_calculator.dart:54): Counts how many days were skipped since the last entry.
+  - `isDue(DailyThing item, DateTime date)` [`lib/src/core/increment_calculator.dart:59`](lib/src/core/increment_calculator.dart:59): Determines if a task is due on a given date.
+  - `calculateTodayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:120`](lib/src/core/increment_calculator.dart:120): Computes today's target based on progress rules and gaps.
+  - `calculateDisplayValue(DailyThing item)` [`lib/src/core/increment_calculator.dart:210`](lib/src/core/increment_calculator.dart:210): Chooses what number to show today (target or actual) depending on type.
+  - `isDone(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:280`](lib/src/core/increment_calculator.dart:280): Tells if today's goal is met for the item.
+  - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:301`](lib/src/core/increment_calculator.dart:301): Returns green or red status based on today's target.
 
 ## lib/src/data/data_manager.dart
 - `DataManager` class [`lib/src/data/data_manager.dart:10`](lib/src/data/data_manager.dart:10): Loads, saves, and manages items and metadata on disk.
@@ -70,24 +68,23 @@ This document provides a map of the project, listing the location of all functio
   - `updateHistoryEntriesWithNewParameters({...})` [`lib/src/data/history_manager.dart:13`](lib/src/data/history_manager.dart:13): Recomputes targets for today and future based on new plan while keeping history intact.
 
 ## lib/src/models/daily_thing.dart
-- `_logger` variable [`lib/src/models/daily_thing.dart:7`](lib/src/models/daily_thing.dart:7): Logs messages for this model.
-- `DailyThing` class [`lib/src/models/daily_thing.dart:9`](lib/src/models/daily_thing.dart:9): Represents a daily task with rules, history, and settings.
-  - Fields like `id`, `icon`, `name`, `itemType`, `startDate`, `startValue`, `duration`, `endValue`, `history`, `nagTime`, `nagMessage`, `frequencyInDays`, `category`, `isPaused`, `notes` [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Store the task's basic info and behavior. History entries now support optional comments.
-  - `increment` getter [`lib/src/models/daily_thing.dart:43`](lib/src/models/daily_thing.dart:43): Gives the per-day change for this task.
-  - `todayValue` getter [`lib/src/models/daily_thing.dart:47`](lib/src/models/daily_thing.dart:47): Gives today's target for this task.
-  - `displayValue` getter [`lib/src/models/daily_thing.dart:51`](lib/src/models/daily_thing.dart:51): Gives what to show in the UI today.
-  - `determineStatus(double currentValue)` [`lib/src/models/daily_thing.dart:55`](lib/src/models/daily_thing.dart:55): Returns green/red status for the current value.
-  - `isDone(double currentValue)` [`lib/src/models/daily_thing.dart:59`](lib/src/models/daily_thing.dart:59): Tells if today is completed for this task.
-  - `lastCompletedDate` getter [`lib/src/models/daily_thing.dart:63`](lib/src/models/daily_thing.dart:63): Finds when you last finished this task.
-  - `todayHistoryEntry` getter: Gets the history entry for today, if it exists.
-  - `isSnoozedForToday` getter: Checks if the task has been marked as snoozed for today.
-  - `isDueToday` getter [`lib/src/models/daily_thing.dart:67`](lib/src/models/daily_thing.dart:67): Says if the task needs doing today based on its frequency.
-  - `completedForToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if today counts as done (if not due, it's considered done).
-  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:88`](lib/src/models/daily_thing.dart:88): Checks if today's history entry is explicitly marked as done.
-  - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:154`](lib/src/models/daily_thing.dart:154): Determines if this item should be shown in the list based on due status and completion.
-  - `toJson()` [`lib/src/models/daily_thing.dart:112`](lib/src/models/daily_thing.dart:112): Converts this item to a JSON map.
-  - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:131`](lib/src/models/daily_thing.dart:131): Builds the item from a JSON map.
-  - `copyWith({...})` [`lib/src/models/daily_thing.dart:185`](lib/src/models/daily_thing.dart:185): Creates a copy of the item with specified fields updated.
+- `_logger` variable [`lib/src/models/daily_thing.dart:8`](lib/src/models/daily_thing.dart:8): Logs messages for this model.
+- `DailyThing` class [`lib/src/models/daily_thing.dart:10`](lib/src/models/daily_thing.dart:10): Represents a daily task with rules, history, and settings.
+  - `increment` getter [`lib/src/models/daily_thing.dart:45`](lib/src/models/daily_thing.dart:45): Gives the per-day change for this task.
+  - `todayValue` getter [`lib/src/models/daily_thing.dart:49`](lib/src/models/daily_thing.dart:49): Gives today's target for this task.
+  - `displayValue` getter [`lib/src/models/daily_thing.dart:53`](lib/src/models/daily_thing.dart:53): Gives what to show in the UI today.
+  - `determineStatus(double currentValue)` [`lib/src/models/daily_thing.dart:57`](lib/src/models/daily_thing.dart:57): Returns green/red status for the current value.
+  - `isDone(double currentValue)` [`lib/src/models/daily_thing.dart:61`](lib/src/models/daily_thing.dart:61): Tells if today is completed for this task.
+  - `lastCompletedDate` getter [`lib/src/models/daily_thing.dart:65`](lib/src/models/daily_thing.dart:65): Finds when you last finished this task.
+  - `todayHistoryEntry` getter [`lib/src/models/daily_thing.dart:69`](lib/src/models/daily_thing.dart:69): Gets the history entry for today, if it exists.
+  - `isSnoozedForToday` getter [`lib/src/models/daily_thing.dart:77`](lib/src/models/daily_thing.dart:77): Checks if the task has been marked as snoozed for today.
+  - `isDueToday` getter [`lib/src/models/daily_thing.dart:81`](lib/src/models/daily_thing.dart:81): Says if the task needs doing today based on its frequency.
+  - `completedForToday` getter [`lib/src/models/daily_thing.dart:128`](lib/src/models/daily_thing.dart:128): Says if today counts as done (if not due, it's considered done).
+  - `hasBeenDoneLiterallyToday` getter [`lib/src/models/daily_thing.dart:145`](lib/src/models/daily_thing.dart:145): Checks if today's history entry is explicitly marked as done.
+  - `shouldShowInList` getter [`lib/src/models/daily_thing.dart:156`](lib/src/models/daily_thing.dart:156): Determines if this item should be shown in the list based on due status and completion.
+  - `toJson()` [`lib/src/models/daily_thing.dart:168`](lib/src/models/daily_thing.dart:168): Converts this item to a JSON map.
+  - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:190`](lib/src/models/daily_thing.dart:190): Builds the item from a JSON map.
+  - `copyWith({...})` [`lib/src/models/daily_thing.dart:232`](lib/src/models/daily_thing.dart:232): Creates a copy of the item with specified fields updated.
 
 ## lib/src/models/history_entry.dart
 - `_logger` variable [`lib/src/models/history_entry.dart:3`](lib/src/models/history_entry.dart:3): Logs parsing warnings for history.
@@ -101,7 +98,10 @@ This document provides a map of the project, listing the location of all functio
 - `IntervalType` enum [`lib/src/models/interval_type.dart:1`](lib/src/models/interval_type.dart:1): Defines whether an item repeats by a number of days or on specific weekdays.
 
 ## lib/src/models/item_type.dart
-- `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, check, or percentage.
+- `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, check, percentage, or trend.
+
+## lib/src/models/status.dart
+- `Status` enum [`lib/src/models/status.dart:1`](lib/src/models/status.dart:1): Simple green or red state for display.
 
 ## lib/src/services/backup_service.dart
 - `BackupService` class [`lib/src/services/backup_service.dart:9`](lib/src/services/backup_service.dart:9): Handles automatic backups with user-configurable settings.
@@ -138,91 +138,27 @@ This document provides a map of the project, listing the location of all functio
   - Notes: `warningOrange` is used for undone/error states (including PERCENTAGE items with no entry), `primaryBlue` is used for completed/entered states (including PERCENTAGE items with values entered), `partialYellow` with `onPartialYellow` highlights partial progress.
 
 ## lib/src/views/add_edit_daily_item_view.dart
-- `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
-- `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:26`](lib/src/views/add_edit_daily_item_view.dart:26): Handles form state and input controllers.
-  - Form controller fields: `_iconController`, `_nameController`, `_startDateController`, `_startValueController`, `_durationController`, `_endValueController`, `_frequencyController`, `_nagTimeController`, `_nagMessageController`, `_categoryController`, `_incrementController`, `_bellSoundController`, `_subdivisionsController`, `_subdivisionBellSoundController`, `_notesController` [`lib/src/views/add_edit_daily_item_view.dart:27`](lib/src/views/add_edit_daily_item_view.dart:27): Store user inputs.
-  - Selections: `_selectedItemType`, `_selectedNagTime`, `_uniqueCategories`, `_selectedBellSoundPath`, `_selectedSubdivisionBellSoundPath` [`lib/src/views/add_edit_daily_item_view.dart:39`](lib/src/views/add_edit_daily_item_view.dart:39): Track current type/time, category options, and bell sounds.
-  - Lifecycle `initState()` [`lib/src/views/add_edit_daily_item_view.dart:47`](lib/src/views/add_edit_daily_item_view.dart:47): Initializes controllers and pre-fills values, including automatic bell3 assignment for new items with subdivisions > 1.
-  - `didChangeDependencies()` [`lib/src/views/add_edit_daily_item_view.dart:108`](lib/src/views/add_edit_daily_item_view.dart:108): Formats the time field when context is ready.
-  - `dispose()` [`lib/src/views/add_edit_daily_item_view.dart:120`](lib/src/views/add_edit_daily_item_view.dart:120): Disposes controllers to avoid leaks.
-  - `_calculateIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:139`](lib/src/views/add_edit_daily_item_view.dart:139): Computes daily increment from inputs, considering interval type and frequency.
-  - `_updateIncrementField()` [`lib/src/views/add_edit_daily_item_view.dart:154`](lib/src/views/add_edit_daily_item_view.dart:154): Updates increment when duration changes.
-  - `_updateDurationFromIncrement()` [`lib/src/views/add_edit_daily_item_view.dart:160`](lib/src/views/add_edit_daily_item_view.dart:160): Updates duration when increment changes, considering interval type and frequency.
-  - `_buildDescriptionText()` [`lib/src/views/add_edit_daily_item_view.dart:458`](lib/src/views/add_edit_daily_item_view.dart:458): Generates descriptive text explaining the increment calculation logic for the user.
-  - `_loadUniqueCategoriesForSelectedType()` [`lib/src/views/add_edit_daily_item_view.dart:164`](lib/src/views/add_edit_daily_item_view.dart:164): Fetches category suggestions for the selected type.
-  - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:179`](lib/src/views/add_edit_daily_item_view.dart:179): Validates, updates history for plan changes, and saves.
-  - Subdivisions onChanged handler [`lib/src/views/add_edit_daily_item_view.dart:882`](lib/src/views/add_edit_daily_item_view.dart:882): Automatically sets bell3 as default subdivision bell when subdivisions > 1.
-  - Subdivision calculation display [`lib/src/views/add_edit_daily_item_view.dart:950`](lib/src/views/add_edit_daily_item_view.dart:950): Shows subdivision calculation using TimeConverter for proper MM:SS formatting (e.g., "2 x 1:09 = 2:18").
-  - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:295`](lib/src/views/add_edit_daily_item_view.dart:295): Renders the item form UI.
+- `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:15`](lib/src/views/add_edit_daily_item_view.dart:15): Screen to create or edit a daily task.
+- `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:28`](lib/src/views/add_edit_daily_item_view.dart:28): Handles form state and input controllers.
+  - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:263`](lib/src/views/add_edit_daily_item_view.dart:263): Validates, updates history for plan changes, and saves.
+  - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:499`](lib/src/views/add_edit_daily_item_view.dart:499): Renders the item form UI.
 
 ## lib/src/views/category_graph_view.dart
 - `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:10`](lib/src/views/category_graph_view.dart:10): Shows graphs of progress for each category with time range filtering.
 
 ## lib/src/views/daily_thing_item.dart
-- `DailyThingItem` class [`lib/src/views/daily_thing_item.dart:9`](lib/src/views/daily_thing_item.dart:9): A single task row with controls and quick actions.
-  - Props `item`, `dataManager`, `onEdit`, `onDelete`, `onDuplicate`, `showFullscreenTimer`, `showRepsInputDialog`, `checkAndShowCompletionSnackbar`, `isExpanded`, `onExpansionChanged`, `allTasksCompleted`, `onItemChanged` [`lib/src/views/daily_thing_item.dart:10`](lib/src/views/daily_thing_item.dart:10): Inputs and callbacks for the row behavior.
-- `_DailyThingItemState` class [`lib/src/views/daily_thing_item.dart:43`](lib/src/views/daily_thing_item.dart:43): Manages expansion and tap actions for the item.
-  - `initState()`, `didUpdateWidget(...)` [`lib/src/views/daily_thing_item.dart:47`](lib/src/views/daily_thing_item.dart:47): Syncs expansion state with parent.
-  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:62`](lib/src/views/daily_thing_item.dart:62): Formats minutes, reps, percentage (with % symbol), or check for display. For PERCENTAGE type, shows the value with % symbol (e.g., "75%").
-  - `_hasIncompleteProgress(DailyThing item)` [`lib/src/views/daily_thing_item.dart:78`](lib/src/views/daily_thing_item.dart:78): Detects if a timer was started but not finished today.
-  - `_showEditNoteDialog(BuildContext context, DailyThing item)`: Shows a dialog to edit the note for an item.
-  - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:101`](lib/src/views/daily_thing_item.dart:101): Draws the row UI and handles tap actions (timer for MINUTES, toggle for CHECK, input dialog for REPS, percentage dialog for PERCENTAGE).
+- `DailyThingItem` class [`lib/src/views/daily_thing_item.dart:11`](lib/src/views/daily_thing_item.dart:11): A single task row with controls and quick actions.
+- `_DailyThingItemState` class [`lib/src/views/daily_thing_item.dart:45`](lib/src/views/daily_thing_item.dart:45): Manages expansion and tap actions for the item.
+  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:88`](lib/src/views/daily_thing_item.dart:88): Formats minutes, reps, percentage, trend, or check for display.
+  - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:107`](lib/src/views/daily_thing_item.dart:107): Draws the row UI and handles tap actions.
 
 ## lib/src/views/daily_things_view.dart
-- `DailyThingsView` class [`lib/src/views/daily_things_view.dart:20`](lib/src/views/daily_things_view.dart:20): The home screen that lists all tasks and actions.
-- `_DailyThingsViewState` class [`lib/src/views/daily_things_view.dart:27`](lib/src/views/daily_things_view.dart:27): Loads, filters, reorders, and manages dialogs/snackbars.
-  - `_dataManager` [`lib/src/views/daily_things_view.dart:29`](lib/src/views/daily_things_view.dart:29): Handles loading and saving items.
-  - `_dailyThings` [`lib/src/views/daily_things_view.dart:30`](lib/src/views/daily_things_view.dart:30): In-memory list of tasks.
-  - `_isExpanded` / `_expansionTileKeys` [`lib/src/views/daily_things_view.dart:31`](lib/src/views/daily_things_view.dart:31): Tracks which rows are expanded.
-  - `_hasShownCompletionSnackbar`, `_allTasksCompleted` [`lib/src/views/daily_things_view.dart:38`](lib/src/views/daily_things_view.dart:38): Status for daily completion celebration.
-  - `_showOnlyDueItems`, `_hideWhenDone` [`lib/src/views/daily_things_view.dart:39`](lib/src/views/daily_things_view.dart:39): Controls filtering and hiding.
-  - `_motivationCheckedThisBuild` [`lib/src/views/daily_things_view.dart:41`](lib/src/views/daily_things_view.dart:41): Ensures motivation dialog is shown once per day.
-  - `_allExpanded` [`lib/src/views/daily_things_view.dart:42`](lib/src/views/daily_things_view.dart:42): Tracks expand/collapse all state.
-  - `_updateAvailable` [`lib/src/views/daily_things_view.dart:43`](lib/src/views/daily_things_view.dart:43): Tracks if a new update is available.
-  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/daily_things_view.dart:45`](lib/src/views/daily_things_view.dart:45): Controls for customizable motivational messages.
-  - `initState()` / `dispose()` [`lib/src/views/daily_things_view.dart:52`](lib/src/views/daily_things_view.dart:52): Lifecycle to subscribe/unsubscribe, kick off loading, and check for updates.
-  - `_loadHideWhenDoneSetting()` / `_refreshHideWhenDoneSetting()` [`lib/src/views/daily_things_view.dart:75`](lib/src/views/daily_things_view.dart:75): Reads and updates the "hide done" preference.
-  - `_loadMotivationalMessageSettings()` [`lib/src/views/daily_things_view.dart:85`](lib/src/views/daily_things_view.dart:85): Loads motivational message settings from SharedPreferences.
-  - `_loadData()` [`lib/src/views/daily_things_view.dart:113`](lib/src/views/daily_things_view.dart:113): Loads items and checks if everything is done.
-  - `_refreshDisplay()` [`lib/src/views/daily_things_view.dart:131`](lib/src/views/daily_things_view.dart:131): Forces a rebuild and reloads items.
-  - `_openAddDailyItemPopup()` [`lib/src/views/daily_things_view.dart:144`](lib/src/views/daily_things_view.dart:144): Opens the screen to add a new task.
-  - `_editDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:160`](lib/src/views/daily_things_view.dart:160): Opens the edit screen and updates the list on return.
-  - `_deleteDailyThing(DailyThing item)` [`lib/src/views/daily_things_view.dart:193`](lib/src/views/daily_things_view.dart:193): Confirms and deletes a task, then refreshes.
-  - `_duplicateItem(DailyThing item)` [`lib/src/views/daily_things_view.dart:225`](lib/src/views/daily_things_view.dart:225): Creates a copy of a task and saves it.
-  - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:265`](lib/src/views/daily_things_view.dart:265): Opens the minutes timer in full screen.
-  - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:427`](lib/src/views/daily_things_view.dart:427): Prompts to enter reps and saves them.
-  - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:434`](lib/src/views/daily_things_view.dart:434): Prompts to enter percentage (0-100%) via slider and saves them.
-  - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:439`](lib/src/views/daily_things_view.dart:439): Exports all items/history to JSON.
-  - `_saveTemplateToFile()` [`lib/src/views/daily_things_view.dart:452`](lib/src/views/daily_things_view.dart:452): Exports all items without history to a template JSON file.
-  - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:465`](lib/src/views/daily_things_view.dart:465): Imports tasks from a JSON file and saves them.
-  - `_loadTemplateFromFile()` [`lib/src/views/daily_things_view.dart:485`](lib/src/views/daily_things_view.dart:485): Imports template tasks from a JSON file, adjusts dates to today, and adds or replaces existing items.
-  - `_resetAllData()` [`lib/src/views/daily_things_view.dart:535`](lib/src/views/daily_things_view.dart:535): Resets all data and clears the UI immediately.
-  - `_checkForUpdate()` [`lib/src/views/daily_things_view.dart:550`](lib/src/views/daily_things_view.dart:550): Checks for updates and shows a pulsing icon.
-  - `_handleUpdate()` [`lib/src/views/daily_things_view.dart:566`](lib/src/views/daily_things_view.dart:566): Manages the multi-step update process with user feedback.
-  - `_getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/daily_things_view.dart:505`](lib/src/views/daily_things_view.dart:505): Finds the next not-done item's index.
-  - `_expandAllVisibleItems()` [`lib/src/views/daily_things_view.dart:509`](lib/src/views/daily_things_view.dart:509): Toggles expansion for filtered items.
-  - `_checkAndShowCompletionSnackbar()` [`lib/src/views/daily_things_view.dart:528`](lib/src/views/daily_things_view.dart:528): Shows a message when all tasks are done.
-  - `_maybeShowCompletionDialog()` [`lib/src/views/daily_things_view.dart:559`](lib/src/views/daily_things_view.dart:559): Shows customizable completion dialog once per day.
-  - `didChangeAppLifecycleState(...)` [`lib/src/views/daily_things_view.dart:592`](lib/src/views/daily_things_view.dart:592): Re-triggers motivation when app resumes.
-  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:599`](lib/src/views/daily_things_view.dart:599): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
-
-## lib/src/views/graph_view.dart
-- `GraphView` class [`lib/src/views/graph_view.dart:10`](lib/src/views/graph_view.dart:10): Shows a step line chart for one task's daily progress with time range filtering.
-  - `dailyThing` property [`lib/src/views/graph_view.dart:11`](lib/src/views/graph_view.dart:11): The item whose history is graphed.
-- `_GraphViewState` class [`lib/src/views/graph_view.dart:18`](lib/src/views/graph_view.dart:18): Calculates ranges and builds data points.
-  - `_minY` / `_maxY` [`lib/src/views/graph_view.dart:19`](lib/src/views/graph_view.dart:19): Y-axis bounds for the chart.
-  - `initState()` [`lib/src/views/graph_view.dart:24`](lib/src/views/graph_view.dart:24): Initializes and computes ranges.
-  - `_calculateRanges()` [`lib/src/views/graph_view.dart:30`](lib/src/views/graph_view.dart:30): Sets up chart limits depending on type and data.
-  - `build(BuildContext context)` [`lib/src/views/graph_view.dart:45`](lib/src/views/graph_view.dart:45): Renders the line chart with axes, grid, and tooltips.
-  - `_buildSpots()` [`lib/src/views/graph_view.dart:191`](lib/src/views/graph_view.dart:191): Produces a point per day from history for plotting.
-  - `_getAllDatesFromStartToToday()` [`lib/src/views/graph_view.dart:227`](lib/src/views/graph_view.dart:227): Builds the full date range shown.
-  - `_generateDateRange(DateTime start, DateTime end)` [`lib/src/views/graph_view.dart:250`](lib/src/views/graph_view.dart:250): Helper to create consecutive dates for the chart.
-
-## lib/src/views/app_bar.dart
-- `DailyThingsAppBar` class [`lib/src/views/app_bar.dart:12`](lib/src/views/app_bar.dart:12): A custom AppBar widget that manages the app's main actions and overflow menu.
-  - Props `updateAvailable`, `onOpenAddDailyItemPopup`, `onRefreshHideWhenDoneSetting`, `onRefreshDisplay`, `onExpandAllVisibleItems`, `onLoadHistoryFromFile`, `onSaveHistoryToFile`, `onLoadTemplateFromFile`, `onSaveTemplateToFile`, `onResetAllData`, `dailyThings`, `hideWhenDone`, `allExpanded`, `showOnlyDueItems`, `onShowAboutDialog`, `onToggleShowOnlyDueItems`, `log` [`lib/src/views/app_bar.dart:13`](lib/src/views/app_bar.dart:13): Inputs and callbacks for the AppBar behavior.
-- `_DailyThingsAppBarState` class [`lib/src/views/app_bar.dart:65`](lib/src/views/app_bar.dart:65): Manages the state and rendering of the AppBar.
-  - `build(BuildContext context)` [`lib/src/views/app_bar.dart:67`](lib/src/views/app_bar.dart:67): Renders the AppBar with actions and overflow menu.
+- `DailyThingsView` class [`lib/src/views/daily_things_view.dart:25`](lib/src/views/daily_things_view.dart:25): The home screen that lists all tasks and actions.
+- `_DailyThingsViewState` class [`lib/src/views/daily_things_view.dart:32`](lib/src/views/daily_things_view.dart:32): Loads, filters, reorders, and manages dialogs/snackbars.
+  - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:629`](lib/src/views/daily_things_view.dart:629): Prompts to enter reps and saves them.
+  - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:640`](lib/src/views/daily_things_view.dart:640): Prompts to enter percentage (0-100%) via slider and saves them.
+  - `_showTrendInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:651`](lib/src/views/daily_things_view.dart:651): Prompts to enter trend and saves it.
+  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:738`](lib/src/views/daily_things_view.dart:738): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
 
 ## lib/src/views/help_view.dart
 - `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.
@@ -238,61 +174,28 @@ This document provides a map of the project, listing the location of all functio
   - `item`/`dataManager`/`onSuccess` [`lib/src/views/percentage_input_dialog.dart:8`](lib/src/views/percentage_input_dialog.dart:8): Inputs for saving today's percentage and updating UI.
   - `build(BuildContext context)` [`lib/src/views/percentage_input_dialog.dart:36`](lib/src/views/percentage_input_dialog.dart:36): Renders a comprehensive percentage input UI with slider, numeric input field, visual feedback, and action buttons. Uses theme colors (orange when not entered, blue when entered).
   - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/percentage_input_dialog.dart:86`](lib/src/views/percentage_input_dialog.dart:86): Validates and saves percentage (0-100) for today, then calls success. Handles both slider and text input validation.
-  - Features real-time synchronization between slider and text input, proper keyboard handling, and visual feedback for current percentage value.
+
+## lib/src/views/trend_input_dialog.dart
+- `TrendInputDialog` class [`lib/src/views/trend_input_dialog.dart:6`](lib/src/views/trend_input_dialog.dart:6): Dialog to enter trend for the day.
+- `_TrendInputDialogState` class [`lib/src/views/trend_input_dialog.dart:20`](lib/src/views/trend_input_dialog.dart:20): Manages the state for the trend input dialog.
+  - `build(BuildContext context)` [`lib/src/views/trend_input_dialog.dart:23`](lib/src/views/trend_input_dialog.dart:23): Renders the trend input dialog.
+  - `_buildTrendButton(BuildContext context, String text, double value)` [`lib/src/views/trend_input_dialog.dart:38`](lib/src/views/trend_input_dialog.dart:38): Renders a button for a trend option.
+  - `_handleSubmit(BuildContext context, double selectedValue)` [`lib/src/views/trend_input_dialog.dart:47`](lib/src/views/trend_input_dialog.dart:47): Saves the selected trend value.
 
 ## lib/src/views/settings_view.dart
 - `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters, data actions, and backup configuration.
 - `_SettingsViewState` class [`lib/src/views/settings_view.dart:15`](lib/src/views/settings_view.dart:15): Loads preferences and handles save/reset.
-  - State variables for motivational messages: `_showStartOfDayMessage`, `_startOfDayMessageText`, `_showCompletionMessage`, `_completionMessageText` [`lib/src/views/settings_view.dart:20`](lib/src/views/settings_view.dart:20): Controls for customizable motivational messages.
-  - State variable for grace period: `_gracePeriodDays` [`lib/src/views/settings_view.dart:26`](lib/src/views/settings_view.dart:26): Controls the number of days before penalties are applied.
-  - State variable for screen dimmer: `_dimScreenMode` [`lib/src/views/settings_view.dart:29`](lib/src/views/settings_view.dart:29): Controls whether the screen dims during timer sessions.
-  - State variables for backup settings: `_backupEnabled`, `_backupLocation`, `_backupRetentionDays`, `_lastBackupTime` [`lib/src/views/settings_view.dart:33`](lib/src/views/settings_view.dart:33): Controls for automatic backup configuration.
-  - `initState()` / `_loadSettings()` [`lib/src/views/settings_view.dart:44`](lib/src/views/settings_view.dart:44): Initializes and fetches stored values including backup settings.
-  - `_saveSettings()` [`lib/src/views/settings_view.dart:93`](lib/src/views/settings_view.dart:93): Persists all settings including backup configuration.
-  - `_selectBackupLocation()` [`lib/src/views/settings_view.dart:113`](lib/src/views/settings_view.dart:113): Opens directory picker for backup location selection.
-  - `_createManualBackup()` [`lib/src/views/settings_view.dart:133`](lib/src/views/settings_view.dart:133): Creates a manual backup on demand.
-  - `_resetAllData()` [`lib//src/views/settings_view.dart:169`](lib/src/views/settings_view.dart:169): Clears stored data and confirms.
-- `build(BuildContext context)` [`lib/src/views/settings_view.dart:224`](lib/src/views/settings_view.dart:224): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, backup configuration section, and warning icon on reset button.
+  - `build(BuildContext context)` [`lib/src/views/settings_view.dart:224`](lib/src/views/settings_view.dart:224): Renders the settings UI with motivational message controls, grace period slider, screen dimmer toggle, backup configuration section, and warning icon on reset button.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.
 - `_HistoryViewState` class [`lib/src/views/history_view.dart:15`](lib/src/views/history_view.dart:15): Manages the state for the history view.
-  - `_history` [`lib/src/views/history_view.dart:16`](lib/src/views/history_view.dart:16): Local copy of the history entries.
-  - `_dataManager` [`lib/src/views/history_view.dart:17`](lib/src/views/history_view.dart:17): Handles data saving.
-  - `initState()` [`lib/src/views/history_view.dart:20`](lib/src/views/history_view.dart:20): Initializes the local history list.
-  - `_saveChanges()` [`lib/src/views/history_view.dart:26`](lib/src/views/history_view.dart:26): Shows a confirmation dialog and saves changes.
-  - `_startAddingEntry()` [`lib/src/views/history_view.dart:90`](lib/src/views/history_view.dart:90): Starts the process of adding a new entry.
-  - `_saveNewEntry()` [`lib/src/views/history_view.dart:103`](lib/src/views/history_view.dart:103): Validates and saves a new entry.
-  - `_cancelAddingEntry()` [`lib/src/views/history_view.dart:133`](lib/src/views/history_view.dart:133): Cancels the process of adding a new entry.
   - `build(BuildContext context)` [`lib/src/views/history_view.dart:55`](lib/src/views/history_view.dart:55): Renders the history list with editable fields.
-  - "Done" checkbox `onChanged` handler for new entries [`lib/src/views/history_view.dart:450`](lib/src/views/history_view.dart:450): Copies target value to actual value when a new entry is marked as done.
-  - "Done" checkbox `onChanged` handler for existing entries [`lib/src/views/history_view.dart:550`](lib/src/views/history_view.dart:550): Copies target value to actual value when an entry is marked as done.
-
 
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.
-  - `item`/`dataManager`/`onExitCallback` [`lib/src/views/timer_view.dart:12`](lib/src/views/timer_view.dart:12): Inputs for running and saving timer progress.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
-  - `_showNoteDialog()`: Shows a dialog to view and edit the note for an item.
-  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:46`](lib/src/views/timer_view.dart:46): Calculates the total time elapsed, including persisted history and the current session.
-  - State variables for screen dimmer: `_dimScreenMode`, `_isDimming`, `_dimTimer`, `_dimOpacity` [`lib/src/views/timer_view.dart:54`](lib/src/views/timer_view.dart:54): Controls for the screen dimmer feature.
-  - `_loadDimScreenPreference()` / `_saveDimScreenPreference()` [`lib/src/views/timer_view.dart:61`](lib/src/views/timer_view.dart:61): Loads and saves the screen dimmer preference.
-  - `_toggleDimScreenMode()` [`lib/src/views/timer_view.dart:68`](lib/src/views/timer_view.dart:68): Toggles the screen dimmer mode and immediately applies changes if timer is running.
-  - `_startDimmingProcess()` [`lib/src/views/timer_view.dart:80`](lib/src/views/timer_view.dart:80): Starts the gradual dimming process over 10 seconds.
-  - `_restoreScreenBrightness()` [`lib/src/views/timer_view.dart:107`](lib/src/views/timer_view.dart:107): Restores screen brightness and cancels dimming.
-  - `_toggleTimer()` [`lib/src/views/timer_view.dart:177`](lib/src/views/timer_view.dart:177): Starts, pauses, or continues the timer. Starts overtime mode when 'Continue' is pressed after timer finishes. Initiates screen dimming when enabled.
-  - `_runCountdown()` / `_runOvertime()` [`lib/src/views/timer_view.dart:216`](lib/src/views/timer_view.dart:216): Main timer loops for countdown and overtime, run by `_toggleTimer`.
-  - `_onTimerComplete()` [`lib/src/views/timer_view.dart:233`](lib/src/views/timer_view.dart:233): Plays a sound, pauses the timer, restores screen brightness, and automatically saves the completed progress.
-  - `_exitTimerDisplay()` [`lib/src/views/timer_view.dart:245`](lib/src/views/timer_view.dart:245): Handles exiting the screen, restores screen brightness, shows a dialog for partial progress or updating the final overtime value. Pauses timer before showing dialogs.
-  - `_saveProgress()` [`lib/src/views/timer_view.dart:308`](lib/src/views/timer_view.dart:308): A unified method to save or update today's history entry, preventing duplicates.
-  - System back button handler [`lib/src/views/timer_view.dart:591`](lib/src/views/timer_view.dart:591): Pauses timer before exiting when back button is pressed.
-  - `initState()` [`lib/src/views/timer_view.dart:117`](lib/src/views/timer_view.dart:117): Initializes the timer state and enables fullscreen mode.
-  - `dispose()` [`lib/src/views/timer_view.dart:173`](lib/src/views/timer_view.dart:173): Cleans up resources, cancels timers, and disables fullscreen mode.
   - `build(BuildContext context)` [`lib/src/views/timer_view.dart:395`](lib/src/views/timer_view.dart:395): Renders the main UI with a responsive timer, info text, comment field, and controls. Includes the screen dimmer overlay.
-  - `_buildCountdownView()` / `_buildOvertimeView()` [`lib/src/views/timer_view.dart:471`](lib/src/views/timer_view.dart:471): Builds the main timer display using Roboto Mono monospace font, LayoutBuilder and FittedBox to maximize its size.
-  - `_buildCommentField()` [`lib/src/views/timer_view.dart:507`](lib/src/views/timer_view.dart:507): Displays a clickable 'add a comment' text that transforms into a `TextField` on focus.
-  - `_getButtonText()` [`lib/src/views/timer_view.dart:457`](lib/src/views/timer_view.dart:457): Determines the label for the main action button ('Start', 'Pause', or 'Continue').
-  - `_buildTopInfoRow()` [`lib/src/views/timer_view.dart:525`](lib/src/views/timer_view.dart:525): Builds the top row with the item name and screen dimmer menu (three vertical dots).
 
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
@@ -323,62 +226,3 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/widgets/filtering_helpers.dart
 - `filterDisplayedItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:4`](lib/src/views/widgets/filtering_helpers.dart:4): Filters the list of daily things to be displayed based on showItemsDueToday and hideWhenDone rules.
 - `calculateDueItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:48`](lib/src/views/widgets/filtering_helpers.dart:48): Calculates the list of items that are due today for completion status calculation.
-
-## .github/workflows/release.yml
-- Release workflow [`/.github/workflows/release.yml`](/.github/workflows/release.yml): GitHub Actions workflow for building and releasing the application with different versioning options.
-  - "minor-from-main" option: Increments the MINOR version number for releases from the main branch (fixed to properly increment minor instead of patch)
-  - "patch-from-main" option: Increments the PATCH version number for releases from the main branch
-  - "major-from-dev" option: Increments the MAJOR version number for releases from the dev branch
-  - "minor-from-dev" option: Increments the MINOR version number for releases from the dev branch
-
-## .github/workflows/dev-test.yml
-- Dev Test workflow [`/.github/workflows/dev-test.yml`](/.github/workflows/dev-test.yml): GitHub Actions workflow for running tests and analysis on the dev branch.
-  - Runs `flutter test` and `flutter analyze` on every push to the dev branch.
-  - Uses `actions/checkout@v4` and `subosito/flutter-action@v2`.
-  - Caches Flutter dependencies for faster builds.
-  - Includes a step to install `flutter_launcher_icons`.
-
-## specs/increment_logic.md
-- Increment Logic specification [`/specs/increment_logic.md`](/specs/increment_logic.md): Detailed specification for how the increment logic should work.
-  - Defines how `todayValue` is calculated based on `lastCompletedDate`, `gracePeriod`, and `frequencyInDays`.
-  - Includes scenarios for completed yesterday, missed within grace period, missed beyond grace period, and start date is today.
-  - The logic is implemented in `lib/src/core/increment_calculator.dart`.
-
-## specs/display_value.md
-- Display Value specification [`/specs/display_value.md`](/specs/display_value.md): Detailed specification for how the display value should be calculated.
-  - Defines how `displayValue` is calculated for each `ItemType`.
-  - For `MINUTES`, it shows `todayValue` if the timer hasn't started, or the actual elapsed minutes if the timer has been started/completed.
-  - For `REPS`, it shows the `actualValue` entered for today if it exists, otherwise shows the `todayValue`.
-  - For `CHECK`, it shows the `todayValue` (0.0 for not done, 1.0 for done).
-  - For `PERCENTAGE`, it shows the `actualValue` entered for today if it exists (formatted with % symbol), otherwise shows the `todayValue` (0.0).
-  - The logic is implemented in `lib/src/core/increment_calculator.dart`.
-
-## specs/timer_value.md
-- Timer Value specification [`/specs/timer_value.md`](/specs/timer_value.md): Detailed specification for how the timer value should be calculated.
-  - Defines how the timer value is calculated based on `todayValue` and `actualValue`.
-  - The timer starts with `todayValue - actualValue`.
-  - The logic is implemented in `lib/src/views/timer_view.dart`.
-
-## specs/intervals.md
-- Intervals specification [`/specs/intervals.md`](/specs/intervals.md): Detailed specification for how intervals should work.
-  - Defines how `isDueToday` is calculated based on `intervalType` and `frequencyInDays` or `weekdays`.
-  - The logic is implemented in `lib/src/models/daily_thing.dart`.
-
-## specs/dimmer.md
-- Dimmer specification [`/specs/dimmer.md`](/specs/dimmer.md): Detailed specification for how the screen dimmer should work.
-  - Defines how the screen dimmer should be implemented in `lib/src/views/timer_view.dart`.
-  - The dimmer should be a user-configurable setting.
-  - The dimmer should gradually dim the screen over 10 seconds.
-  - The dimmer should restore the screen brightness when the timer is paused or finished.
-
-## specs/graph.md
-- Graph specification [`/specs/graph.md`](/specs/graph.md): Detailed specification for how the graph should work.
-  - Defines how the graph should be implemented in `lib/src/views/graph_view.dart`.
-  - The graph should be a step line chart.
-  - The graph should show the `actualValue` for each day.
-  - The graph should have a configurable time range.
-
-## specs/ANDROID_SIGNING_FIX.md
-- Android Signing Fix specification [`/specs/ANDROID_SIGNING_FIX.md`](/specs/ANDROID_SIGNING_FIX.md): Detailed specification for how to fix the Android signing issue.
-  - Defines how to create a new keystore and update the `key.properties` file.
-  - The logic is implemented in `android/app/build.gradle.kts`.
