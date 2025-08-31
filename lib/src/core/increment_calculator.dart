@@ -273,6 +273,19 @@ class IncrementCalculator {
       }
     }
 
+    // Percentage: show actual value if entered today (like REPS)
+    if (item.itemType == ItemType.percentage) {
+      final todaysEntry = item.history.where((entry) {
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        return entryDate == todayDate && entry.actualValue != null;
+      }).toList();
+
+      if (todaysEntry.isNotEmpty) {
+        return todaysEntry.first.actualValue!;
+      }
+    }
+
     // Default: show today's target value
     return calculateTodayValue(item);
   }
@@ -295,6 +308,11 @@ class IncrementCalculator {
       }
     }
 
+    // For PERCENTAGE items, done if any value is entered (> 0)
+    if (item.itemType == ItemType.percentage) {
+      return currentValue > 0.0;
+    }
+
     return determineStatus(item, currentValue) == Status.green;
   }
 
@@ -306,6 +324,11 @@ class IncrementCalculator {
     // For CHECK items, simple logic: green if checked (1.0), red if unchecked (0.0)
     if (item.itemType == ItemType.check) {
       return currentValue >= 1.0 ? Status.green : Status.red;
+    }
+
+    // For PERCENTAGE items, green if any value is entered (> 0), red if not entered (0)
+    if (item.itemType == ItemType.percentage) {
+      return currentValue > 0.0 ? Status.green : Status.red;
     }
 
     if (increment > 0) {

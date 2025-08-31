@@ -108,7 +108,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final startValue = double.tryParse(_startValueController.text) ?? 0.0;
       final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-      
+
       if (startValue == endValue) {
         // If values are the same, just update the display without changing the actual values
         _updateIncrementMinutesAndSecondsFields(
@@ -247,11 +247,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
   void _updateIncrementField() {
     if (_isUpdatingFromIncrement) return;
-    
+
     // Check if start and end values are the same
     final startValue = double.tryParse(_startValueController.text) ?? 0.0;
     final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-    
+
     if (startValue == endValue) {
       // If values are the same, just update the display without changing the actual values
       _updateIncrementMinutesAndSecondsFields(
@@ -259,7 +259,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       setState(() {});
       return;
     }
-    
+
     if (_incrementController != null) {
       final increment = _calculateIncrement();
       _incrementController!.text = increment;
@@ -279,12 +279,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     // Check if start and end values are the same
     final startValue = double.tryParse(_startValueController.text) ?? 0.0;
     final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-    
+
     if (startValue == endValue) {
       // If values are the same, don't update duration
       return;
     }
-    
+
     _isUpdatingFromIncrement = true;
     try {
       final minutes = int.tryParse(_incrementMinutesController.text) ?? 0;
@@ -321,12 +321,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     // Check if start and end values are the same
     final startValue = double.tryParse(_startValueController.text) ?? 0.0;
     final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-    
+
     if (startValue == endValue) {
       // If values are the same, don't update duration
       return;
     }
-    
+
     _isUpdatingFromIncrement = true;
     try {
       final increment = double.tryParse(_incrementController!.text) ?? 0.0;
@@ -381,15 +381,16 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           'yyyy-MM-dd',
         ).parse(_startDateController.text.trim());
 
-        // For CHECK items, use default values since the fields are hidden
+        // For CHECK and PERCENTAGE items, use default values since the fields are hidden
         final double startValue;
         final int duration;
         final double endValue;
 
-        if (_selectedItemType == ItemType.check) {
-          startValue = 0.0; // Always start unchecked
-          duration = 1; // Duration is irrelevant for check items
-          endValue = 1.0; // End value is checked state
+        if (_selectedItemType == ItemType.check ||
+            _selectedItemType == ItemType.percentage) {
+          startValue = 0.0; // Always start at 0%
+          duration = 1; // Duration is irrelevant for check/percentage items
+          endValue = 1.0; // End value is 100%
         } else {
           startValue = double.parse(_startValueController.text.trim());
           duration = int.parse(_durationController.text.trim());
@@ -468,7 +469,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           category: _categoryController.text.isEmpty
               ? 'None'
               : _categoryController.text,
-          isPaused: widget.dailyThing?.isPaused ?? false, // Preserve pause state
+          isPaused:
+              widget.dailyThing?.isPaused ?? false, // Preserve pause state
           intervalType: finalIntervalType,
           intervalValue: finalIntervalValue,
           intervalWeekdays: finalIntervalWeekdays,
@@ -477,7 +479,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           subdivisions: int.tryParse(_subdivisionsController.text) ??
               widget.dailyThing?.subdivisions, // Preserve subdivisions
           subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath ??
-              widget.dailyThing?.subdivisionBellSoundPath, // Preserve subdivision bell
+              widget.dailyThing
+                  ?.subdivisionBellSoundPath, // Preserve subdivision bell
           notes: _notesController.text.isNotEmpty
               ? _notesController.text
               : widget.dailyThing?.notes, // Preserve notes
@@ -515,7 +518,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     final duration = int.tryParse(_durationController.text) ?? 0;
 
     if (_selectedItemType != ItemType.minutes &&
-        _selectedItemType != ItemType.reps) {
+        _selectedItemType != ItemType.reps &&
+        _selectedItemType != ItemType.percentage) {
       return '';
     }
 
@@ -535,7 +539,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           }
         }
         return '$valueText $intervalText';
-      } else {
+      } else if (_selectedItemType == ItemType.reps) {
         // reps
         final valueText = startValue.toStringAsFixed(0);
         String intervalText = '';
@@ -551,6 +555,24 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         }
         final unitText = startValue == 1.0 ? ' rep' : ' reps';
         return '$valueText$unitText $intervalText';
+      } else if (_selectedItemType == ItemType.percentage) {
+        // percentage
+        final valueText = startValue.toStringAsFixed(0);
+        String intervalText = '';
+        if (_selectedIntervalType == IntervalType.byDays) {
+          intervalText =
+              _intervalValue == 1 ? 'per day' : 'every $_intervalValue days';
+        } else {
+          if (_selectedWeekdays.isNotEmpty) {
+            intervalText = 'on ${_selectedWeekdays.length} selected weekdays';
+          } else {
+            intervalText = 'weekly';
+          }
+        }
+        return '$valueText% $intervalText';
+      } else {
+        // This should not happen, but return empty string as fallback
+        return '';
       }
     }
 
@@ -600,6 +622,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     } else if (_selectedItemType == ItemType.reps) {
       startLabel = 'Start (reps)';
       goalLabel = 'Goal (reps)';
+    } else if (_selectedItemType == ItemType.percentage) {
+      startLabel = 'Start (%)';
+      goalLabel = 'Goal (%)';
     } else {
       startLabel = 'Start Value';
       goalLabel = 'End Value';
@@ -665,7 +690,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   items: ItemType.values.map((type) {
                     IconData icon;
                     String name;
-                    
+
                     switch (type) {
                       case ItemType.minutes:
                         icon = Icons.timer;
@@ -679,8 +704,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         icon = Icons.check_circle;
                         name = 'Checkmark';
                         break;
+                      case ItemType.percentage:
+                        icon = Icons.percent;
+                        name = 'Percentage';
+                        break;
                     }
-                    
+
                     return DropdownMenuItem(
                       value: type,
                       child: Row(
@@ -834,8 +863,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     ),
                   ],
                 ),
-                // Hide start/end values and duration for CHECK items
-                if (_selectedItemType != ItemType.check) ...[
+                // Hide start/end values and duration for CHECK and PERCENTAGE items
+                if (_selectedItemType != ItemType.check &&
+                    _selectedItemType != ItemType.percentage) ...[
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -887,8 +917,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         child: TextFormField(
                           controller: _durationController,
                           enabled: () {
-                            final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                            final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                            final startValue =
+                                double.tryParse(_startValueController.text) ??
+                                    0.0;
+                            final endValue =
+                                double.tryParse(_endValueController.text) ??
+                                    0.0;
                             return startValue != endValue;
                           }(),
                           decoration: InputDecoration(
@@ -896,8 +930,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             hintText: '30',
                             prefixIcon: const Icon(Icons.schedule),
                             enabled: () {
-                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                              final startValue =
+                                  double.tryParse(_startValueController.text) ??
+                                      0.0;
+                              final endValue =
+                                  double.tryParse(_endValueController.text) ??
+                                      0.0;
                               return startValue != endValue;
                             }(),
                           ),
@@ -912,12 +950,16 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             }
                           },
                           validator: (value) {
-                            final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                            final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-                            
+                            final startValue =
+                                double.tryParse(_startValueController.text) ??
+                                    0.0;
+                            final endValue =
+                                double.tryParse(_endValueController.text) ??
+                                    0.0;
+
                             // Skip validation if start and end values are the same
                             if (startValue == endValue) return null;
-                            
+
                             if (value == null || value.isEmpty) {
                               return 'Please enter a duration';
                             }
@@ -941,16 +983,24 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                                 child: TextFormField(
                                   controller: _incrementMinutesController,
                                   enabled: () {
-                                    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                                    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                    final startValue = double.tryParse(
+                                            _startValueController.text) ??
+                                        0.0;
+                                    final endValue = double.tryParse(
+                                            _endValueController.text) ??
+                                        0.0;
                                     return startValue != endValue;
                                   }(),
                                   decoration: InputDecoration(
                                     labelText: 'Incr. Min',
                                     hintText: '0',
                                     enabled: () {
-                                      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                                      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                      final startValue = double.tryParse(
+                                              _startValueController.text) ??
+                                          0.0;
+                                      final endValue = double.tryParse(
+                                              _endValueController.text) ??
+                                          0.0;
                                       return startValue != endValue;
                                     }(),
                                   ),
@@ -969,16 +1019,24 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                                 child: TextFormField(
                                   controller: _incrementSecondsController,
                                   enabled: () {
-                                    final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                                    final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                    final startValue = double.tryParse(
+                                            _startValueController.text) ??
+                                        0.0;
+                                    final endValue = double.tryParse(
+                                            _endValueController.text) ??
+                                        0.0;
                                     return startValue != endValue;
                                   }(),
                                   decoration: InputDecoration(
                                     labelText: 'Sec',
                                     hintText: '0',
                                     enabled: () {
-                                      final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                                      final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                      final startValue = double.tryParse(
+                                              _startValueController.text) ??
+                                          0.0;
+                                      final endValue = double.tryParse(
+                                              _endValueController.text) ??
+                                          0.0;
                                       return startValue != endValue;
                                     }(),
                                   ),
@@ -1000,16 +1058,24 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           child: TextFormField(
                             controller: _incrementController,
                             enabled: () {
-                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                              final startValue =
+                                  double.tryParse(_startValueController.text) ??
+                                      0.0;
+                              final endValue =
+                                  double.tryParse(_endValueController.text) ??
+                                      0.0;
                               return startValue != endValue;
                             }(),
                             decoration: InputDecoration(
                               labelText: 'Increment',
                               hintText: '0.0',
                               enabled: () {
-                                final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                                final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+                                final startValue = double.tryParse(
+                                        _startValueController.text) ??
+                                    0.0;
+                                final endValue =
+                                    double.tryParse(_endValueController.text) ??
+                                        0.0;
                                 return startValue != endValue;
                               }(),
                             ),
@@ -1022,12 +1088,16 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                               }
                             },
                             validator: (value) {
-                              final startValue = double.tryParse(_startValueController.text) ?? 0.0;
-                              final endValue = double.tryParse(_endValueController.text) ?? 0.0;
-                              
+                              final startValue =
+                                  double.tryParse(_startValueController.text) ??
+                                      0.0;
+                              final endValue =
+                                  double.tryParse(_endValueController.text) ??
+                                      0.0;
+
                               // Skip validation if start and end values are the same
                               if (startValue == endValue) return null;
-                              
+
                               if (value == null || value.isEmpty) {
                                 return 'Please enter an increment';
                               }

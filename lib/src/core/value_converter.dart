@@ -12,9 +12,24 @@ class ValueConverter {
       if (original.itemType == ItemType.check) {
         return value; // 0 or 1, no change needed
       }
+      // From percentage to anything else
+      if (original.itemType == ItemType.percentage) {
+        // Convert percentage (0-100) to other types
+        if (newType == ItemType.check) {
+          return value >= 100 ? 1.0 : 0.0; // 100% = done, else not done
+        }
+        // For minutes/reps, scale percentage to a reasonable value
+        return value; // Keep as is for now (percentage value as minutes/reps)
+      }
       // From minutes/reps to check
       if (newType == ItemType.check) {
         return value != 0 ? 1.0 : 0.0;
+      }
+      // From minutes/reps to percentage
+      if (newType == ItemType.percentage) {
+        // Convert minutes/reps to percentage (0-100)
+        // For now, treat any non-zero value as 100%, zero as 0%
+        return value != 0 ? 100.0 : 0.0;
       }
       // For all other conversions (minutes <-> reps)
       return value;

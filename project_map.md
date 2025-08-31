@@ -24,6 +24,10 @@ This document provides a map of the project, listing the location of all functio
   - `toDecimal()` [`lib/src/core/time_converter.dart:94`](lib/src/core/time_converter.dart:94): Converts to decimal minutes.
   - `toTotalSeconds()` [`lib/src/core/time_converter.dart:99`](lib/src/core/time_converter.dart:99): Converts to total seconds.
 
+## lib/src/core/value_converter.dart
+- `ValueConverter` class [`lib/src/core/value_converter.dart:1`](lib/src/core/value_converter.dart:1): Handles conversions between different item types when changing task types.
+  - `convert(DailyThing original, ItemType newType)` [`lib/src/core/value_converter.dart:5`](lib/src/core/value_converter.dart:5): Converts a DailyThing from one type to another, handling value conversions appropriately. Now includes PERCENTAGE type conversions: from percentage to check (100% = done), from minutes/reps to percentage (non-zero = 100%), and preserves percentage values when converting to minutes/reps.
+
 ## lib/src/core/increment_calculator.dart
 - `IncrementCalculator` class [`lib/src/core/increment_calculator.dart:9`](lib/src/core/increment_calculator.dart:9): Calculates targets, display values, and status for daily items.
   - Static variable `_gracePeriodDays` [`lib/src/core/increment_calculator.dart:10`](lib/src/core/increment_calculator.dart:10): Stores the configurable grace period.
@@ -97,7 +101,7 @@ This document provides a map of the project, listing the location of all functio
 - `IntervalType` enum [`lib/src/models/interval_type.dart:1`](lib/src/models/interval_type.dart:1): Defines whether an item repeats by a number of days or on specific weekdays.
 
 ## lib/src/models/item_type.dart
-- `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, or check.
+- `ItemType` enum [`lib/src/models/item_type.dart:1`](lib/src/models/item_type.dart:1): The type of task: minutes, reps, check, or percentage.
 
 ## lib/src/services/backup_service.dart
 - `BackupService` class [`lib/src/services/backup_service.dart:9`](lib/src/services/backup_service.dart:9): Handles automatic backups with user-configurable settings.
@@ -131,7 +135,7 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/theme/color_palette.dart
 - `ColorPalette` class [`lib/src/theme/color_palette.dart:3`](lib/src/theme/color_palette.dart:3): Defines the app colors used across the UI.
   - Constants like `primaryBlue`, `darkBackground`, `cardBackground`, `inputBackground`, `lightText`, `blackText`, `secondaryText`, `warningOrange`, `partialYellow`, `onPartialYellow`, `scrollbarThumb` [`lib/src/theme/color_palette.dart:4`](lib/src/theme/color_palette.dart:4): Named colors for consistent styling.
-  - Notes: `warningOrange` is used for undone/error, `partialYellow` with `onPartialYellow` highlights partial progress.
+  - Notes: `warningOrange` is used for undone/error states (including PERCENTAGE items with no entry), `primaryBlue` is used for completed/entered states (including PERCENTAGE items with values entered), `partialYellow` with `onPartialYellow` highlights partial progress.
 
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:10`](lib/src/views/add_edit_daily_item_view.dart:10): Screen to create or edit a daily task.
@@ -159,10 +163,10 @@ This document provides a map of the project, listing the location of all functio
   - Props `item`, `dataManager`, `onEdit`, `onDelete`, `onDuplicate`, `showFullscreenTimer`, `showRepsInputDialog`, `checkAndShowCompletionSnackbar`, `isExpanded`, `onExpansionChanged`, `allTasksCompleted`, `onItemChanged` [`lib/src/views/daily_thing_item.dart:10`](lib/src/views/daily_thing_item.dart:10): Inputs and callbacks for the row behavior.
 - `_DailyThingItemState` class [`lib/src/views/daily_thing_item.dart:43`](lib/src/views/daily_thing_item.dart:43): Manages expansion and tap actions for the item.
   - `initState()`, `didUpdateWidget(...)` [`lib/src/views/daily_thing_item.dart:47`](lib/src/views/daily_thing_item.dart:47): Syncs expansion state with parent.
-  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:62`](lib/src/views/daily_thing_item.dart:62): Formats minutes, reps, or check for display.
+  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:62`](lib/src/views/daily_thing_item.dart:62): Formats minutes, reps, percentage (with % symbol), or check for display. For PERCENTAGE type, shows the value with % symbol (e.g., "75%").
   - `_hasIncompleteProgress(DailyThing item)` [`lib/src/views/daily_thing_item.dart:78`](lib/src/views/daily_thing_item.dart:78): Detects if a timer was started but not finished today.
   - `_showEditNoteDialog(BuildContext context, DailyThing item)`: Shows a dialog to edit the note for an item.
-  - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:101`](lib/src/views/daily_thing_item.dart:101): Draws the row UI and handles tap actions (timer/check/reps).
+  - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:101`](lib/src/views/daily_thing_item.dart:101): Draws the row UI and handles tap actions (timer for MINUTES, toggle for CHECK, input dialog for REPS, percentage dialog for PERCENTAGE).
 
 ## lib/src/views/daily_things_view.dart
 - `DailyThingsView` class [`lib/src/views/daily_things_view.dart:20`](lib/src/views/daily_things_view.dart:20): The home screen that lists all tasks and actions.
@@ -187,6 +191,7 @@ This document provides a map of the project, listing the location of all functio
   - `_duplicateItem(DailyThing item)` [`lib/src/views/daily_things_view.dart:225`](lib/src/views/daily_things_view.dart:225): Creates a copy of a task and saves it.
   - `_showFullscreenTimer(DailyThing item)` [`lib/src/views/daily_things_view.dart:265`](lib/src/views/daily_things_view.dart:265): Opens the minutes timer in full screen.
   - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:427`](lib/src/views/daily_things_view.dart:427): Prompts to enter reps and saves them.
+  - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:434`](lib/src/views/daily_things_view.dart:434): Prompts to enter percentage (0-100%) via slider and saves them.
   - `_saveHistoryToFile()` [`lib/src/views/daily_things_view.dart:439`](lib/src/views/daily_things_view.dart:439): Exports all items/history to JSON.
   - `_saveTemplateToFile()` [`lib/src/views/daily_things_view.dart:452`](lib/src/views/daily_things_view.dart:452): Exports all items without history to a template JSON file.
   - `_loadHistoryFromFile()` [`lib/src/views/daily_things_view.dart:465`](lib/src/views/daily_things_view.dart:465): Imports tasks from a JSON file and saves them.
@@ -227,6 +232,13 @@ This document provides a map of the project, listing the location of all functio
   - `item`/`dataManager`/`onSuccess` [`lib/src/views/reps_input_dialog.dart:8`](lib/src/views/reps_input_dialog.dart:8): Inputs for saving today's reps and updating UI.
   - `build(BuildContext context)` [`lib/src/views/reps_input_dialog.dart:21`](lib/src/views/reps_input_dialog.dart:21): Renders the input field and buttons.
   - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/reps_input_dialog.dart:61`](lib/src/views/reps_input_dialog.dart:61): Validates and saves reps for today, then calls success.
+
+## lib/src/views/percentage_input_dialog.dart
+- `PercentageInputDialog` class [`lib/src/views/percentage_input_dialog.dart:7`](lib/src/views/percentage_input_dialog.dart:7): Dialog to enter percentage completion (0-100%) for a task with slider and text input.
+  - `item`/`dataManager`/`onSuccess` [`lib/src/views/percentage_input_dialog.dart:8`](lib/src/views/percentage_input_dialog.dart:8): Inputs for saving today's percentage and updating UI.
+  - `build(BuildContext context)` [`lib/src/views/percentage_input_dialog.dart:36`](lib/src/views/percentage_input_dialog.dart:36): Renders a comprehensive percentage input UI with slider, numeric input field, visual feedback, and action buttons. Uses theme colors (orange when not entered, blue when entered).
+  - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/percentage_input_dialog.dart:86`](lib/src/views/percentage_input_dialog.dart:86): Validates and saves percentage (0-100) for today, then calls success. Handles both slider and text input validation.
+  - Features real-time synchronization between slider and text input, proper keyboard handling, and visual feedback for current percentage value.
 
 ## lib/src/views/settings_view.dart
 - `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters, data actions, and backup configuration.
@@ -338,6 +350,7 @@ This document provides a map of the project, listing the location of all functio
   - For `MINUTES`, it shows `todayValue` if the timer hasn't started, or the actual elapsed minutes if the timer has been started/completed.
   - For `REPS`, it shows the `actualValue` entered for today if it exists, otherwise shows the `todayValue`.
   - For `CHECK`, it shows the `todayValue` (0.0 for not done, 1.0 for done).
+  - For `PERCENTAGE`, it shows the `actualValue` entered for today if it exists (formatted with % symbol), otherwise shows the `todayValue` (0.0).
   - The logic is implemented in `lib/src/core/increment_calculator.dart`.
 
 ## specs/timer_value.md

@@ -9,10 +9,11 @@ This document provides essential context for any AI Coding Agent to understand t
 
 # Project Overview
 
-**Daily Inc** is a Flutter application designed to help users build and maintain daily habits through incremental progress. It allows users to track three types of activities:
+**Daily Inc** is a Flutter application designed to help users build and maintain daily habits through incremental progress. It allows users to track four types of activities:
 - **MINUTES**: Activities tracked with a countdown timer (e.g., meditation for 10 minutes).
 - **REPS**: Activities tracked by repetitions, with a target that increases over time (e.g., push-ups, starting at 5 reps).
 - **CHECK**: Simple daily tasks that are either completed or not (e.g., drink water).
+- **PERCENTAGE**: Activities tracked by percentage completion (0-100%), with no start/end values or duration (e.g., project progress).
 
 The core concept is that targets for REPS and MINUTES tasks adjust automatically based on rules defined when the task is created (start value, end value, duration in days) and the user's history (whether they completed the task on previous days). Missing days might pause progress or apply a penalty, while consistent completion leads to increments.
 

@@ -2,10 +2,11 @@
 
 A Flutter app to **do the important things daily**, and **increase incrementally** over time.
 
-Track three types of activities:
+Track four types of activities:
 - MINUTES: run a countdown timer for time-based activities
 - REPS: gradually increase your repetitions
 - CHECK: mark when done
+- PERCENTAGE: track progress by percentage (0-100%)
 
 ## Features (at a glance)
 - Daily targets auto-adjust using simple rules

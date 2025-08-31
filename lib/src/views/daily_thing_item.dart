@@ -17,6 +17,7 @@ class DailyThingItem extends StatefulWidget {
   final Future<bool> Function(DailyThing) onConfirmSnooze;
   final Function(DailyThing, {bool startInOvertime}) showFullscreenTimer;
   final Function(DailyThing) showRepsInputDialog;
+  final Function(DailyThing) showPercentageInputDialog;
   final Function checkAndShowCompletionSnackbar;
   final bool isExpanded;
   final Function(bool) onExpansionChanged;
@@ -33,6 +34,7 @@ class DailyThingItem extends StatefulWidget {
     required this.onConfirmSnooze,
     required this.showFullscreenTimer,
     required this.showRepsInputDialog,
+    required this.showPercentageInputDialog,
     required this.checkAndShowCompletionSnackbar,
     required this.isExpanded,
     required this.onExpansionChanged,
@@ -87,6 +89,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
       return TimeConverter.toSmartString(value);
     } else if (itemType == ItemType.reps) {
       return '${value.round()}x';
+    } else if (itemType == ItemType.percentage) {
+      return '${value.round()}%';
     } else {
       return value >= 1 ? '✅' : '❌';
     }
@@ -141,7 +145,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
             childrenPadding: EdgeInsets.zero,
             collapsedShape:
                 const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            shape:
+                const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
             title: Padding(
               padding: EdgeInsets.zero,
               child: Row(
@@ -165,7 +170,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   : _hasIncompleteProgress(widget.item)
                                       ? ColorPalette.partialYellow
                                       : widget.allTasksCompleted
-                                          ? Theme.of(context).colorScheme.primary
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
                                           : Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(width: 12),
@@ -214,7 +221,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             }
                           } else if (widget.item.itemType == ItemType.check) {
                             final today = DateTime.now();
-                            final todayDate = DateTime(today.year, today.month, today.day);
+                            final todayDate =
+                                DateTime(today.year, today.month, today.day);
                             final existingEntry = widget.item.todayHistoryEntry;
 
                             final wasDone = existingEntry?.doneToday ?? false;
@@ -227,7 +235,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               doneToday: newDone,
                             );
 
-                            final history = List<HistoryEntry>.from(widget.item.history);
+                            final history =
+                                List<HistoryEntry>.from(widget.item.history);
                             if (existingEntry != null) {
                               final index = history.indexOf(existingEntry);
                               history[index] = newEntry;
@@ -239,12 +248,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               setState(() {});
                             }
 
-                            await widget.dataManager
-                                .updateDailyThing(widget.item.copyWith(history: history));
+                            await widget.dataManager.updateDailyThing(
+                                widget.item.copyWith(history: history));
                             widget.onItemChanged?.call();
                             widget.checkAndShowCompletionSnackbar();
                           } else if (widget.item.itemType == ItemType.reps) {
                             widget.showRepsInputDialog(widget.item);
+                          } else if (widget.item.itemType ==
+                              ItemType.percentage) {
+                            widget.showPercentageInputDialog(widget.item);
                           }
                         },
                         child: SizedBox(
@@ -258,11 +270,13 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   ? Theme.of(context).colorScheme.primary
                                   : _hasIncompleteProgress(widget.item)
                                       ? ColorPalette.partialYellow
-                                      : Theme.of(context).colorScheme.error,
+                                      : widget.item.itemType ==
+                                              ItemType.percentage
+                                          ? ColorPalette.warningOrange
+                                          : Theme.of(context).colorScheme.error,
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                  color: Colors.transparent,
-                                  width: 0),
+                                  color: Colors.transparent, width: 0),
                             ),
                             alignment: Alignment.center,
                             child: widget.item.itemType == ItemType.check
@@ -274,18 +288,21 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                             : Icons.close),
                                     color: _hasIncompleteProgress(widget.item)
                                         ? ColorPalette.onPartialYellow
-                                        : Theme.of(context).colorScheme.onPrimary,
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
                                     size: 16.0,
                                   )
                                 : Text(
                                     _formatValue(widget.item.displayValue,
                                         widget.item.itemType),
                                     style: TextStyle(
-                                        color: _hasIncompleteProgress(widget.item)
-                                            ? ColorPalette.onPartialYellow
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary,
+                                        color:
+                                            _hasIncompleteProgress(widget.item)
+                                                ? ColorPalette.onPartialYellow
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
                                         fontSize: 14),
                                   ),
                           ),
@@ -313,8 +330,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                     widget.item.category,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color:
-                                          Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -407,7 +425,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 iconSize: 20,
                                 visualDensity: const VisualDensity(
                                     horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onDuplicate(widget.item),
+                                onPressed: () =>
+                                    widget.onDuplicate(widget.item),
                               ),
                               IconButton(
                                 tooltip: 'delete the item',
@@ -479,14 +498,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                     }
 
                                     String numStr = absVal.toStringAsFixed(2);
-                                    numStr =
-                                        numStr.replaceFirst(RegExp(r'\.00'), '');
+                                    numStr = numStr.replaceFirst(
+                                        RegExp(r'\.00'), '');
                                     numStr =
                                         numStr.replaceFirst(RegExp(r'0'), '');
                                     return '$sign$numStr';
                                   })(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     fontSize: 13,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -581,7 +601,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 iconSize: 20,
                                 visualDensity: const VisualDensity(
                                     horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onDuplicate(widget.item),
+                                onPressed: () =>
+                                    widget.onDuplicate(widget.item),
                               ),
                               IconButton(
                                 tooltip: 'delete the item',

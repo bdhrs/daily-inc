@@ -230,6 +230,7 @@ class HelpView extends StatelessWidget {
             onConfirmSnooze: (_) => Future.value(false),
             showFullscreenTimer: (item, {startInOvertime = false}) {},
             showRepsInputDialog: (_) {},
+            showPercentageInputDialog: (_) {},
             checkAndShowCompletionSnackbar: () {},
             isExpanded: true, // Keep it expanded for the help view
             onExpansionChanged: (_) {},

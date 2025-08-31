@@ -7,6 +7,7 @@ import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
+import 'package:daily_inc/src/views/percentage_input_dialog.dart';
 import 'package:daily_inc/src/views/app_bar.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
@@ -301,7 +302,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
       updatedEntry = todayEntry.copyWith(snoozed: !wasSnoozed);
     } else {
       updatedEntry = HistoryEntry(
-        date: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        date: DateTime(
+            DateTime.now().year, DateTime.now().month, DateTime.now().day),
         targetValue: currentItem.todayValue,
         doneToday: false,
         snoozed: true,
@@ -576,6 +578,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       onConfirmSnooze: _handleSnooze,
       showFullscreenTimer: _showFullscreenTimer,
       showRepsInputDialog: _showRepsInputDialog,
+      showPercentageInputDialog: _showPercentageInputDialog,
       checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,
       isExpanded: _isExpanded[item.id] ?? false,
       onExpansionChanged: (expanded) {
@@ -607,6 +610,18 @@ class _DailyThingsViewState extends State<DailyThingsView>
     showDialog(
       context: context,
       builder: (context) => RepsInputDialog(
+        item: item,
+        dataManager: _dataManager,
+        onSuccess: _checkAndShowCompletionSnackbar,
+      ),
+    );
+  }
+
+  void _showPercentageInputDialog(DailyThing item) {
+    _log.info('Showing percentage input dialog for: ${item.name}');
+    showDialog(
+      context: context,
+      builder: (context) => PercentageInputDialog(
         item: item,
         dataManager: _dataManager,
         onSuccess: _checkAndShowCompletionSnackbar,
@@ -799,7 +814,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Load Template'),
-              content: const Text('Do you want to add the template items to your existing items, or replace all your current items with the template?'),
+              content: const Text(
+                  'Do you want to add the template items to your existing items, or replace all your current items with the template?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop('add'),
@@ -825,7 +841,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           // Create new items with today's date and no history
           final today = DateTime.now();
           final todayDate = DateTime(today.year, today.month, today.day);
-          
+
           final newItems = loadedTemplateThings.map((templateItem) {
             return templateItem.copyWith(
               id: null, // Generate new IDs
@@ -837,28 +853,33 @@ class _DailyThingsViewState extends State<DailyThingsView>
           setState(() {
             if (choice == 'replace') {
               _dailyThings = newItems;
-            } else { // add
+            } else {
+              // add
               _dailyThings.addAll(newItems);
             }
           });
 
           // Save the loaded data to the default storage
           await _dataManager.saveData(_dailyThings);
-          _log.info('Template loaded and saved to default storage successfully.');
+          _log.info(
+              'Template loaded and saved to default storage successfully.');
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Template ${choice == 'replace' ? 'replaced' : 'added'} successfully'),
+                content: Text(
+                    'Template ${choice == 'replace' ? 'replaced' : 'added'} successfully'),
                 duration: const Duration(seconds: 2),
-                backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+                backgroundColor:
+                    Theme.of(context).snackBarTheme.backgroundColor,
                 behavior: SnackBarBehavior.floating,
               ),
             );
           }
         }
       } else {
-        _log.info('No template items loaded from file or file selection was cancelled.');
+        _log.info(
+            'No template items loaded from file or file selection was cancelled.');
       }
     } catch (e, s) {
       _log.severe('Failed to load template', e, s);
