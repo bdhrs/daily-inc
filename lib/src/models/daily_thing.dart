@@ -1,6 +1,7 @@
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
+import 'package:daily_inc/src/models/status.dart';
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';

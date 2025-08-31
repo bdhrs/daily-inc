@@ -18,6 +18,7 @@ class DailyThingItem extends StatefulWidget {
   final Function(DailyThing, {bool startInOvertime}) showFullscreenTimer;
   final Function(DailyThing) showRepsInputDialog;
   final Function(DailyThing) showPercentageInputDialog;
+  final Function(DailyThing) showTrendInputDialog;
   final Function checkAndShowCompletionSnackbar;
   final bool isExpanded;
   final Function(bool) onExpansionChanged;
@@ -35,6 +36,7 @@ class DailyThingItem extends StatefulWidget {
     required this.showFullscreenTimer,
     required this.showRepsInputDialog,
     required this.showPercentageInputDialog,
+    required this.showTrendInputDialog,
     required this.checkAndShowCompletionSnackbar,
     required this.isExpanded,
     required this.onExpansionChanged,
@@ -91,6 +93,11 @@ class _DailyThingItemState extends State<DailyThingItem> {
       return '${value.round()}x';
     } else if (itemType == ItemType.percentage) {
       return '${value.round()}%';
+    } else if (itemType == ItemType.trend) {
+      if (value == -1.0) return '↘️';
+      if (value == 0.0) return '→';
+      if (value == 1.0) return '↗️';
+      return '❓'; // Handles -999.0 and any other unknown state
     } else {
       return value >= 1 ? '✅' : '❌';
     }
@@ -257,6 +264,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                           } else if (widget.item.itemType ==
                               ItemType.percentage) {
                             widget.showPercentageInputDialog(widget.item);
+                          } else if (widget.item.itemType == ItemType.trend) {
+                            widget.showTrendInputDialog(widget.item);
                           }
                         },
                         child: SizedBox(
@@ -270,8 +279,10 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   ? Theme.of(context).colorScheme.primary
                                   : _hasIncompleteProgress(widget.item)
                                       ? ColorPalette.partialYellow
-                                      : widget.item.itemType ==
-                                              ItemType.percentage
+                                      : (widget.item.itemType ==
+                                                  ItemType.percentage ||
+                                              widget.item.itemType ==
+                                                  ItemType.trend)
                                           ? ColorPalette.warningOrange
                                           : Theme.of(context).colorScheme.error,
                               borderRadius: BorderRadius.circular(4),

@@ -8,6 +8,7 @@ import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/percentage_input_dialog.dart';
+import 'package:daily_inc/src/views/trend_input_dialog.dart';
 import 'package:daily_inc/src/views/app_bar.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
@@ -579,6 +580,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       showFullscreenTimer: _showFullscreenTimer,
       showRepsInputDialog: _showRepsInputDialog,
       showPercentageInputDialog: _showPercentageInputDialog,
+      showTrendInputDialog: _showTrendInputDialog,
       checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,
       isExpanded: _isExpanded[item.id] ?? false,
       onExpansionChanged: (expanded) {
@@ -625,6 +627,18 @@ class _DailyThingsViewState extends State<DailyThingsView>
         item: item,
         dataManager: _dataManager,
         onSuccess: _checkAndShowCompletionSnackbar,
+      ),
+    );
+  }
+
+  void _showTrendInputDialog(DailyThing item) {
+    _log.info('Showing trend input dialog for: ${item.name}');
+    showDialog(
+      context: context,
+      builder: (context) => TrendInputDialog(
+        item: item,
+        dataManager: _dataManager,
+        onSuccess: _refreshDisplay,
       ),
     );
   }

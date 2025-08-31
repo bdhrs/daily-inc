@@ -2,6 +2,7 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
+import 'package:daily_inc/src/models/status.dart';
 
 class IncrementCalculator {
   static int _gracePeriodDays = 1; // Default to 1 day
@@ -286,6 +287,19 @@ class IncrementCalculator {
       }
     }
 
+    if (item.itemType == ItemType.trend) {
+      final todaysEntry = item.history.where((entry) {
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        return entryDate == todayDate && entry.actualValue != null;
+      }).toList();
+
+      if (todaysEntry.isNotEmpty) {
+        return todaysEntry.first.actualValue!;
+      }
+      return -999.0; // Sentinel for "not entered"
+    }
+
     // Default: show today's target value
     return calculateTodayValue(item);
   }
@@ -313,6 +327,11 @@ class IncrementCalculator {
       return currentValue > 0.0;
     }
 
+    if (item.itemType == ItemType.trend) {
+      // TREND is done if any value is entered
+      return currentValue != -999.0;
+    }
+
     return determineStatus(item, currentValue) == Status.green;
   }
 
@@ -331,6 +350,11 @@ class IncrementCalculator {
       return currentValue > 0.0 ? Status.green : Status.red;
     }
 
+    if (item.itemType == ItemType.trend) {
+      // TREND is considered "done" if any value is entered
+      return currentValue != -999.0 ? Status.green : Status.red;
+    }
+
     if (increment > 0) {
       // Incrementing case - green if currentValue meets or exceeds today's target
       return currentValue >= todayValue ? Status.green : Status.red;
@@ -344,4 +368,3 @@ class IncrementCalculator {
   }
 }
 
-enum Status { green, red }

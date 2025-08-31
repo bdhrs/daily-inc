@@ -21,6 +21,13 @@ class ValueConverter {
         // For minutes/reps, scale percentage to a reasonable value
         return value; // Keep as is for now (percentage value as minutes/reps)
       }
+      // From trend to anything else
+      if (original.itemType == ItemType.trend) {
+        if (newType == ItemType.check) {
+          return value == 1.0 ? 1.0 : 0.0; // Improving -> done
+        }
+        return value == 1.0 ? 1.0 : 0.0; // Improving -> 1, else 0
+      }
       // From minutes/reps to check
       if (newType == ItemType.check) {
         return value != 0 ? 1.0 : 0.0;
@@ -30,6 +37,13 @@ class ValueConverter {
         // Convert minutes/reps to percentage (0-100)
         // For now, treat any non-zero value as 100%, zero as 0%
         return value != 0 ? 100.0 : 0.0;
+      }
+      // To trend from other types
+      if (newType == ItemType.trend) {
+        if (original.itemType == ItemType.check) {
+          return value == 1.0 ? 1.0 : 0.0; // Done -> improving, not done -> same
+        }
+        return value != 0 ? 1.0 : 0.0; // non-zero -> improving, zero -> same
       }
       // For all other conversions (minutes <-> reps)
       return value;
