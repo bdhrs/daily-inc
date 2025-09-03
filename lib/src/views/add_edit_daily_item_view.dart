@@ -144,6 +144,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _subdivisionsController = TextEditingController(text: '1');
       // Initialize subdivision bell sound path for new items
       _selectedSubdivisionBellSoundPath = null;
+      
+      // Set default start and goal values to 30 for new MINUTES items
+      if (_selectedItemType == ItemType.minutes) {
+        _startValueController.text = '30.0';
+        _endValueController.text = '30.0';
+      }
     }
     _bellSoundController = TextEditingController(
         text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
@@ -754,9 +760,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
                     setState(() {
                       _selectedItemType = value;
-                      _startValueController.text =
-                          converted.startValue.toString();
-                      _endValueController.text = converted.endValue.toString();
+                      // Set default start and goal values to 30 for new MINUTES items
+                      if (value == ItemType.minutes && widget.dailyThing == null) {
+                        _startValueController.text = '30.0';
+                        _endValueController.text = '30.0';
+                      } else {
+                        _startValueController.text =
+                            converted.startValue.toString();
+                        _endValueController.text = converted.endValue.toString();
+                      }
                       _uniqueCategories = newCategories;
                       _categoryController.text = newCategoryText;
                     });
