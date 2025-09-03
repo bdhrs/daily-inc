@@ -158,6 +158,7 @@ This document provides a map of the project, listing the location of all functio
   - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:629`](lib/src/views/daily_things_view.dart:629): Prompts to enter reps and saves them.
   - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:640`](lib/src/views/daily_things_view.dart:640): Prompts to enter percentage (0-100%) via slider and saves them.
   - `_showTrendInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:651`](lib/src/views/daily_things_view.dart:651): Prompts to enter trend and saves it.
+  - `_showFullscreenTimer(DailyThing item, {bool startInOvertime = false})` [`lib/src/views/daily_things_view.dart:700`](lib/src/views/daily_things_view.dart:700): Shows the fullscreen timer view with navigation context.
   - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:738`](lib/src/views/daily_things_view.dart:738): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
 
 ## lib/src/views/help_view.dart
@@ -195,7 +196,12 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime.
-  - `build(BuildContext context)` [`lib/src/views/timer_view.dart:395`](lib/src/views/timer_view.dart:395): Renders the main UI with a responsive timer, info text, comment field, and controls. Includes the screen dimmer overlay.
+  - `build(BuildContext context)` method [`lib/src/views/timer_view.dart:395`](lib/src/views/timer_view.dart:395): Renders the main UI with a responsive timer, info text, comment field, and controls. Includes the screen dimmer overlay.
+  - `_navigateToNextTask()` method [`lib/src/views/timer_view.dart:550`](lib/src/views/timer_view.dart:550): Navigates to the next undone task in the list or exits to main UI.
+  - `_findNextUndoneTask()` method [`lib/src/views/timer_view.dart:500`](lib/src/views/timer_view.dart:500): Finds the next undone task in the list after the current item.
+## lib/src/views/widgets/next_task_arrow.dart
+- `NextTaskArrow` class [`lib/src/views/widgets/next_task_arrow.dart:6`](lib/src/views/widgets/next_task_arrow.dart:6): A pulsing arrow button that appears when a timer completes.
+  - `build(BuildContext context)` method [`lib/src/views/widgets/next_task_arrow.dart:45`](lib/src/views/widgets/next_task_arrow.dart:45): Renders a pulsing arrow icon positioned in the bottom right of the screen.
 
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
@@ -219,6 +225,10 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/widgets/add_history_entry_dialog.dart
 - `AddHistoryEntryDialog` class [`lib/src/views/widgets/add_history_entry_dialog.dart:7`](lib/src/views/widgets/add_history_entry_dialog.dart:7): A dialog to add a new history entry (currently unused).
+
+## lib/src/views/widgets/next_task_arrow.dart
+- `NextTaskArrow` class [`lib/src/views/widgets/next_task_arrow.dart:6`](lib/src/views/widgets/next_task_arrow.dart:6): A pulsing arrow button that appears when a timer completes.
+  - `build(BuildContext context)` method [`lib/src/views/widgets/next_task_arrow.dart:45`](lib/src/views/widgets/next_task_arrow.dart:45): Renders a pulsing arrow icon positioned in the bottom right of the screen.
 
 ## lib/src/views/widgets/visibility_and_expand_helpers.dart
 - `toggleExpansionForVisibleItems(...)` [`lib/src/views/widgets/visibility_and_expand_helpers.dart:3`](lib/src/views/widgets/visibility_and_expand_helpers.dart:3): Toggles the expansion state of visible items.

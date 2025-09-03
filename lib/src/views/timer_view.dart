@@ -3,7 +3,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
+import 'package:daily_inc/src/views/widgets/next_task_arrow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -20,6 +22,9 @@ class TimerView extends StatefulWidget {
   final DataManager dataManager;
   final VoidCallback onExitCallback;
   final bool startInOvertime;
+  final List<DailyThing>? allItems; // All items in the list for navigation
+  final int? currentItemIndex; // Index of current item in the list
+  final String? nextTaskName; // Name of the next task (for display when navigating)
 
   const TimerView({
     super.key,
@@ -27,6 +32,9 @@ class TimerView extends StatefulWidget {
     required this.dataManager,
     required this.onExitCallback,
     this.startInOvertime = false,
+    this.allItems,
+    this.currentItemIndex,
+    this.nextTaskName,
   });
 
   @override
@@ -47,6 +55,12 @@ class _TimerViewState extends State<TimerView> {
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   bool _showSubdivisions = true;
+  
+  // Next task navigation variables
+  bool _showNextTaskArrow = false;
+  bool _showNextTaskName = false;
+  String _nextTaskName = '';
+  Timer? _nextTaskNameTimer;
 
   late double _todaysTargetMinutes;
   late double _initialTargetSeconds;
@@ -282,6 +296,22 @@ class _TimerViewState extends State<TimerView> {
     _loadDimScreenPreference();
     // Load minimalist mode preference
     _loadMinimalistModePreference();
+    
+    // Initialize next task name if provided
+    if (widget.nextTaskName != null) {
+      _nextTaskName = widget.nextTaskName!;
+      _showNextTaskName = true;
+      
+      // Set timer to start fading out the name after 8 seconds, fully hidden by 10 seconds
+      _nextTaskNameTimer = Timer(const Duration(seconds: 8), () {
+        if (mounted) {
+          setState(() {
+            _showNextTaskName = false; // This will trigger the fade-out animation
+          });
+        }
+      });
+    }
+    
     _log.info('--- TIMER INITIALIZATION START ---');
     _log.info('Item Name: ${widget.item.name}');
     _log.info('Item Type: ${widget.item.itemType}');
@@ -361,6 +391,7 @@ class _TimerViewState extends State<TimerView> {
     _commentController.dispose();
     _commentFocusNode.dispose();
     _subdivisionAudioPlayer.dispose();
+    _nextTaskNameTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -501,6 +532,9 @@ class _TimerViewState extends State<TimerView> {
         _completedSubdivisions = widget.item.subdivisions!;
       }
       _log.info('Timer paused in onTimerComplete');
+      
+      // Show the next task arrow when timer completes
+      _showNextTaskArrow = true;
     });
 
     // Disable wakelock immediately
@@ -677,6 +711,125 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Comment saved successfully.');
   }
 
+  /// Finds the next undone task in the list after the current item
+  DailyThing? _findNextUndoneTask() {
+    // If we don't have the full list or current index, we can't navigate
+    if (widget.allItems == null || widget.currentItemIndex == null) {
+      return null;
+    }
+
+    // Start from the next item
+    for (int i = widget.currentItemIndex! + 1; i < widget.allItems!.length; i++) {
+      final item = widget.allItems![i];
+      
+      // Check if the item is undone based on its type
+      switch (item.itemType) {
+        case ItemType.check:
+          if (!item.completedForToday) {
+            return item;
+          }
+          break;
+        case ItemType.reps:
+          // For reps, check if no actual value has been entered today
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+          final hasActualValueToday = item.history.any((entry) {
+            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+            return entryDate == todayDate && entry.actualValue != null;
+          });
+          if (!hasActualValueToday) {
+            return item;
+          }
+          break;
+        case ItemType.minutes:
+          // For minutes, check if not completed
+          if (!item.completedForToday) {
+            return item;
+          }
+          break;
+        case ItemType.percentage:
+          // For percentage, check if no entry for today or entry has 0 value
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+          final todayEntry = item.history.cast<HistoryEntry?>().firstWhere(
+            (entry) => entry != null && DateTime(entry.date.year, entry.date.month, entry.date.day) == todayDate,
+            orElse: () => null,
+          );
+          if (todayEntry == null || (todayEntry.actualValue ?? 0) == 0) {
+            return item;
+          }
+          break;
+        case ItemType.trend:
+          // For trend, check if no entry for today
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+          final hasEntryToday = item.history.any((entry) {
+            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+            return entryDate == todayDate;
+          });
+          if (!hasEntryToday) {
+            return item;
+          }
+          break;
+      }
+    }
+    
+    // No more undone tasks
+    return null;
+  }
+
+  /// Navigates to the next task or exits to main UI
+  void _navigateToNextTask() async {
+    final nextTask = _findNextUndoneTask();
+    
+    if (nextTask == null) {
+      // No more tasks, exit to main UI
+      await _exitTimerDisplay();
+      return;
+    }
+    
+    // Cancel any existing timer for showing task name
+    _nextTaskNameTimer?.cancel();
+    
+    String? nextTaskName;
+    // If it's another timer, prepare its name for display
+    if (nextTask.itemType == ItemType.minutes) {
+      nextTaskName = nextTask.name;
+    }
+    
+    // Navigate to the next task
+    if (mounted) {
+      // Cancel current timer
+      _timer?.cancel();
+      _dimTimer?.cancel();
+      WakelockPlus.disable();
+      
+      // Save current progress first
+      await _saveProgress();
+      
+      if (nextTask.itemType == ItemType.minutes) {
+        // Navigate to the next timer
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TimerView(
+              item: nextTask,
+              dataManager: widget.dataManager,
+              onExitCallback: widget.onExitCallback,
+              allItems: widget.allItems,
+              currentItemIndex: widget.allItems?.indexOf(nextTask),
+              nextTaskName: nextTaskName, // Pass the next task name
+            ),
+          ),
+        );
+      } else {
+        // For other task types, exit to main UI
+        widget.onExitCallback();
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
     return DailyThing(
       id: widget.item.id,
@@ -804,7 +957,19 @@ class _TimerViewState extends State<TimerView> {
                 ),
               ],
               title: _minimalistMode
-                  ? null
+                  ? AnimatedOpacity(
+                      opacity: _showNextTaskName ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 2000),
+                      child: Text(
+                        _nextTaskName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
                   : Text(
                       widget.item.name,
                       style: const TextStyle(
@@ -994,6 +1159,11 @@ class _TimerViewState extends State<TimerView> {
                 ),
               ),
             ),
+          // Next task arrow button
+          NextTaskArrow(
+            onTap: _navigateToNextTask,
+            isVisible: _showNextTaskArrow,
+          ),
         ],
       ),
     );

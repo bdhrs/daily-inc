@@ -336,6 +336,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
   void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
     _log.info('Showing fullscreen timer for: ${item.name}');
+    
+    // Find the index of the current item in the list
+    final currentIndex = _dailyThings.indexWhere((thing) => thing.id == item.id);
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -344,6 +348,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
           dataManager: _dataManager,
           onExitCallback: _refreshDisplay,
           startInOvertime: startInOvertime,
+          allItems: _dailyThings,
+          currentItemIndex: currentIndex,
         ),
       ),
     ).then((_) {
