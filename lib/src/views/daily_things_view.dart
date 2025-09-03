@@ -262,7 +262,18 @@ class _DailyThingsViewState extends State<DailyThingsView>
         subdivisions: item.subdivisions,
         subdivisionBellSoundPath: item.subdivisionBellSoundPath,
       );
-      await _dataManager.addDailyThing(duplicatedItem);
+      
+      // Instead of just adding to the end, insert right after the original item
+      final items = await _dataManager.loadData();
+      final originalIndex = items.indexWhere((element) => element.id == item.id);
+      if (originalIndex != -1) {
+        // Insert right after the original item
+        items.insert(originalIndex + 1, duplicatedItem);
+      } else {
+        // If original item not found, add to the end (fallback)
+        items.add(duplicatedItem);
+      }
+      await _dataManager.saveData(items);
       _refreshDisplay();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
