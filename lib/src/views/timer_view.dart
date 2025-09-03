@@ -24,7 +24,8 @@ class TimerView extends StatefulWidget {
   final bool startInOvertime;
   final List<DailyThing>? allItems; // All items in the list for navigation
   final int? currentItemIndex; // Index of current item in the list
-  final String? nextTaskName; // Name of the next task (for display when navigating)
+  final String?
+      nextTaskName; // Name of the next task (for display when navigating)
 
   const TimerView({
     super.key,
@@ -55,7 +56,7 @@ class _TimerViewState extends State<TimerView> {
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   bool _showSubdivisions = true;
-  
+
   // Next task navigation variables
   bool _showNextTaskArrow = false;
   bool _showNextTaskName = false;
@@ -70,9 +71,13 @@ class _TimerViewState extends State<TimerView> {
   bool _isDimming = false;
   Timer? _dimTimer;
   double _dimOpacity = 0.0;
-  
+
   // Minimalist mode variable
   bool _minimalistMode = false;
+
+  // Variables for fading out UI elements in minimalist mode
+  bool _shouldFadeUI = false;
+  Timer? _fadeUITimer;
 
   double get _currentElapsedTimeInMinutes {
     if (_isOvertime) {
@@ -118,7 +123,7 @@ class _TimerViewState extends State<TimerView> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('dimScreenMode', value);
   }
-  
+
   Future<void> _loadMinimalistModePreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -234,12 +239,46 @@ class _TimerViewState extends State<TimerView> {
       _restoreScreenBrightness();
     }
   }
-  
+
   void _toggleMinimalistMode() {
     setState(() {
       _minimalistMode = !_minimalistMode;
+
+      // Cancel fade UI timer when toggling minimalist mode
+      _cancelFadeUITimer();
+
+      // If turning off minimalist mode, make UI visible again
+      if (!_minimalistMode) {
+        _shouldFadeUI = false;
+      }
     });
     _saveMinimalistModePreference(_minimalistMode);
+  }
+
+  void _startFadeUITimer() {
+    // Cancel any existing fade timer
+    _cancelFadeUITimer();
+
+    // Start a new timer to fade UI after 1 second
+    _fadeUITimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _shouldFadeUI = true;
+        });
+      }
+    });
+  }
+
+  void _cancelFadeUITimer() {
+    _fadeUITimer?.cancel();
+    _fadeUITimer = null;
+
+    // Make UI visible again when canceling
+    if (_shouldFadeUI) {
+      setState(() {
+        _shouldFadeUI = false;
+      });
+    }
   }
 
   void _startDimmingProcess() {
@@ -296,22 +335,23 @@ class _TimerViewState extends State<TimerView> {
     _loadDimScreenPreference();
     // Load minimalist mode preference
     _loadMinimalistModePreference();
-    
+
     // Initialize next task name if provided
     if (widget.nextTaskName != null) {
       _nextTaskName = widget.nextTaskName!;
       _showNextTaskName = true;
-      
+
       // Set timer to start fading out the name after 8 seconds, fully hidden by 10 seconds
       _nextTaskNameTimer = Timer(const Duration(seconds: 8), () {
         if (mounted) {
           setState(() {
-            _showNextTaskName = false; // This will trigger the fade-out animation
+            _showNextTaskName =
+                false; // This will trigger the fade-out animation
           });
         }
       });
     }
-    
+
     _log.info('--- TIMER INITIALIZATION START ---');
     _log.info('Item Name: ${widget.item.name}');
     _log.info('Item Type: ${widget.item.itemType}');
@@ -392,6 +432,7 @@ class _TimerViewState extends State<TimerView> {
     _commentFocusNode.dispose();
     _subdivisionAudioPlayer.dispose();
     _nextTaskNameTimer?.cancel();
+    _fadeUITimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -408,6 +449,11 @@ class _TimerViewState extends State<TimerView> {
         // Start dimming process if enabled
         if (_dimScreenMode) {
           _startDimmingProcess();
+        }
+
+        // Start fade UI timer if in minimalist mode
+        if (_minimalistMode) {
+          _startFadeUITimer();
         }
 
         final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
@@ -434,6 +480,9 @@ class _TimerViewState extends State<TimerView> {
         _log.info('Timer paused, disabling wakelock.');
         _timer?.cancel();
         WakelockPlus.disable();
+
+        // Cancel fade UI timer when pausing
+        _cancelFadeUITimer();
       }
     });
   }
@@ -532,7 +581,7 @@ class _TimerViewState extends State<TimerView> {
         _completedSubdivisions = widget.item.subdivisions!;
       }
       _log.info('Timer paused in onTimerComplete');
-      
+
       // Show the next task arrow when timer completes
       _showNextTaskArrow = true;
     });
@@ -719,9 +768,11 @@ class _TimerViewState extends State<TimerView> {
     }
 
     // Start from the next item
-    for (int i = widget.currentItemIndex! + 1; i < widget.allItems!.length; i++) {
+    for (int i = widget.currentItemIndex! + 1;
+        i < widget.allItems!.length;
+        i++) {
       final item = widget.allItems![i];
-      
+
       // Check if the item is undone based on its type
       switch (item.itemType) {
         case ItemType.check:
@@ -734,7 +785,8 @@ class _TimerViewState extends State<TimerView> {
           final today = DateTime.now();
           final todayDate = DateTime(today.year, today.month, today.day);
           final hasActualValueToday = item.history.any((entry) {
-            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+            final entryDate =
+                DateTime(entry.date.year, entry.date.month, entry.date.day);
             return entryDate == todayDate && entry.actualValue != null;
           });
           if (!hasActualValueToday) {
@@ -752,9 +804,13 @@ class _TimerViewState extends State<TimerView> {
           final today = DateTime.now();
           final todayDate = DateTime(today.year, today.month, today.day);
           final todayEntry = item.history.cast<HistoryEntry?>().firstWhere(
-            (entry) => entry != null && DateTime(entry.date.year, entry.date.month, entry.date.day) == todayDate,
-            orElse: () => null,
-          );
+                (entry) =>
+                    entry != null &&
+                    DateTime(entry.date.year, entry.date.month,
+                            entry.date.day) ==
+                        todayDate,
+                orElse: () => null,
+              );
           if (todayEntry == null || (todayEntry.actualValue ?? 0) == 0) {
             return item;
           }
@@ -764,7 +820,8 @@ class _TimerViewState extends State<TimerView> {
           final today = DateTime.now();
           final todayDate = DateTime(today.year, today.month, today.day);
           final hasEntryToday = item.history.any((entry) {
-            final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+            final entryDate =
+                DateTime(entry.date.year, entry.date.month, entry.date.day);
             return entryDate == todayDate;
           });
           if (!hasEntryToday) {
@@ -773,7 +830,7 @@ class _TimerViewState extends State<TimerView> {
           break;
       }
     }
-    
+
     // No more undone tasks
     return null;
   }
@@ -781,32 +838,32 @@ class _TimerViewState extends State<TimerView> {
   /// Navigates to the next task or exits to main UI
   void _navigateToNextTask() async {
     final nextTask = _findNextUndoneTask();
-    
+
     if (nextTask == null) {
       // No more tasks, exit to main UI
       await _exitTimerDisplay();
       return;
     }
-    
+
     // Cancel any existing timer for showing task name
     _nextTaskNameTimer?.cancel();
-    
+
     String? nextTaskName;
     // If it's another timer, prepare its name for display
     if (nextTask.itemType == ItemType.minutes) {
       nextTaskName = nextTask.name;
     }
-    
+
     // Navigate to the next task
     if (mounted) {
       // Cancel current timer
       _timer?.cancel();
       _dimTimer?.cancel();
       WakelockPlus.disable();
-      
+
       // Save current progress first
       await _saveProgress();
-      
+
       if (nextTask.itemType == ItemType.minutes) {
         // Navigate to the next timer
         Navigator.pushReplacement(
@@ -859,7 +916,9 @@ class _TimerViewState extends State<TimerView> {
   Widget build(BuildContext context) {
     double elapsedMinutesInCurrentSubdivision = 0;
     double totalMinutesInCurrentSubdivision = 0;
-    if (!_isOvertime && widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+    if (!_isOvertime &&
+        widget.item.subdivisions != null &&
+        widget.item.subdivisions! > 1) {
       final double subdivisionDurationInMinutes =
           _todaysTargetMinutes / widget.item.subdivisions!;
       final double elapsedMinutesInCompletedSubdivisions =
@@ -887,74 +946,165 @@ class _TimerViewState extends State<TimerView> {
             backgroundColor: ColorPalette.darkBackground,
             appBar: AppBar(
               backgroundColor: ColorPalette.darkBackground,
+              automaticallyImplyLeading: !(_minimalistMode && !_isPaused),
+              leading: (_minimalistMode && !_isPaused)
+                  ? AnimatedOpacity(
+                      opacity: _shouldFadeUI ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () async {
+                          _log.info('Back button pressed');
+                          // If timer is running, pause it first, then exit.
+                          if (!_isPaused) {
+                            _toggleTimer();
+                          }
+                          await _exitTimerDisplay();
+                        },
+                      ),
+                    )
+                  : null,
               actions: [
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (String result) {
-                    if (result == 'toggle') {
-                      _toggleDimScreenMode();
-                    } else if (result == 'minimalist') {
-                      _toggleMinimalistMode();
-                    } else if (result == 'edit') {
-                      _editItem();
-                    } else if (result == 'view_note') {
-                      _showNoteDialog();
-                    }
-                  },
-                  itemBuilder: (BuildContext context) =>
-                      <PopupMenuEntry<String>>[
-                    PopupMenuItem<String>(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(_dimScreenMode
-                              ? Icons.brightness_high
-                              : Icons.brightness_low),
-                          const SizedBox(width: 8),
-                          Text(_dimScreenMode
-                              ? 'Turn Dim Screen Off'
-                              : 'Turn Dim Screen On'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'minimalist',
-                      child: Row(
-                        children: [
-                          Icon(_minimalistMode
-                              ? Icons.fullscreen
-                              : Icons.aspect_ratio),
-                          const SizedBox(width: 8),
-                          Text(_minimalistMode
-                              ? 'Turn Minimalist Mode Off'
-                              : 'Turn Minimalist Mode On'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.edit),
-                          const SizedBox(width: 8),
-                          const Text('Edit Item'),
-                        ],
-                      ),
-                    ),
-                    if (widget.item.notes != null &&
-                        widget.item.notes!.isNotEmpty)
+                if (!(_minimalistMode && !_isPaused))
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (String result) {
+                      if (result == 'toggle') {
+                        _toggleDimScreenMode();
+                      } else if (result == 'minimalist') {
+                        _toggleMinimalistMode();
+                      } else if (result == 'edit') {
+                        _editItem();
+                      } else if (result == 'view_note') {
+                        _showNoteDialog();
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
                       PopupMenuItem<String>(
-                        value: 'view_note',
+                        value: 'toggle',
                         child: Row(
                           children: [
-                            const Icon(Icons.note),
+                            Icon(_dimScreenMode
+                                ? Icons.brightness_high
+                                : Icons.brightness_low),
                             const SizedBox(width: 8),
-                            const Text('View Note'),
+                            Text(_dimScreenMode
+                                ? 'Turn Dim Screen Off'
+                                : 'Turn Dim Screen On'),
                           ],
                         ),
                       ),
-                  ],
-                ),
+                      PopupMenuItem<String>(
+                        value: 'minimalist',
+                        child: Row(
+                          children: [
+                            Icon(_minimalistMode
+                                ? Icons.fullscreen
+                                : Icons.aspect_ratio),
+                            const SizedBox(width: 8),
+                            Text(_minimalistMode
+                                ? 'Turn Minimalist Mode Off'
+                                : 'Turn Minimalist Mode On'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit),
+                            const SizedBox(width: 8),
+                            const Text('Edit Item'),
+                          ],
+                        ),
+                      ),
+                      if (widget.item.notes != null &&
+                          widget.item.notes!.isNotEmpty)
+                        PopupMenuItem<String>(
+                          value: 'view_note',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.note),
+                              const SizedBox(width: 8),
+                              const Text('View Note'),
+                            ],
+                          ),
+                        ),
+                    ],
+                  )
+                else
+                  AnimatedOpacity(
+                    opacity: _shouldFadeUI ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 500),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (String result) {
+                        if (result == 'toggle') {
+                          _toggleDimScreenMode();
+                        } else if (result == 'minimalist') {
+                          _toggleMinimalistMode();
+                        } else if (result == 'edit') {
+                          _editItem();
+                        } else if (result == 'view_note') {
+                          _showNoteDialog();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'toggle',
+                          child: Row(
+                            children: [
+                              Icon(_dimScreenMode
+                                  ? Icons.brightness_high
+                                  : Icons.brightness_low),
+                              const SizedBox(width: 8),
+                              Text(_dimScreenMode
+                                  ? 'Turn Dim Screen Off'
+                                  : 'Turn Dim Screen On'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'minimalist',
+                          child: Row(
+                            children: [
+                              Icon(_minimalistMode
+                                  ? Icons.fullscreen
+                                  : Icons.aspect_ratio),
+                              const SizedBox(width: 8),
+                              Text(_minimalistMode
+                                  ? 'Turn Minimalist Mode Off'
+                                  : 'Turn Minimalist Mode On'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.edit),
+                              const SizedBox(width: 8),
+                              const Text('Edit Item'),
+                            ],
+                          ),
+                        ),
+                        if (widget.item.notes != null &&
+                            widget.item.notes!.isNotEmpty)
+                          PopupMenuItem<String>(
+                            value: 'view_note',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.note),
+                                const SizedBox(width: 8),
+                                const Text('View Note'),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
               ],
               title: _minimalistMode
                   ? AnimatedOpacity(
@@ -1007,8 +1157,7 @@ class _TimerViewState extends State<TimerView> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: ColorPalette.lightText
-                                            .withAlpha(
-                                                (255 * 0.7).round()),
+                                            .withAlpha((255 * 0.7).round()),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -1019,8 +1168,7 @@ class _TimerViewState extends State<TimerView> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: ColorPalette.lightText
-                                              .withAlpha(
-                                                  (255 * 0.7).round()),
+                                              .withAlpha((255 * 0.7).round()),
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
@@ -1072,8 +1220,7 @@ class _TimerViewState extends State<TimerView> {
                                     )
                                   : Text(
                                       '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                                      key:
-                                          const ValueKey('full_mode_normal'),
+                                      key: const ValueKey('full_mode_normal'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 16,
@@ -1081,7 +1228,8 @@ class _TimerViewState extends State<TimerView> {
                                             .withAlpha((255 * 0.7).round()),
                                       ),
                                     )
-                          : const SizedBox.shrink(key: ValueKey('minimalist_mode')),
+                          : const SizedBox.shrink(
+                              key: ValueKey('minimalist_mode')),
                     ),
                     Expanded(
                       child: _isOvertime
@@ -1128,7 +1276,8 @@ class _TimerViewState extends State<TimerView> {
                                 ),
                               ],
                             )
-                          : const SizedBox.shrink(key: ValueKey('minimalist_mode_controls')),
+                          : const SizedBox.shrink(
+                              key: ValueKey('minimalist_mode_controls')),
                     ),
                   ],
                 ),
@@ -1247,8 +1396,10 @@ class _TimerViewState extends State<TimerView> {
 
   Widget _buildCommentField() {
     // In minimalist mode, only show comment field when timer is finished (at 0 seconds) or in overtime
-    final bool showCommentField = !_minimalistMode || _isOvertime || (_remainingSeconds <= 0 && !_isOvertime);
-    
+    final bool showCommentField = !_minimalistMode ||
+        _isOvertime ||
+        (_remainingSeconds <= 0 && !_isOvertime);
+
     return Opacity(
       opacity: showCommentField ? 1.0 : 0.0,
       child: IgnorePointer(
@@ -1267,12 +1418,12 @@ class _TimerViewState extends State<TimerView> {
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              border:
-                  _commentFocusNode.hasFocus || _commentController.text.isNotEmpty
-                      ? const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        )
-                      : InputBorder.none,
+              border: _commentFocusNode.hasFocus ||
+                      _commentController.text.isNotEmpty
+                  ? const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    )
+                  : InputBorder.none,
             ),
           ),
         ),
