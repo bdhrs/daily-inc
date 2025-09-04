@@ -97,6 +97,9 @@ The project uses standard Flutter commands for development and building, as deta
 - Always follow the existing code style and conventions when making changes.
 - When adding UI elements, follow Material Design principles and existing app styling.
 
+# Edits
+- If the edit fails, try to **EDIT THE WHOLE CODE BLOCK**. Edits within code blocks frequently fail.
+- If the edit fails again, **REWRITE THE WHOLE FILE**.
 
 # Code Style Guidelines
 - Use `flutter_lints` recommended rules from analysis_options.yaml

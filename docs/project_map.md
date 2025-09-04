@@ -243,3 +243,9 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/widgets/filtering_helpers.dart
 - `filterDisplayedItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:4`](lib/src/views/widgets/filtering_helpers.dart:4): Filters the list of daily things to be displayed based on showItemsDueToday and hideWhenDone rules.
 - `calculateDueItems(...)` [`lib/src/views/widgets/filtering_helpers.dart:48`](lib/src/views/widgets/filtering_helpers.dart:48): Calculates the list of items that are due today for completion status calculation.
+
+## lib/src/views/widgets/mini_graph_widget.dart
+- `MiniGraphWidget` class [`lib/src/views/widgets/mini_graph_widget.dart:8`](lib/src/views/widgets/mini_graph_widget.dart:8): A simplified graph widget showing the last 14 days of data for a daily item directly in the expanded view.
+  - `build(BuildContext context)` method [`lib/src/views/widgets/mini_graph_widget.dart:72`](lib/src/views/widgets/mini_graph_widget.dart:72): Renders a minimal FlChart-based graph with no labels, tooltips, or borders.
+  - `_buildSpots()` method [`lib/src/views/widgets/mini_graph_widget.dart:14`](lib/src/views/widgets/mini_graph_widget.dart:14): Extracts the last 14 days of history data for all item types.
+  - `_calculateMaxY(List<FlSpot> spots)` method [`lib/src/views/widgets/mini_graph_widget.dart:63`](lib/src/views/widgets/mini_graph_widget.dart:63): Calculates the Y-axis range for the graph based on data values.
