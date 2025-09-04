@@ -20,6 +20,42 @@ class TrendInputDialog extends StatefulWidget {
 }
 
 class _TrendInputDialogState extends State<TrendInputDialog> {
+  final TextEditingController _commentController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingComment();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _commentFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _loadExistingComment() {
+    final existingEntry = widget.item.todayHistoryEntry;
+    if (existingEntry != null && existingEntry.comment != null) {
+      _commentController.text = existingEntry.comment!;
+    }
+  }
+
+  String _formatSentenceCase(String text) {
+    if (text.isEmpty) return text;
+
+    // Split into sentences and capitalize first letter of each
+    final sentences = text.split('. ');
+    final formattedSentences = sentences.map((sentence) {
+      if (sentence.isEmpty) return sentence;
+      return sentence[0].toUpperCase() + sentence.substring(1);
+    }).toList();
+
+    return formattedSentences.join('. ');
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -32,6 +68,8 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
           _buildTrendButton(context, '→ Same', 0.0),
           const SizedBox(height: 8),
           _buildTrendButton(context, '↘️ Worse', -1.0),
+          const SizedBox(height: 16),
+          _buildCommentField(),
         ],
       ),
     );
@@ -47,6 +85,20 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
     );
   }
 
+  Widget _buildCommentField() {
+    return TextField(
+      controller: _commentController,
+      focusNode: _commentFocusNode,
+      decoration: const InputDecoration(
+        hintText: 'Add an optional comment',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      maxLines: 3,
+      textInputAction: TextInputAction.done,
+    );
+  }
+
   void _handleSubmit(BuildContext context, double selectedValue) async {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -57,6 +109,9 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
       targetValue: widget.item.todayValue, // Keep target value for consistency
       actualValue: selectedValue,
       doneToday: true, // Any selection marks it as done
+      comment: _commentController.text.isNotEmpty
+          ? _formatSentenceCase(_commentController.text)
+          : null,
     );
 
     final history = List<HistoryEntry>.from(widget.item.history);
@@ -71,7 +126,8 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
       history.add(newEntry);
     }
 
-    await widget.dataManager.updateDailyThing(widget.item.copyWith(history: history));
+    await widget.dataManager
+        .updateDailyThing(widget.item.copyWith(history: history));
     widget.onSuccess();
     Navigator.of(context).pop();
   }

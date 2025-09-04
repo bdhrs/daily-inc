@@ -114,6 +114,7 @@ The project uses standard Flutter commands for development and building, as deta
 
 # Completion
 - After completing any task, give a one line, lowercase, simple git commit message. DO NOT perform any git operations (e.g., git add, git commit) unless explicitly instructed by the user. Only provide the commit message.
+- DONT EVER RUN `git commit`
 
 
 # Important Notes for Roocode

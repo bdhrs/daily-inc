@@ -184,11 +184,13 @@ This document provides a map of the project, listing the location of all functio
   - `_handleSubmit(BuildContext, String, VoidCallback)` [`lib/src/views/percentage_input_dialog.dart:86`](lib/src/views/percentage_input_dialog.dart:86): Validates and saves percentage (0-100) for today, then calls success. Handles both slider and text input validation.
 
 ## lib/src/views/trend_input_dialog.dart
-- `TrendInputDialog` class [`lib/src/views/trend_input_dialog.dart:6`](lib/src/views/trend_input_dialog.dart:6): Dialog to enter trend for the day.
-- `_TrendInputDialogState` class [`lib/src/views/trend_input_dialog.dart:20`](lib/src/views/trend_input_dialog.dart:20): Manages the state for the trend input dialog.
-  - `build(BuildContext context)` [`lib/src/views/trend_input_dialog.dart:23`](lib/src/views/trend_input_dialog.dart:23): Renders the trend input dialog.
-  - `_buildTrendButton(BuildContext context, String text, double value)` [`lib/src/views/trend_input_dialog.dart:38`](lib/src/views/trend_input_dialog.dart:38): Renders a button for a trend option.
-  - `_handleSubmit(BuildContext context, double selectedValue)` [`lib/src/views/trend_input_dialog.dart:47`](lib/src/views/trend_input_dialog.dart:47): Saves the selected trend value.
+- `TrendInputDialog` class [`lib/src/views/trend_input_dialog.dart:6`](lib/src/views/trend_input_dialog.dart:6): Dialog to enter trend for the day with optional comment.
+- `_TrendInputDialogState` class [`lib/src/views/trend_input_dialog.dart:22`](lib/src/views/trend_input_dialog.dart:22): Manages the state for the trend input dialog, including comment handling.
+  - `build(BuildContext context)` [`lib/src/views/trend_input_dialog.dart:46`](lib/src/views/trend_input_dialog.dart:46): Renders the trend input dialog with comment field.
+  - `_buildTrendButton(BuildContext context, String text, double value)` [`lib/src/views/trend_input_dialog.dart:65`](lib/src/views/trend_input_dialog.dart:65): Renders a button for a trend option.
+  - `_buildCommentField()` [`lib/src/views/trend_input_dialog.dart:75`](lib/src/views/trend_input_dialog.dart:75): Renders the comment input field.
+  - `_handleSubmit(BuildContext context, double selectedValue)` [`lib/src/views/trend_input_dialog.dart:89`](lib/src/views/trend_input_dialog.dart:89): Saves the selected trend value with optional comment.
+  - `_loadExistingComment()` [`lib/src/views/trend_input_dialog.dart:39`](lib/src/views/trend_input_dialog.dart:39): Loads existing comment from today's history entry.
 
 ## lib/src/views/settings_view.dart
 - `SettingsView` class [`lib/src/views/settings_view.dart:8`](lib/src/views/settings_view.dart:8): Settings screen for filters, data actions, and backup configuration.
