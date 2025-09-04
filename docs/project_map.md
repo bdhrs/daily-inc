@@ -174,6 +174,7 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/help_view.dart
 - `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app with an exact simulation of the appbar layout and detailed explanations of all UI elements.
+  - `_createExampleHistory()` method [`lib/src/views/help_view.dart:507`](lib/src/views/help_view.dart:507): Creates realistic example history data starting from 5 minutes, incrementing by 40 seconds (0.6667 minutes) each day with skipped days to demonstrate graph functionality.
 
 ## lib/src/views/reps_input_dialog.dart
 - `RepsInputDialog` class [`lib/src/views/reps_input_dialog.dart:7`](lib/src/views/reps_input_dialog.dart:7): Dialog to enter how many reps you did today.

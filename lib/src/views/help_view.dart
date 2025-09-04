@@ -1,5 +1,6 @@
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
@@ -10,7 +11,7 @@ class HelpView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A dummy item for demonstration purposes
+    // A dummy item for demonstration purposes with realistic history data
     final dummyItem = DailyThing(
       id: 'dummy',
       name: 'Example Task',
@@ -19,8 +20,8 @@ class HelpView extends StatelessWidget {
       endValue: 25,
       duration: 30,
       icon: '🏃',
-      history: [],
-      startDate: DateTime.now(),
+      history: _createExampleHistory(),
+      startDate: DateTime.now().subtract(const Duration(days: 30)),
       category: 'Exercise',
     );
     return Scaffold(
@@ -499,5 +500,46 @@ class HelpView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Creates realistic example history data for the help view
+  /// Starting from 5 minutes, incrementing by 40 seconds (0.6667 minutes) each day
+  /// with some skipped days to make it realistic
+  List<HistoryEntry> _createExampleHistory() {
+    final history = <HistoryEntry>[];
+    final now = DateTime.now();
+    final startDate = now.subtract(const Duration(days: 30));
+    double currentValue = 5.0; // Start at 5 minutes
+    const increment = 40.0 / 60.0; // 40 seconds = 0.6667 minutes
+
+    for (int i = 0; i < 30; i++) {
+      final date = startDate.add(Duration(days: i));
+
+      // Skip some days to make it realistic (skip weekends occasionally)
+      final isWeekend =
+          date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+      final shouldSkip = (i % 7 == 0 && i > 0) || (isWeekend && i % 3 == 0);
+
+      if (!shouldSkip) {
+        // Add some variation - sometimes complete the full target, sometimes a bit less
+        final completedValue = currentValue * (0.8 + 0.4 * (i % 5 / 5.0));
+
+        history.add(HistoryEntry(
+          date: date,
+          targetValue: currentValue,
+          doneToday: true,
+          actualValue: completedValue,
+          comment: i % 5 == 0 ? 'Good session!' : null,
+        ));
+
+        // Increment for next day
+        currentValue += increment;
+      } else {
+        // Skipped day - no entry, but still increment target
+        currentValue += increment;
+      }
+    }
+
+    return history;
   }
 }
