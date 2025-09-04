@@ -52,7 +52,7 @@ class TimerPainter extends CustomPainter {
       );
     }
 
-    // Spokes
+    // Spokes - always draw when subdivisions are set
     if (subdivisions > 0) {
       final spokePaint = Paint()
         ..color = ColorPalette.secondaryText.withAlpha((255 * 0.5).round())

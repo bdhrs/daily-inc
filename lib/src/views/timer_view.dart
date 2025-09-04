@@ -55,7 +55,8 @@ class _TimerViewState extends State<TimerView> {
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
-  bool _showSubdivisions = true;
+  // No longer needed - subdivisions are always shown when set
+  // bool _showSubdivisions = true;
 
   // Next task navigation variables
   bool _showNextTaskArrow = false;
@@ -396,6 +397,19 @@ class _TimerViewState extends State<TimerView> {
         _overtimeSeconds =
             (overtimeMinutes > 0) ? (overtimeMinutes * 60).round() : 0;
         _remainingSeconds = 0;
+        
+        // Calculate completed subdivisions for overtime mode
+        if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+          final totalSeconds = (_todaysTargetMinutes * 60).round();
+          final subdivisionInterval =
+              (totalSeconds / widget.item.subdivisions!).round();
+          if (subdivisionInterval > 0) {
+            final elapsedSeconds = totalSeconds + _overtimeSeconds;
+            // Use the same calculation method as in the timer loop
+            _completedSubdivisions =
+                (elapsedSeconds ~/ subdivisionInterval).clamp(0, widget.item.subdivisions! * 2); // Allow for overtime
+          }
+        }
       } else {
         final remainingMinutes = dailyTarget - completedMinutes;
         _remainingSeconds = (remainingMinutes * 60).round();
@@ -408,8 +422,9 @@ class _TimerViewState extends State<TimerView> {
             (totalSeconds / widget.item.subdivisions!).round();
         if (subdivisionInterval > 0) {
           final elapsedSeconds = totalSeconds - _remainingSeconds;
+          // Use the same calculation method as in the timer loop
           _completedSubdivisions =
-              (elapsedSeconds / subdivisionInterval).floor();
+              (elapsedSeconds ~/ subdivisionInterval).clamp(0, widget.item.subdivisions! - 1);
         }
       }
     } else {
@@ -457,9 +472,10 @@ class _TimerViewState extends State<TimerView> {
         }
 
         final bool isFinished = _remainingSeconds <= 0 && !_isOvertime;
-        if (isFinished) {
+        // Only hide subdivisions when timer finishes, not in overtime mode
+        if (isFinished && !_isOvertime) {
           setState(() {
-            _showSubdivisions = false;
+            // No longer needed - subdivisions are always shown when set
           });
         }
         _log.info(
@@ -468,6 +484,9 @@ class _TimerViewState extends State<TimerView> {
           _log.info('Timer is finished, starting overtime mode');
           // Timer is finished, start overtime mode
           _isOvertime = true;
+          // Ensure subdivisions are visible in overtime mode
+          setState(() {
+          });
           _runOvertime();
         } else if (_isOvertime) {
           _log.info('Running overtime timer');
@@ -488,13 +507,37 @@ class _TimerViewState extends State<TimerView> {
   }
 
   void _runOvertime() {
+    final subdivisions = widget.item.subdivisions;
+    final totalSeconds = (_todaysTargetMinutes * 60).round();
+    final subdivisionInterval = subdivisions != null && subdivisions > 1 
+        ? (totalSeconds / subdivisions).round() 
+        : 0;
+    
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPaused) {
         timer.cancel();
         return;
       }
+      
+      final previousOvertimeSeconds = _overtimeSeconds;
+      
       setState(() {
         _overtimeSeconds++;
+        
+        // Check if we've crossed a subdivision boundary in overtime
+        if (subdivisionInterval > 0) {
+          // Calculate which subdivision we're in (continuing from where countdown left off)
+          final previousSubdivision = (totalSeconds + previousOvertimeSeconds) ~/ subdivisionInterval;
+          final newSubdivision = (totalSeconds + _overtimeSeconds) ~/ subdivisionInterval;
+          
+          // Only play bell when we cross into a new subdivision
+          if (newSubdivision > previousSubdivision && newSubdivision > 0) {
+            _playSubdivisionBell();
+            setState(() {
+              _completedSubdivisions = newSubdivision;
+            });
+          }
+        }
       });
     });
   }
@@ -520,6 +563,9 @@ class _TimerViewState extends State<TimerView> {
           return;
         }
 
+        // Calculate elapsed seconds before updating _remainingSeconds
+        final previousElapsedSeconds = totalSeconds - _remainingSeconds;
+        
         setState(() {
           _remainingSeconds--;
 
@@ -531,13 +577,21 @@ class _TimerViewState extends State<TimerView> {
             return;
           }
 
-          if (subdivisionInterval > 0 &&
-              _remainingSeconds > 0 &&
-              _remainingSeconds % subdivisionInterval == 0) {
-            _playSubdivisionBell();
-            setState(() {
-              _completedSubdivisions++;
-            });
+          // Calculate new elapsed seconds after updating _remainingSeconds
+          final newElapsedSeconds = totalSeconds - _remainingSeconds;
+          
+          // Check if we've crossed a subdivision boundary
+          if (subdivisionInterval > 0) {
+            final previousSubdivision = previousElapsedSeconds ~/ subdivisionInterval;
+            final newSubdivision = newElapsedSeconds ~/ subdivisionInterval;
+            
+            // Only play bell when we cross into a new subdivision (and not at the very start)
+            if (newSubdivision > previousSubdivision && newSubdivision > 0) {
+              _playSubdivisionBell();
+              setState(() {
+                _completedSubdivisions = newSubdivision;
+              });
+            }
           }
         });
       });
@@ -1339,7 +1393,7 @@ class _TimerViewState extends State<TimerView> {
           painter: TimerPainter(
             totalTime: _todaysTargetMinutes,
             elapsedTime: _currentElapsedTimeInMinutes,
-            subdivisions: _showSubdivisions ? widget.item.subdivisions ?? 0 : 0,
+            subdivisions: widget.item.subdivisions ?? 0,
           ),
           child: SizedBox(
             width: constraints.maxWidth,
@@ -1373,7 +1427,7 @@ class _TimerViewState extends State<TimerView> {
         painter: TimerPainter(
           totalTime: _todaysTargetMinutes,
           elapsedTime: _currentElapsedTimeInMinutes,
-          subdivisions: _showSubdivisions ? widget.item.subdivisions ?? 0 : 0,
+          subdivisions: widget.item.subdivisions ?? 0,
         ),
         child: SizedBox(
           width: constraints.maxWidth,
