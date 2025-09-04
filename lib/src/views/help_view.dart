@@ -42,7 +42,8 @@ class HelpView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).appBarTheme.backgroundColor ??
                     Theme.of(context).primaryColor,
-                border: Border.all(width: 0.5, color: Colors.white),
+                border: Border.all(
+                    width: 0.5, color: Theme.of(context).colorScheme.onPrimary),
               ),
               height: kToolbarHeight,
               child: Row(
@@ -59,89 +60,216 @@ class HelpView extends StatelessWidget {
                                       .primaryTextTheme
                                       .titleLarge
                                       ?.color) ??
-                              Colors.white,
+                              Theme.of(context).colorScheme.onPrimary,
                         ),
                   ),
                   const Spacer(),
+                  // Download button (shown when update available)
                   IconButton(
-                      icon: const Icon(Icons.filter_list, color: Colors.white),
+                      icon: Icon(
+                        Icons.download,
+                        color: ColorPalette.primaryBlue,
+                      ),
                       onPressed: null,
-                      tooltip: 'Show/Hide Completed Items'),
+                      tooltip: 'Download the latest release'),
                   IconButton(
-                      icon: const Icon(Icons.expand_more, color: Colors.white),
+                      icon: Icon(
+                        Icons.filter_list_off,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                       onPressed: null,
-                      tooltip: 'Expand/Collapse all items'),
+                      tooltip: 'Show Completed Items'),
                   IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: Icon(
+                        Icons.expand_less,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      onPressed: null,
+                      tooltip: 'Collapse all items'),
+                  IconButton(
+                      icon: Icon(
+                        Icons.add,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                       onPressed: null,
                       tooltip: 'Add an item'),
                   IconButton(
-                      icon: const Icon(Icons.bar_chart, color: Colors.white),
+                      icon: Icon(
+                        Icons.bar_chart,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                       onPressed: null,
                       tooltip: 'Category Graphs'),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                     tooltip: 'More options',
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<String>>[
                       PopupMenuItem<String>(
                         value: 'toggle_due',
                         child: Row(
-                          children: const [
-                            Icon(Icons.visibility),
-                            SizedBox(width: 8),
-                            Text('Show/Hide Due Items'),
+                          children: [
+                            Icon(
+                              Icons.visibility_off,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Only Show Today\'s Items',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
                       PopupMenuItem<String>(
                         value: 'toggle_archived',
                         child: Row(
-                          children: const [
-                            Icon(Icons.inventory),
-                            SizedBox(width: 8),
-                            Text('Show/Hide Archived Items'),
+                          children: [
+                            Icon(
+                              Icons.inventory,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Show Active Items',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'settings',
                         child: Row(
                           children: [
-                            Icon(Icons.settings),
-                            SizedBox(width: 8),
-                            Text('Settings'),
+                            Icon(
+                              Icons.settings,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Settings',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'help',
                         child: Row(
                           children: [
-                            Icon(Icons.help),
-                            SizedBox(width: 8),
-                            Text('Help'),
+                            Icon(
+                              Icons.help,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Help',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
                       const PopupMenuDivider(),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'load_history',
                         child: Row(
                           children: [
-                            Icon(Icons.folder_open),
-                            SizedBox(width: 8),
-                            Text('Load History'),
+                            Icon(
+                              Icons.folder_open,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Load History',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'save_history',
                         child: Row(
                           children: [
-                            Icon(Icons.save_alt),
-                            SizedBox(width: 8),
-                            Text('Save History'),
+                            Icon(
+                              Icons.save_alt,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Save History',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'load_template',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.folder_open,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Load Template',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'save_template',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.save_alt,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Save Template',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'about',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'About',
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
                           ],
                         ),
                       ),
@@ -153,16 +281,26 @@ class HelpView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const ListTile(
-            leading: Icon(Icons.filter_list),
-            title: Text('Show/Hide Completed Items'),
-            subtitle: Text('Toggle whether completed items are hidden.'),
+          ListTile(
+            leading: Icon(
+              Icons.download,
+              color: ColorPalette.primaryBlue,
+            ),
+            title: const Text('Download Update'),
+            subtitle:
+                const Text('Download the latest app release when available.'),
           ),
           const ListTile(
-            leading: Icon(Icons.expand_more),
-            title: Text('Expand/Collapse all items'),
+            leading: Icon(Icons.filter_list_off),
+            title: Text('Show Completed Items'),
+            subtitle:
+                Text('Currently showing completed items. Toggle to hide them.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.expand_less),
+            title: Text('Collapse all items'),
             subtitle: Text(
-                'Expand or collapse all visible items to show or hide their details.'),
+                'Currently expanded. Click to collapse all visible items to hide their details.'),
           ),
           const ListTile(
             leading: Icon(Icons.add),
@@ -173,12 +311,6 @@ class HelpView extends StatelessWidget {
             leading: Icon(Icons.bar_chart),
             title: Text('Category Graphs'),
             subtitle: Text('View graphs aggregated by category.'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.archive),
-            title: Text('Show/Hide Archived Items'),
-            subtitle:
-                Text('Toggle between showing active items or archived items.'),
           ),
 
           const Divider(height: 32),
@@ -196,16 +328,16 @@ class HelpView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   ListTile(
-                    leading: Icon(Icons.visibility),
-                    title: Text('Show/Hide Due Items'),
+                    leading: Icon(Icons.visibility_off),
+                    title: Text('Only Show Today\'s Items'),
                     subtitle: Text(
-                        'Toggle between all items or only those due today.'),
+                        'Currently showing only items due today. Toggle to show all items.'),
                   ),
                   ListTile(
                     leading: Icon(Icons.inventory),
-                    title: Text('Show/Hide Archived Items'),
+                    title: Text('Show Active Items'),
                     subtitle: Text(
-                        'Toggle between showing active items or archived items.'),
+                        'Currently showing active items. Toggle to show archived items.'),
                   ),
                   ListTile(
                     leading: Icon(Icons.settings),
@@ -217,6 +349,7 @@ class HelpView extends StatelessWidget {
                     title: Text('Help'),
                     subtitle: Text('You are here!'),
                   ),
+                  Divider(height: 1),
                   ListTile(
                     leading: Icon(Icons.folder_open),
                     title: Text('Load History'),
@@ -227,6 +360,25 @@ class HelpView extends StatelessWidget {
                     leading: Icon(Icons.save_alt),
                     title: Text('Save History'),
                     subtitle: Text('Export your data to a JSON file.'),
+                  ),
+                  Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.folder_open),
+                    title: Text('Load Template'),
+                    subtitle: Text(
+                        'Load a template without history data from a JSON file.'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.save_alt),
+                    title: Text('Save Template'),
+                    subtitle: Text(
+                        'Export your data without history to a JSON template file.'),
+                  ),
+                  Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.info),
+                    title: Text('About'),
+                    subtitle: Text('View information about the app.'),
                   ),
                 ],
               ),
@@ -332,6 +484,12 @@ class HelpView extends StatelessWidget {
             leading: Icon(Icons.content_copy),
             title: Text('Duplicate'),
             subtitle: Text('Creates a copy of the task.'),
+          ),
+          const ListTile(
+            leading: Icon(Icons.inventory),
+            title: Text('Archive'),
+            subtitle: Text(
+                'Moves the task to archived items (hidden from main view).'),
           ),
           const ListTile(
             leading: Icon(Icons.delete),

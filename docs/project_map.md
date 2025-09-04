@@ -1,4 +1,4 @@
-# Project Map
+h# Project Map
 
 This document provides a map of the project, listing the location of all functions, classes, and important variables. Each entry also includes a simple one-line description in plain English.
 
@@ -169,7 +169,7 @@ This document provides a map of the project, listing the location of all functio
   - `_filterDisplayedItems(List<DailyThing> allItems)` [`lib/src/views/daily_things_view.dart:950`](lib/src/views/daily_things_view.dart:950): Filters items based on archived status and other criteria.
 
 ## lib/src/views/help_view.dart
-- `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.
+- `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app with an exact simulation of the appbar layout and detailed explanations of all UI elements.
 
 ## lib/src/views/reps_input_dialog.dart
 - `RepsInputDialog` class [`lib/src/views/reps_input_dialog.dart:7`](lib/src/views/reps_input_dialog.dart:7): Dialog to enter how many reps you did today.
