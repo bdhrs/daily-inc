@@ -120,6 +120,16 @@ class _DailyThingItemState extends State<DailyThingItem> {
     return false;
   }
 
+  /// Archives or unarchives an item
+  Future<void> _archiveItem(DailyThing item) async {
+    if (item.isArchived) {
+      await widget.dataManager.unarchiveDailyThing(item);
+    } else {
+      await widget.dataManager.archiveDailyThing(item);
+    }
+    widget.onItemChanged?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSnoozedToday = widget.item.isSnoozedForToday;
@@ -331,132 +341,148 @@ class _DailyThingItemState extends State<DailyThingItem> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (widget.item.itemType == ItemType.check) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                    // First row: Action buttons (aligned to the left and spaced out)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          tooltip: 'see daily stats',
+                          icon: const Icon(Icons.auto_graph),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    GraphView(dailyThing: widget.item),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: 'edit history',
+                          icon: const Icon(Icons.history),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HistoryView(
+                                  item: widget.item,
+                                  onHistoryUpdated: () {
+                                    if (mounted) setState(() {});
+                                    widget.onItemChanged?.call();
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: 'edit note',
+                          icon: const Icon(Icons.note_add_outlined),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () =>
+                              _showEditNoteDialog(context, widget.item),
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: widget.item.isPaused
+                              ? 'resume increments'
+                              : 'pause increments',
+                          icon: Icon(widget.item.isPaused
+                              ? Icons.play_arrow
+                              : Icons.pause),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () async {
+                            final updated = widget.item.copyWith(
+                              isPaused: !widget.item.isPaused,
+                            );
+                            await widget.dataManager.updateDailyThing(updated);
+                            if (mounted) {
+                              setState(() {});
+                            }
+                            widget.onItemChanged?.call();
+                          },
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: 'edit the item',
+                          icon: const Icon(Icons.edit),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () => widget.onEdit(widget.item),
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: 'duplicate the item',
+                          icon: const Icon(Icons.content_copy),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () => widget.onDuplicate(widget.item),
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: widget.item.isArchived
+                              ? 'unarchive the item'
+                              : 'archive the item',
+                          icon: Icon(widget.item.isArchived
+                              ? Icons.inventory_2
+                              : Icons.inventory),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () => _archiveItem(widget.item),
+                        ),
+                        const SizedBox(width: 4), // Add space between icons
+                        IconButton(
+                          tooltip: 'delete the item',
+                          icon: const Icon(Icons.delete),
+                          iconSize: 20,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          onPressed: () => widget.onDelete(widget.item),
+                        ),
+                      ],
+                    ),
+                    // Second row: Category on the left, Start/end values and increment on the right (for non-CHECK items)
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Category on the left
+                        if ((widget.item.category).isNotEmpty)
                           Expanded(
-                            child: (widget.item.category).isNotEmpty
-                                ? Text(
-                                    widget.item.category,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: true,
-                                  )
-                                : const SizedBox.shrink(),
+                            flex: 1,
+                            child: Text(
+                              widget.item.category,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'see daily stats',
-                                icon: const Icon(Icons.auto_graph),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          GraphView(dailyThing: widget.item),
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit history',
-                                icon: const Icon(Icons.history),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => HistoryView(
-                                        item: widget.item,
-                                        onHistoryUpdated: () {
-                                          if (mounted) setState(() {});
-                                          widget.onItemChanged?.call();
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit note',
-                                icon: const Icon(Icons.note_add_outlined),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () =>
-                                    _showEditNoteDialog(context, widget.item),
-                              ),
-                              IconButton(
-                                tooltip: widget.item.isPaused
-                                    ? 'resume increments'
-                                    : 'pause increments',
-                                icon: Icon(widget.item.isPaused
-                                    ? Icons.play_arrow
-                                    : Icons.pause),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () async {
-                                  final updated = widget.item.copyWith(
-                                    isPaused: !widget.item.isPaused,
-                                  );
-                                  await widget.dataManager
-                                      .updateDailyThing(updated);
-                                  if (mounted) {
-                                    setState(() {});
-                                  }
-                                  widget.onItemChanged?.call();
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit the item',
-                                icon: const Icon(Icons.edit),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onEdit(widget.item),
-                              ),
-                              IconButton(
-                                tooltip: 'duplicate the item',
-                                icon: const Icon(Icons.content_copy),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () =>
-                                    widget.onDuplicate(widget.item),
-                              ),
-                              IconButton(
-                                tooltip: 'delete the item',
-                                icon: const Icon(Icons.delete),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onDelete(widget.item),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                        // Start/end values and increment on the right (for non-CHECK items)
+                        if (widget.item.itemType != ItemType.check)
                           Expanded(
+                            flex: 1,
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Flexible(
                                   child: Row(
@@ -527,120 +553,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               ],
                             ),
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'see daily stats',
-                                icon: const Icon(Icons.auto_graph),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          GraphView(dailyThing: widget.item),
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit history',
-                                icon: const Icon(Icons.history),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => HistoryView(
-                                        item: widget.item,
-                                        onHistoryUpdated: () {
-                                          if (mounted) setState(() {});
-                                          widget.onItemChanged?.call();
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit note',
-                                icon: const Icon(Icons.note_add_outlined),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () =>
-                                    _showEditNoteDialog(context, widget.item),
-                              ),
-                              IconButton(
-                                tooltip: widget.item.isPaused
-                                    ? 'resume increments'
-                                    : 'pause increments',
-                                icon: Icon(widget.item.isPaused
-                                    ? Icons.play_arrow
-                                    : Icons.pause),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () async {
-                                  final updated = widget.item.copyWith(
-                                    isPaused: !widget.item.isPaused,
-                                  );
-                                  await widget.dataManager
-                                      .updateDailyThing(updated);
-                                  if (mounted) {
-                                    setState(() {});
-                                  }
-                                  widget.onItemChanged?.call();
-                                },
-                              ),
-                              IconButton(
-                                tooltip: 'edit the item',
-                                icon: const Icon(Icons.edit),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onEdit(widget.item),
-                              ),
-                              IconButton(
-                                tooltip: 'duplicate the item',
-                                icon: const Icon(Icons.content_copy),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () =>
-                                    widget.onDuplicate(widget.item),
-                              ),
-                              IconButton(
-                                tooltip: 'delete the item',
-                                icon: const Icon(Icons.delete),
-                                iconSize: 20,
-                                visualDensity: const VisualDensity(
-                                    horizontal: -3, vertical: -3),
-                                onPressed: () => widget.onDelete(widget.item),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if ((widget.item.category).isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.item.category,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: true,
-                        ),
                       ],
-                    ],
+                    ),
                   ],
                 ),
               ),

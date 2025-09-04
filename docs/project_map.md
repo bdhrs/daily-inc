@@ -43,7 +43,7 @@ This document provides a map of the project, listing the location of all functio
   - `determineStatus(DailyThing item, double currentValue)` [`lib/src/core/increment_calculator.dart:301`](lib/src/core/increment_calculator.dart:301): Returns green or red status based on today's target.
 
 ## lib/src/data/data_manager.dart
-- `DataManager` class [`lib/src/data/data_manager.dart:10`](lib/src/data/data_manager.dart:10): Loads, saves, and manages items and metadata on disk.
+- `DataManager` class [`lib/src/data/data_manager.dart:11`](lib/src/data/data_manager.dart:11): Loads, saves, and manages items and metadata on disk.
   - `loadFromFile()` [`lib/src/data/data_manager.dart:14`](lib/src/data/data_manager.dart:14): Lets you pick a JSON file and imports items, fixing missing fields if needed. Now includes platform-specific file picker handling for Linux.
   - `_getFilePath()` [`lib/src/data/data_manager.dart:82`](lib/src/data/data_manager.dart:82): Finds the app's data file location.
   - `_readRawStore()` [`lib/src/data/data_manager.dart:87`](lib/src/data/data_manager.dart:87): Reads raw JSON data from storage.
@@ -54,6 +54,8 @@ This document provides a map of the project, listing the location of all functio
   - `deleteDailyThing(DailyThing itemToDelete)` [`lib/src/data/data_manager.dart:156`](lib/src/data/data_manager.dart:156): Removes an item and saves.
   - `updateDailyThing(DailyThing updatedItem)` [`lib/src/data/data_manager.dart:164`](lib/src/data/data_manager.dart:164): Updates an existing item and saves.
   - `resetAllData()` [`lib/src/data/data_manager.dart:178`](lib/src/data/data_manager.dart:178): Deletes the stored data file to start fresh.
+  - `archiveDailyThing(DailyThing item)` [`lib/src/data/data_manager.dart:202`](lib/src/data/data_manager.dart:202): Archives a daily thing item.
+  - `unarchiveDailyThing(DailyThing item)` [`lib/src/data/data_manager.dart:209`](lib/src/data/data_manager.dart:209): Unarchives a daily thing item.
   - `saveHistoryToFile()` [`lib/src/data/data_manager.dart:194`](lib/src/data/data_manager.dart:194): Exports all current data to a JSON file via a save dialog. Now includes platform-specific file picker handling for Linux.
   - `saveTemplateToFile()` [`lib/src/data/data_manager.dart:215`](lib/src/data/data_manager.dart:215): Exports all current data without history to a JSON template file via a save dialog. Now includes platform-specific file picker handling for Linux.
   - `getUniqueCategories()` [`lib/src/data/data_manager.dart:245`](lib/src/data/data_manager.dart:245): Lists all unique categories (except "None").
@@ -85,6 +87,7 @@ This document provides a map of the project, listing the location of all functio
   - `toJson()` [`lib/src/models/daily_thing.dart:168`](lib/src/models/daily_thing.dart:168): Converts this item to a JSON map.
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:190`](lib/src/models/daily_thing.dart:190): Builds the item from a JSON map.
   - `copyWith({...})` [`lib/src/models/daily_thing.dart:232`](lib/src/models/daily_thing.dart:232): Creates a copy of the item with specified fields updated.
+  - `isArchived` field [`lib/src/models/daily_thing.dart:33`](lib/src/models/daily_thing.dart:33): Indicates whether the item is archived (hidden from main view).
 
 ## lib/src/models/history_entry.dart
 - `_logger` variable [`lib/src/models/history_entry.dart:3`](lib/src/models/history_entry.dart:3): Logs parsing warnings for history.
@@ -149,8 +152,10 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/daily_thing_item.dart
 - `DailyThingItem` class [`lib/src/views/daily_thing_item.dart:11`](lib/src/views/daily_thing_item.dart:11): A single task row with controls and quick actions.
 - `_DailyThingItemState` class [`lib/src/views/daily_thing_item.dart:45`](lib/src/views/daily_thing_item.dart:45): Manages expansion and tap actions for the item.
-  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:88`](lib/src/views/daily_thing_item.dart:88): Formats minutes, reps, percentage, trend, or check for display.
+  - `_formatValue(double value, ItemType itemType)` [`lib/src/views/daily_thing_item.dart:88`](lib/src/views/daily_thing_item.dart:8): Formats minutes, reps, percentage, trend, or check for display.
   - `build(BuildContext context)` [`lib/src/views/daily_thing_item.dart:107`](lib/src/views/daily_thing_item.dart:107): Draws the row UI and handles tap actions.
+  - `_archiveItem(DailyThing item)` [`lib/src/views/daily_thing_item.dart:124`](lib/src/views/daily_thing_item.dart:124): Archives or unarchives an item.
+  - `_buildActionButtons(DailyThing item)` [`lib/src/views/daily_thing_item.dart:350`](lib/src/views/daily_thing_item.dart:350): Builds the action buttons row with archive functionality.
 
 ## lib/src/views/daily_things_view.dart
 - `DailyThingsView` class [`lib/src/views/daily_things_view.dart:25`](lib/src/views/daily_things_view.dart:25): The home screen that lists all tasks and actions.
@@ -159,7 +164,9 @@ This document provides a map of the project, listing the location of all functio
   - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:640`](lib/src/views/daily_things_view.dart:640): Prompts to enter percentage (0-100%) via slider and saves them.
   - `_showTrendInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:651`](lib/src/views/daily_things_view.dart:651): Prompts to enter trend and saves it.
   - `_showFullscreenTimer(DailyThing item, {bool startInOvertime = false})` [`lib/src/views/daily_things_view.dart:700`](lib/src/views/daily_things_view.dart:700): Shows the fullscreen timer view with navigation context.
-  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:738`](lib/src/views/daily_things_view.dart:738): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
+  - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:1047`](lib/src/views/daily_things_view.dart:1047): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
+  - `_toggleShowArchivedItems()` [`lib/src/views/daily_things_view.dart:65`](lib/src/views/daily_things_view.dart:65): Toggles between showing and hiding archived items.
+  - `_filterDisplayedItems(List<DailyThing> allItems)` [`lib/src/views/daily_things_view.dart:950`](lib/src/views/daily_things_view.dart:950): Filters items based on archived status and other criteria.
 
 ## lib/src/views/help_view.dart
 - `HelpView` class [`lib/src/views/help_view.dart:8`](lib/src/views/help_view.dart:8): A screen that explains how to use the app.

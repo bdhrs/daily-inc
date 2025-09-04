@@ -30,6 +30,7 @@ class DailyThing {
   final int? subdivisions;
   final String? subdivisionBellSoundPath;
   final String? notes;
+  final bool isArchived; // New field for archive status
 
   DailyThing({
     String? id,
@@ -52,6 +53,7 @@ class DailyThing {
     this.subdivisions,
     this.subdivisionBellSoundPath,
     this.notes,
+    this.isArchived = false, // Default to false
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -79,11 +81,15 @@ class DailyThing {
   }
 
   HistoryEntry? get todayHistoryEntry {
-    final todayDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final todayDate =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     return history.cast<HistoryEntry?>().firstWhere(
-          (entry) => entry != null && DateTime(entry.date.year, entry.date.month, entry.date.day) == todayDate,
-      orElse: () => null,
-    );
+          (entry) =>
+              entry != null &&
+              DateTime(entry.date.year, entry.date.month, entry.date.day) ==
+                  todayDate,
+          orElse: () => null,
+        );
   }
 
   bool get isSnoozedForToday {
@@ -203,6 +209,7 @@ class DailyThing {
       'subdivisions': subdivisions,
       'subdivisionBellSoundPath': subdivisionBellSoundPath,
       'notes': notes,
+      'isArchived': isArchived, // Add to toJson
     };
   }
 
@@ -259,6 +266,8 @@ class DailyThing {
       subdivisions: json['subdivisions'] as int?,
       subdivisionBellSoundPath: json['subdivisionBellSoundPath'] as String?,
       notes: json['notes'] as String?,
+      isArchived:
+          json['isArchived'] as bool? ?? false, // Add to fromJson with default
     );
   }
 
@@ -283,6 +292,7 @@ class DailyThing {
     int? subdivisions,
     String? subdivisionBellSoundPath,
     String? notes,
+    bool? isArchived, // Add to copyWith
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -306,6 +316,7 @@ class DailyThing {
       subdivisionBellSoundPath:
           subdivisionBellSoundPath ?? this.subdivisionBellSoundPath,
       notes: notes ?? this.notes,
+      isArchived: isArchived ?? this.isArchived, // Use new field
     );
   }
 }

@@ -24,8 +24,11 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool hideWhenDone;
   final bool allExpanded;
   final bool showOnlyDueItems;
+  final bool showArchivedItems; // New parameter for showing archived items
   final VoidCallback onShowAboutDialog;
   final VoidCallback onToggleShowOnlyDueItems;
+  final VoidCallback
+      onToggleShowArchivedItems; // New parameter for toggle callback
   final Logger log;
 
   const DailyThingsAppBar({
@@ -44,8 +47,10 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.hideWhenDone,
     required this.allExpanded,
     required this.showOnlyDueItems,
+    required this.showArchivedItems, // New parameter
     required this.onShowAboutDialog,
     required this.onToggleShowOnlyDueItems,
+    required this.onToggleShowArchivedItems, // New parameter
     required this.log,
   });
 
@@ -158,6 +163,10 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 widget.onToggleShowOnlyDueItems();
                 widget.onRefreshDisplay();
                 break;
+              case 'toggle_archived':
+                widget.onToggleShowArchivedItems();
+                widget.onRefreshDisplay();
+                break;
               case 'settings':
                 Navigator.push(
                   context,
@@ -208,6 +217,20 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 ],
               ),
             ),
+            PopupMenuItem<String>(
+              value: 'toggle_archived',
+              child: Row(
+                children: [
+                  Icon(widget.showArchivedItems
+                      ? Icons.inventory_2
+                      : Icons.inventory),
+                  const SizedBox(width: 8),
+                  Text(widget.showArchivedItems
+                      ? 'Show Active Items'
+                      : 'Show Archived Items'),
+                ],
+              ),
+            ),
             const PopupMenuItem<String>(
               value: 'settings',
               child: Row(
@@ -228,7 +251,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 ],
               ),
             ),
-            const PopupMenuDivider(),
             const PopupMenuItem<String>(
               value: 'load_history',
               child: Row(

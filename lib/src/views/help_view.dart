@@ -94,6 +94,16 @@ class HelpView extends StatelessWidget {
                           ],
                         ),
                       ),
+                      PopupMenuItem<String>(
+                        value: 'toggle_archived',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.inventory),
+                            SizedBox(width: 8),
+                            Text('Show/Hide Archived Items'),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem<String>(
                         value: 'settings',
                         child: Row(
@@ -164,6 +174,12 @@ class HelpView extends StatelessWidget {
             title: Text('Category Graphs'),
             subtitle: Text('View graphs aggregated by category.'),
           ),
+          const ListTile(
+            leading: Icon(Icons.archive),
+            title: Text('Show/Hide Archived Items'),
+            subtitle:
+                Text('Toggle between showing active items or archived items.'),
+          ),
 
           const Divider(height: 32),
           Text(
@@ -184,6 +200,12 @@ class HelpView extends StatelessWidget {
                     title: Text('Show/Hide Due Items'),
                     subtitle: Text(
                         'Toggle between all items or only those due today.'),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.inventory),
+                    title: Text('Show/Hide Archived Items'),
+                    subtitle: Text(
+                        'Toggle between showing active items or archived items.'),
                   ),
                   ListTile(
                     leading: Icon(Icons.settings),

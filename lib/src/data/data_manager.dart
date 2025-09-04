@@ -16,7 +16,7 @@ class DataManager {
     _log.info('loadFromFile called');
     try {
       FilePickerResult? result;
-      
+
       // Use different file picker configuration based on platform
       if (Platform.isLinux) {
         // On Linux, use ANY file type to avoid the "custom" issue
@@ -199,6 +199,20 @@ class DataManager {
     }
   }
 
+  Future<void> archiveDailyThing(DailyThing item) async {
+    _log.info('archiveDailyThing called for item: ${item.name}');
+    final archivedItem = item.copyWith(isArchived: true);
+    await updateDailyThing(archivedItem);
+    _log.info('Item archived and data saved.');
+  }
+
+  Future<void> unarchiveDailyThing(DailyThing item) async {
+    _log.info('unarchiveDailyThing called for item: ${item.name}');
+    final unarchivedItem = item.copyWith(isArchived: false);
+    await updateDailyThing(unarchivedItem);
+    _log.info('Item unarchived and data saved.');
+  }
+
   Future<void> resetAllData() async {
     _log.info('resetAllData called to clear all data.');
     try {
@@ -227,7 +241,7 @@ class DataManager {
       final bytes = utf8.encode(jsonString);
 
       String? outputFile;
-      
+
       if (Platform.isLinux) {
         // On Linux, use ANY file type
         outputFile = await FilePicker.platform.saveFile(
@@ -268,7 +282,7 @@ class DataManager {
       final templateItems = items.map((thing) {
         return thing.copyWith(history: []);
       }).toList();
-      
+
       final jsonData = {
         'dailyThings': templateItems.map((thing) => thing.toJson()).toList(),
         'savedAt': DateTime.now().toIso8601String(),
@@ -278,7 +292,7 @@ class DataManager {
       final bytes = utf8.encode(jsonString);
 
       String? outputFile;
-      
+
       if (Platform.isLinux) {
         // On Linux, use ANY file type
         outputFile = await FilePicker.platform.saveFile(

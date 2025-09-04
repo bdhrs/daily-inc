@@ -47,6 +47,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _allExpanded = false;
   bool _updateAvailable = false;
   bool _backupPromptCheckedThisBuild = false;
+  bool _showArchivedItems =
+      false; // New state variable for showing archived items
 
   // Motivational message settings
   bool _showStartOfDayMessage = false;
@@ -57,6 +59,13 @@ class _DailyThingsViewState extends State<DailyThingsView>
   void _toggleShowOnlyDueItems() {
     setState(() {
       _showOnlyDueItems = !_showOnlyDueItems;
+    });
+  }
+
+  /// Toggles between showing and hiding archived items
+  void _toggleShowArchivedItems() {
+    setState(() {
+      _showArchivedItems = !_showArchivedItems;
     });
   }
 
@@ -262,10 +271,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
         subdivisions: item.subdivisions,
         subdivisionBellSoundPath: item.subdivisionBellSoundPath,
       );
-      
+
       // Instead of just adding to the end, insert right after the original item
       final items = await _dataManager.loadData();
-      final originalIndex = items.indexWhere((element) => element.id == item.id);
+      final originalIndex =
+          items.indexWhere((element) => element.id == item.id);
       if (originalIndex != -1) {
         // Insert right after the original item
         items.insert(originalIndex + 1, duplicatedItem);
@@ -347,10 +357,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
   void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
     _log.info('Showing fullscreen timer for: ${item.name}');
-    
+
     // Find the index of the current item in the list
-    final currentIndex = _dailyThings.indexWhere((thing) => thing.id == item.id);
-    
+    final currentIndex =
+        _dailyThings.indexWhere((thing) => thing.id == item.id);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -728,7 +739,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   void _checkAndShowCompletionSnackbar() {
-    bool allCompleted = _dailyThings.every((item) => item.completedForToday);
+    // Exclude archived items from the completion check
+    bool allCompleted = _dailyThings
+        .where((item) => !item.isArchived)
+        .every((item) => item.completedForToday);
 
     if (allCompleted && !_hasShownCompletionSnackbar) {
       _log.info('All tasks completed, showing celebration snackbar.');
@@ -949,14 +963,23 @@ class _DailyThingsViewState extends State<DailyThingsView>
       showItemsDueToday: _showOnlyDueItems,
     );
 
-    // The "all completed" status should be based on all due items, regardless of visibility.
-    final allTasksCompleted =
-        dueItems.isNotEmpty && dueItems.every((item) => item.completedForToday);
+    // Filter items based on archived status
+    final List<DailyThing> filteredDueItems = _showArchivedItems
+        ? dueItems
+            .where((item) => item.isArchived)
+            .toList() // Show only archived items
+        : dueItems
+            .where((item) => !item.isArchived)
+            .toList(); // Show only non-archived items
+
+    // The "all completed" status should be based on all due items, excluding archived items
+    final allTasksCompleted = filteredDueItems.isNotEmpty &&
+        filteredDueItems.every((item) => item.completedForToday);
 
     // Now, create the list of items to actually display, applying the "hide when done" filter.
-    List<DailyThing> displayedItems = dueItems;
+    List<DailyThing> displayedItems = filteredDueItems;
     if (_hideWhenDone) {
-      displayedItems = dueItems.where((item) {
+      displayedItems = filteredDueItems.where((item) {
         if (item.isSnoozedForToday) {
           return false; // Always hide snoozed items when this filter is on
         }
@@ -1011,8 +1034,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
         hideWhenDone: _hideWhenDone,
         allExpanded: _allExpanded,
         showOnlyDueItems: _showOnlyDueItems,
+        showArchivedItems: _showArchivedItems, // New parameter
         onShowAboutDialog: _showAboutDialog,
         onToggleShowOnlyDueItems: _toggleShowOnlyDueItems,
+        onToggleShowArchivedItems: _toggleShowArchivedItems, // New parameter
         log: _log,
       ),
       body: SafeArea(
