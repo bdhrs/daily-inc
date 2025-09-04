@@ -1312,6 +1312,10 @@ class _TimerViewState extends State<TimerView> {
           NextTaskArrow(
             onTap: _navigateToNextTask,
             isVisible: _showNextTaskArrow,
+            isOvertime: _isOvertime,
+            isMinimalistMode: _minimalistMode,
+            isPaused: _isPaused,
+            shouldFadeUI: _shouldFadeUI,
           ),
         ],
       ),
@@ -1395,35 +1399,44 @@ class _TimerViewState extends State<TimerView> {
   }
 
   Widget _buildCommentField() {
-    // In minimalist mode, only show comment field when timer is finished (at 0 seconds) or in overtime
+    // In minimalist mode:
+    // - When timer is running in overtime, hide the comment field
+    // - When timer is paused in overtime, show the comment field
+    // - When timer is finished (at 0 seconds) but not in overtime, show the comment field
     final bool showCommentField = !_minimalistMode ||
-        _isOvertime ||
-        (_remainingSeconds <= 0 && !_isOvertime);
+        (_isOvertime ? _isPaused : (_remainingSeconds <= 0 && !_isOvertime));
+
+    // In minimalist mode when timer is running, fade out the comment field like other UI elements
+    final bool shouldFadeOut = _minimalistMode && !_isPaused && showCommentField;
 
     return Opacity(
       opacity: showCommentField ? 1.0 : 0.0,
       child: IgnorePointer(
         ignoring: !showCommentField,
-        child: GestureDetector(
-          onTap: () {
-            FocusScope.of(context).requestFocus(_commentFocusNode);
-          },
-          child: TextField(
-            controller: _commentController,
-            focusNode: _commentFocusNode,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'add a comment',
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              border: _commentFocusNode.hasFocus ||
-                      _commentController.text.isNotEmpty
-                  ? const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
-                    )
-                  : InputBorder.none,
+        child: AnimatedOpacity(
+          opacity: shouldFadeOut ? (_shouldFadeUI ? 0.0 : 1.0) : 1.0,
+          duration: const Duration(milliseconds: 500),
+          child: GestureDetector(
+            onTap: () {
+              FocusScope.of(context).requestFocus(_commentFocusNode);
+            },
+            child: TextField(
+              controller: _commentController,
+              focusNode: _commentFocusNode,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'add a comment',
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: _commentFocusNode.hasFocus ||
+                        _commentController.text.isNotEmpty
+                    ? const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      )
+                    : InputBorder.none,
+              ),
             ),
           ),
         ),
