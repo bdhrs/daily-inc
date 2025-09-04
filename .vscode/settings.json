@@ -39,6 +39,7 @@
         "Symbolication",
         "temurin",
         "TOOLSETS",
+        "unarchived",
         "Unarchives",
         "wakelock",
         "xcconfig",

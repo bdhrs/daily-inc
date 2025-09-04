@@ -412,4 +412,48 @@ class DataManager {
       // Don't rethrow - backup failure shouldn't prevent data saving
     }
   }
+
+  /// Save template data to backup location automatically (without file picker)
+  Future<void> saveTemplateToBackupLocation() async {
+    _log.info(
+        'saveTemplateToBackupLocation called to save template data automatically');
+    try {
+      final items = await loadData();
+      // Create template items without history
+      final templateItems = items.map((thing) {
+        return thing.copyWith(history: []);
+      }).toList();
+
+      final jsonData = {
+        'dailyThings': templateItems.map((thing) => thing.toJson()).toList(),
+        'savedAt': DateTime.now().toIso8601String(),
+        'isTemplate': true,
+      };
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+
+      // Get backup location from backup service
+      final backupService = BackupService();
+      final backupLocation = await backupService.getBackupLocation();
+      if (backupLocation == null || backupLocation.isEmpty) {
+        _log.warning('Backup location not configured, skipping template save');
+        return;
+      }
+
+      final backupDir = Directory(backupLocation);
+      if (!backupDir.existsSync()) {
+        backupDir.createSync(recursive: true);
+        _log.info('Created backup directory: $backupLocation');
+      }
+
+      // Save template file with correct name
+      final templateFile =
+          File('${backupDir.path}/daily_inc_latest_template.json');
+      await templateFile.writeAsString(jsonString);
+
+      _log.fine('Template saved successfully to: ${templateFile.path}');
+    } catch (e, s) {
+      _log.warning('Failed to save template to backup location', e, s);
+      // Don't rethrow - template save failure shouldn't prevent normal operations
+    }
+  }
 }

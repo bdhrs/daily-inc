@@ -58,6 +58,7 @@ This document provides a map of the project, listing the location of all functio
   - `unarchiveDailyThing(DailyThing item)` [`lib/src/data/data_manager.dart:209`](lib/src/data/data_manager.dart:209): Unarchives a daily thing item.
   - `saveHistoryToFile()` [`lib/src/data/data_manager.dart:194`](lib/src/data/data_manager.dart:194): Exports all current data to a JSON file via a save dialog. Now includes platform-specific file picker handling for Linux.
   - `saveTemplateToFile()` [`lib/src/data/data_manager.dart:215`](lib/src/data/data_manager.dart:215): Exports all current data without history to a JSON template file via a save dialog. Now includes platform-specific file picker handling for Linux.
+  - `saveTemplateToBackupLocation()` [`lib/src/data/data_manager.dart:416`](lib/src/data/data_manager.dart:416): Automatically saves all items as template to backup location when template parameters change, without user interaction.
   - `getUniqueCategories()` [`lib/src/data/data_manager.dart:245`](lib/src/data/data_manager.dart:245): Lists all unique categories (except "None").
   - `getUniqueCategoriesForType(ItemType type)` [`lib/src/data/data_manager.dart:262`](lib/src/data/data_manager.dart:262): Lists unique categories only for the given type.
   - `getLastMotivationShownDate()` [`lib/src/data/data_manager.dart:280`](lib/src/data/data_manager.dart:280): Reads the date when the motivation dialog was last shown.
@@ -143,7 +144,10 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/add_edit_daily_item_view.dart
 - `AddEditDailyItemView` class [`lib/src/views/add_edit_daily_item_view.dart:15`](lib/src/views/add_edit_daily_item_view.dart:15): Screen to create or edit a daily task.
 - `_AddEditDailyItemViewState` class [`lib/src/views/add_edit_daily_item_view.dart:28`](lib/src/views/add_edit_daily_item_view.dart:28): Handles form state and input controllers.
-  - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:263`](lib/src/views/add_edit_daily_item_view.dart:263): Validates, updates history for plan changes, and saves.
+  - `_submitDailyItem()` [`lib/src/views/add_edit_daily_item_view.dart:263`](lib/src/views/add_edit_daily_item_view.dart:263): Validates, updates history for plan changes, saves, and automatically saves template to backup location if template parameters changed.
+  - `_storeOriginalTemplate()` [`lib/src/views/add_edit_daily_item_view.dart:205`](lib/src/views/add_edit_daily_item_view.dart:205): Stores original template parameters for change detection.
+  - `_haveTemplateParametersChanged()` [`lib/src/views/add_edit_daily_item_view.dart:227`](lib/src/views/add_edit_daily_item_view.dart:227): Checks if template parameters have changed compared to original.
+  - `_listsEqual(List<int>? list1, List<int>? list2)` [`lib/src/views/add_edit_daily_item_view.dart:270`](lib/src/views/add_edit_daily_item_view.dart:270): Helper method to compare lists of integers for template parameter comparison.
   - `build(BuildContext context)` [`lib/src/views/add_edit_daily_item_view.dart:499`](lib/src/views/add_edit_daily_item_view.dart:499): Renders the item form UI.
 
 ## lib/src/views/category_graph_view.dart

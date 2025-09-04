@@ -63,6 +63,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   bool _isUpdatingFromIncrement = false;
   double _todayValue = 0.0;
 
+  // Template parameter tracking for automatic template saving
+  DailyThing? _originalTemplate;
+
   @override
   void initState() {
     super.initState();
@@ -144,7 +147,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _subdivisionsController = TextEditingController(text: '1');
       // Initialize subdivision bell sound path for new items
       _selectedSubdivisionBellSoundPath = null;
-      
+
       // Set default start and goal values to 30 for new MINUTES items
       if (_selectedItemType == ItemType.minutes) {
         _startValueController.text = '30.0';
@@ -159,6 +162,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
     // Load unique categories for autofill (type-specific)
     _loadUniqueCategoriesForSelectedType();
+
+    // Store original template parameters for change detection
+    _storeOriginalTemplate();
   }
 
   @override
@@ -200,6 +206,109 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _incrementMinutesController.dispose();
     _incrementSecondsController.dispose();
     super.dispose();
+  }
+
+  /// Store the original template parameters for change detection
+  void _storeOriginalTemplate() {
+    final existingItem = widget.dailyThing;
+    if (existingItem != null) {
+      // Create a copy without history to track only template parameters
+      _originalTemplate = existingItem.copyWith(history: []);
+    } else {
+      // For new items, create a template from current form values
+      try {
+        final startDate =
+            DateFormat('yyyy-MM-dd').parse(_startDateController.text);
+        final startValue = double.tryParse(_startValueController.text) ?? 0.0;
+        final endValue = double.tryParse(_endValueController.text) ?? 0.0;
+        final duration = int.tryParse(_durationController.text) ?? 1;
+
+        _originalTemplate = DailyThing(
+          name: _nameController.text,
+          icon: _iconController.text,
+          itemType: _selectedItemType,
+          startDate: startDate,
+          startValue: startValue,
+          duration: duration,
+          endValue: endValue,
+          category: _categoryController.text.isEmpty
+              ? 'None'
+              : _categoryController.text,
+          intervalType: _selectedIntervalType,
+          intervalValue: _intervalValue,
+          intervalWeekdays: _selectedWeekdays,
+          bellSoundPath: _selectedBellSoundPath,
+          subdivisions: int.tryParse(_subdivisionsController.text),
+          subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
+          notes: _notesController.text,
+          history: [],
+        );
+      } catch (e) {
+        _log.warning('Could not create initial template: $e');
+        _originalTemplate = null;
+      }
+    }
+  }
+
+  /// Check if template parameters have changed
+  bool _haveTemplateParametersChanged() {
+    if (_originalTemplate == null) return false;
+
+    try {
+      final currentTemplate = DailyThing(
+        name: _nameController.text,
+        icon: _iconController.text,
+        itemType: _selectedItemType,
+        startDate: DateFormat('yyyy-MM-dd').parse(_startDateController.text),
+        startValue: double.tryParse(_startValueController.text) ?? 0.0,
+        duration: int.tryParse(_durationController.text) ?? 1,
+        endValue: double.tryParse(_endValueController.text) ?? 0.0,
+        category: _categoryController.text.isEmpty
+            ? 'None'
+            : _categoryController.text,
+        intervalType: _selectedIntervalType,
+        intervalValue: _intervalValue,
+        intervalWeekdays: _selectedWeekdays,
+        bellSoundPath: _selectedBellSoundPath,
+        subdivisions: int.tryParse(_subdivisionsController.text),
+        subdivisionBellSoundPath: _selectedSubdivisionBellSoundPath,
+        notes: _notesController.text,
+        history: [],
+      );
+
+      // Compare template parameters (excluding history and ID)
+      return _originalTemplate!.name != currentTemplate.name ||
+          _originalTemplate!.icon != currentTemplate.icon ||
+          _originalTemplate!.itemType != currentTemplate.itemType ||
+          _originalTemplate!.startDate != currentTemplate.startDate ||
+          _originalTemplate!.startValue != currentTemplate.startValue ||
+          _originalTemplate!.duration != currentTemplate.duration ||
+          _originalTemplate!.endValue != currentTemplate.endValue ||
+          _originalTemplate!.category != currentTemplate.category ||
+          _originalTemplate!.intervalType != currentTemplate.intervalType ||
+          _originalTemplate!.intervalValue != currentTemplate.intervalValue ||
+          !_listsEqual(_originalTemplate!.intervalWeekdays,
+              currentTemplate.intervalWeekdays) ||
+          _originalTemplate!.bellSoundPath != currentTemplate.bellSoundPath ||
+          _originalTemplate!.subdivisions != currentTemplate.subdivisions ||
+          _originalTemplate!.subdivisionBellSoundPath !=
+              currentTemplate.subdivisionBellSoundPath ||
+          _originalTemplate!.notes != currentTemplate.notes;
+    } catch (e) {
+      _log.warning('Error checking template parameter changes: $e');
+      return false;
+    }
+  }
+
+  /// Helper method to compare lists of integers
+  bool _listsEqual(List<int>? list1, List<int>? list2) {
+    if (list1 == null && list2 == null) return true;
+    if (list1 == null || list2 == null) return false;
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i] != list2[i]) return false;
+    }
+    return true;
   }
 
   void _updateTodayValue() {
@@ -504,6 +613,23 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
         if (!mounted) return;
         _log.info('Item submitted successfully, calling callback and popping');
+
+        // Save template automatically if template parameters changed
+        if (_haveTemplateParametersChanged()) {
+          _log.info(
+              'Template parameters changed, saving template to backup location');
+          try {
+            await widget.dataManager.saveTemplateToBackupLocation();
+            _log.info('Template saved successfully');
+          } catch (e, s) {
+            _log.warning('Failed to save template to backup location', e, s);
+            // Don't show error to user - template saving is a background operation
+          }
+        } else {
+          _log.info(
+              'No template parameter changes detected, skipping template save');
+        }
+
         widget.onSubmitCallback();
         Navigator.of(context).pop(newItem);
       } catch (e, s) {
@@ -761,13 +887,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     setState(() {
                       _selectedItemType = value;
                       // Set default start and goal values to 30 for new MINUTES items
-                      if (value == ItemType.minutes && widget.dailyThing == null) {
+                      if (value == ItemType.minutes &&
+                          widget.dailyThing == null) {
                         _startValueController.text = '30.0';
                         _endValueController.text = '30.0';
                       } else {
                         _startValueController.text =
                             converted.startValue.toString();
-                        _endValueController.text = converted.endValue.toString();
+                        _endValueController.text =
+                            converted.endValue.toString();
                       }
                       _uniqueCategories = newCategories;
                       _categoryController.text = newCategoryText;
