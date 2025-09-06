@@ -43,13 +43,17 @@ class TimerView extends StatefulWidget {
 }
 
 class _TimerViewState extends State<TimerView> {
-  late int _remainingSeconds;
+  late double _remainingSeconds;
   bool _isPaused = true;
   bool _hasStarted = false;
   Timer? _timer;
   bool _isOvertime = false;
-  int _overtimeSeconds = 0;
+  double _overtimeSeconds = 0.0;
   int _completedSubdivisions = 0;
+  // High-resolution timing variables for precise subdivision synchronization
+  double _preciseElapsedSeconds = 0.0;
+  double _preciseSubdivisionInterval = 0.0;
+  int _lastTriggeredSubdivision = -1;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _subdivisionAudioPlayer = AudioPlayer();
   final _log = Logger('TimerView');
@@ -394,41 +398,40 @@ class _TimerViewState extends State<TimerView> {
         _isPaused = true;
         _hasStarted = true;
         final overtimeMinutes = completedMinutes - dailyTarget;
-        _overtimeSeconds =
-            (overtimeMinutes > 0) ? (overtimeMinutes * 60).round() : 0;
-        _remainingSeconds = 0;
-        
-        // Calculate completed subdivisions for overtime mode
+        _overtimeSeconds = (overtimeMinutes > 0) ? (overtimeMinutes * 60) : 0.0;
+        _remainingSeconds = 0.0;
+
+        // Calculate completed subdivisions for overtime mode using precise floating-point
         if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
-          final totalSeconds = (_todaysTargetMinutes * 60).round();
-          final subdivisionInterval =
-              (totalSeconds / widget.item.subdivisions!).round();
+          final totalSeconds = (_todaysTargetMinutes * 60);
+          final subdivisionInterval = totalSeconds / widget.item.subdivisions!;
           if (subdivisionInterval > 0) {
             final elapsedSeconds = totalSeconds + _overtimeSeconds;
-            // Use the same calculation method as in the timer loop
-            _completedSubdivisions =
-                (elapsedSeconds ~/ subdivisionInterval).clamp(0, widget.item.subdivisions! * 2); // Allow for overtime
+            // Use precise calculation to match the new timer logic
+            _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
+                .floor()
+                .clamp(0, widget.item.subdivisions! * 2); // Allow for overtime
           }
         }
       } else {
         final remainingMinutes = dailyTarget - completedMinutes;
-        _remainingSeconds = (remainingMinutes * 60).round();
+        _remainingSeconds = (remainingMinutes * 60);
       }
 
-      // Calculate already completed subdivisions
+      // Calculate already completed subdivisions using precise floating-point
       if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
-        final totalSeconds = (_todaysTargetMinutes * 60).round();
-        final subdivisionInterval =
-            (totalSeconds / widget.item.subdivisions!).round();
+        final totalSeconds = (_todaysTargetMinutes * 60);
+        final subdivisionInterval = totalSeconds / widget.item.subdivisions!;
         if (subdivisionInterval > 0) {
           final elapsedSeconds = totalSeconds - _remainingSeconds;
-          // Use the same calculation method as in the timer loop
-          _completedSubdivisions =
-              (elapsedSeconds ~/ subdivisionInterval).clamp(0, widget.item.subdivisions! - 1);
+          // Use precise calculation to match the new timer logic
+          _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
+              .floor()
+              .clamp(0, widget.item.subdivisions! - 1);
         }
       }
     } else {
-      _remainingSeconds = _initialTargetSeconds.round();
+      _remainingSeconds = _initialTargetSeconds;
     }
     _log.info('--- TIMER INITIALIZATION END ---');
     _commentFocusNode.addListener(() {
@@ -485,8 +488,7 @@ class _TimerViewState extends State<TimerView> {
           // Timer is finished, start overtime mode
           _isOvertime = true;
           // Ensure subdivisions are visible in overtime mode
-          setState(() {
-          });
+          setState(() {});
           _runOvertime();
         } else if (_isOvertime) {
           _log.info('Running overtime timer');
@@ -508,34 +510,37 @@ class _TimerViewState extends State<TimerView> {
 
   void _runOvertime() {
     final subdivisions = widget.item.subdivisions;
-    final totalSeconds = (_todaysTargetMinutes * 60).round();
-    final subdivisionInterval = subdivisions != null && subdivisions > 1 
-        ? (totalSeconds / subdivisions).round() 
-        : 0;
-    
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    final totalSeconds = (_todaysTargetMinutes * 60);
+
+    // Calculate precise subdivision interval without rounding
+    if (subdivisions != null && subdivisions > 1) {
+      _preciseSubdivisionInterval = totalSeconds / subdivisions;
+      _preciseElapsedSeconds = totalSeconds + _overtimeSeconds;
+      _lastTriggeredSubdivision =
+          (_preciseElapsedSeconds / _preciseSubdivisionInterval).floor();
+    }
+
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (_isPaused) {
         timer.cancel();
         return;
       }
-      
-      final previousOvertimeSeconds = _overtimeSeconds;
-      
+
       setState(() {
-        _overtimeSeconds++;
-        
+        _overtimeSeconds += 0.1; // 100ms increments
+        _preciseElapsedSeconds = totalSeconds + _overtimeSeconds;
+
         // Check if we've crossed a subdivision boundary in overtime
-        if (subdivisionInterval > 0) {
-          // Calculate which subdivision we're in (continuing from where countdown left off)
-          final previousSubdivision = (totalSeconds + previousOvertimeSeconds) ~/ subdivisionInterval;
-          final newSubdivision = (totalSeconds + _overtimeSeconds) ~/ subdivisionInterval;
-          
+        if (_preciseSubdivisionInterval > 0) {
+          final currentSubdivision =
+              (_preciseElapsedSeconds / _preciseSubdivisionInterval).floor();
+
           // Only play bell when we cross into a new subdivision
-          if (newSubdivision > previousSubdivision && newSubdivision > 0) {
+          if (currentSubdivision > _lastTriggeredSubdivision &&
+              currentSubdivision > 0) {
             _playSubdivisionBell();
-            setState(() {
-              _completedSubdivisions = newSubdivision;
-            });
+            _lastTriggeredSubdivision = currentSubdivision;
+            _completedSubdivisions = currentSubdivision;
           }
         }
       });
@@ -554,20 +559,23 @@ class _TimerViewState extends State<TimerView> {
 
     final subdivisions = widget.item.subdivisions;
     if (subdivisions != null && subdivisions > 1) {
-      final totalSeconds = (_todaysTargetMinutes * 60).round();
-      final subdivisionInterval = (totalSeconds / subdivisions).round();
+      final totalSeconds = (_todaysTargetMinutes * 60);
 
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Calculate precise subdivision interval without rounding
+      _preciseSubdivisionInterval = totalSeconds / subdivisions;
+      _preciseElapsedSeconds = totalSeconds - _remainingSeconds;
+      _lastTriggeredSubdivision =
+          (_preciseElapsedSeconds / _preciseSubdivisionInterval).floor();
+
+      _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (_isPaused) {
           timer.cancel();
           return;
         }
 
-        // Calculate elapsed seconds before updating _remainingSeconds
-        final previousElapsedSeconds = totalSeconds - _remainingSeconds;
-        
         setState(() {
-          _remainingSeconds--;
+          _remainingSeconds -= 0.1; // 100ms decrements
+          _preciseElapsedSeconds = totalSeconds - _remainingSeconds;
 
           // Check for immediate completion when reaching 0
           if (_remainingSeconds <= 0) {
@@ -577,33 +585,30 @@ class _TimerViewState extends State<TimerView> {
             return;
           }
 
-          // Calculate new elapsed seconds after updating _remainingSeconds
-          final newElapsedSeconds = totalSeconds - _remainingSeconds;
-          
           // Check if we've crossed a subdivision boundary
-          if (subdivisionInterval > 0) {
-            final previousSubdivision = previousElapsedSeconds ~/ subdivisionInterval;
-            final newSubdivision = newElapsedSeconds ~/ subdivisionInterval;
-            
+          if (_preciseSubdivisionInterval > 0) {
+            final currentSubdivision =
+                (_preciseElapsedSeconds / _preciseSubdivisionInterval).floor();
+
             // Only play bell when we cross into a new subdivision (and not at the very start)
-            if (newSubdivision > previousSubdivision && newSubdivision > 0) {
+            if (currentSubdivision > _lastTriggeredSubdivision &&
+                currentSubdivision > 0) {
               _playSubdivisionBell();
-              setState(() {
-                _completedSubdivisions = newSubdivision;
-              });
+              _lastTriggeredSubdivision = currentSubdivision;
+              _completedSubdivisions = currentSubdivision;
             }
           }
         });
       });
     } else {
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (_isPaused) {
           timer.cancel();
           return;
         }
 
         setState(() {
-          _remainingSeconds--;
+          _remainingSeconds -= 0.1; // 100ms decrements
 
           // Check for immediate completion when reaching 0
           if (_remainingSeconds <= 0) {
@@ -1461,7 +1466,8 @@ class _TimerViewState extends State<TimerView> {
         (_isOvertime ? _isPaused : (_remainingSeconds <= 0 && !_isOvertime));
 
     // In minimalist mode when timer is running, fade out the comment field like other UI elements
-    final bool shouldFadeOut = _minimalistMode && !_isPaused && showCommentField;
+    final bool shouldFadeOut =
+        _minimalistMode && !_isPaused && showCommentField;
 
     return Opacity(
       opacity: showCommentField ? 1.0 : 0.0,
