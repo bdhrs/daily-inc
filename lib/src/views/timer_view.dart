@@ -7,7 +7,6 @@ import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/widgets/next_task_arrow.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:daily_inc/src/views/widgets/timer_painter.dart';
@@ -328,8 +327,6 @@ class _TimerViewState extends State<TimerView> {
     _todaysTargetMinutes = widget.item.todayValue;
     _initialTargetSeconds = _todaysTargetMinutes * 60;
 
-    // Enable fullscreen mode when entering the timer view
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     if (widget.startInOvertime) {
       _isOvertime = true;
       _isPaused = true;
@@ -442,8 +439,6 @@ class _TimerViewState extends State<TimerView> {
   @override
   void dispose() {
     _log.info('dispose called');
-    // Disable fullscreen mode when exiting the timer view
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _timer?.cancel();
     _dimTimer?.cancel();
     _commentController.dispose();

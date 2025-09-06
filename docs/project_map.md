@@ -169,7 +169,7 @@ This document provides a map of the project, listing the location of all functio
   - `_showRepsInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:629`](lib/src/views/daily_things_view.dart:629): Prompts to enter reps and saves them.
   - `_showPercentageInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:640`](lib/src/views/daily_things_view.dart:640): Prompts to enter percentage (0-100%) via slider and saves them.
   - `_showTrendInputDialog(DailyThing item)` [`lib/src/views/daily_things_view.dart:651`](lib/src/views/daily_things_view.dart:651): Prompts to enter trend and saves it.
-  - `_showFullscreenTimer(DailyThing item, {bool startInOvertime = false})` [`lib/src/views/daily_things_view.dart:700`](lib/src/views/daily_things_view.dart:700): Shows the fullscreen timer view with navigation context.
+  - `_showFullscreenTimer(DailyThing item, {bool startInOvertime = false})` [`lib/src/views/daily_things_view.dart:700`](lib/src/views/daily_things_view.dart:700): Shows the fullscreen timer view with navigation context and manages immersive mode throughout the timer workflow.
   - `build(BuildContext context)` [`lib/src/views/daily_things_view.dart:1047`](lib/src/views/daily_things_view.dart:1047): Builds filters, menus, the reorderable task list, and uses the DailyThingsAppBar widget.
   - `_toggleShowArchivedItems()` [`lib/src/views/daily_things_view.dart:65`](lib/src/views/daily_things_view.dart:65): Toggles between showing and hiding archived items.
   - `_filterDisplayedItems(List<DailyThing> allItems)` [`lib/src/views/daily_things_view.dart:950`](lib/src/views/daily_things_view.dart:950): Filters items based on archived status and other criteria.

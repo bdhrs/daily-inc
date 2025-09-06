@@ -23,6 +23,7 @@ import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/services.dart';
 
 class DailyThingsView extends StatefulWidget {
   const DailyThingsView({super.key});
@@ -358,6 +359,9 @@ class _DailyThingsViewState extends State<DailyThingsView>
   void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
     _log.info('Showing fullscreen timer for: ${item.name}');
 
+    // Enable immersive mode when entering timer view
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
     // Find the index of the current item in the list
     final currentIndex =
         _dailyThings.indexWhere((thing) => thing.id == item.id);
@@ -368,7 +372,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
         builder: (context) => TimerView(
           item: item,
           dataManager: _dataManager,
-          onExitCallback: _refreshDisplay,
+          onExitCallback: () {
+            // Restore normal UI mode when exiting timer view
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            _refreshDisplay();
+          },
           startInOvertime: startInOvertime,
           allItems: _dailyThings,
           currentItemIndex: currentIndex,
