@@ -284,7 +284,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
         // If original item not found, add to the end (fallback)
         items.add(duplicatedItem);
       }
-      await _dataManager.saveData(items);
+      await _dataManager.saveData(items, context: context);
       _refreshDisplay();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -825,7 +825,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
         });
 
         // Save the loaded data to the default storage
-        await _dataManager.saveData(_dailyThings);
+        await _dataManager.saveData(_dailyThings, context: context);
         _log.info('History loaded and saved to default storage successfully.');
 
         if (mounted) {
@@ -913,7 +913,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           });
 
           // Save the loaded data to the default storage
-          await _dataManager.saveData(_dailyThings);
+          await _dataManager.saveData(_dailyThings, context: context);
           _log.info(
               'Template loaded and saved to default storage successfully.');
 
@@ -1059,7 +1059,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
                 newIndex: newIndex,
               );
             });
-            _dataManager.saveData(_dailyThings);
+            _dataManager.saveData(_dailyThings, context: context);
           },
           children: displayedItems.asMap().entries.map((entry) {
             final index = entry.key;

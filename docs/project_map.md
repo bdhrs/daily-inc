@@ -110,19 +110,26 @@ This document provides a map of the project, listing the location of all functio
 - `Status` enum [`lib/src/models/status.dart:1`](lib/src/models/status.dart:1): Simple green or red state for display.
 
 ## lib/src/services/backup_service.dart
-- `BackupService` class [`lib/src/services/backup_service.dart:9`](lib/src/services/backup_service.dart:9): Handles automatic backups with user-configurable settings.
-  - `isBackupEnabled()` [`lib/src/services/backup_service.dart:22`](lib/src/services/backup_service.dart:22): Checks if automatic backups are enabled.
-  - `setBackupEnabled(bool enabled)` [`lib/src/services/backup_service.dart:28`](lib/src/services/backup_service.dart:28): Enables or disables automatic backups.
-  - `getBackupLocation()` [`lib/src/services/backup_service.dart:35`](lib/src/services/backup_service.dart:35): Gets the backup directory path.
-  - `setBackupLocation(String path)` [`lib/src/services/backup_service.dart:41`](lib/src/services/backup_service.dart:41): Sets the backup directory path.
-  - `getBackupRetentionDays()` [`lib/src/services/backup_service.dart:48`](lib/src/services/backup_service.dart:48): Gets backup retention days setting.
-  - `setBackupRetentionDays(int days)` [`lib/src/services/backup_service.dart:55`](lib/src/services/backup_service.dart:55): Sets backup retention days.
-  - `shouldShowBackupPrompt()` [`lib/src/services/backup_service.dart:90`](lib/src/services/backup_service.dart:90): Checks if backup prompt should be shown (after 1 day of first use, but not if backups are already enabled).
-  - `createBackup(List<DailyThing> items)` [`lib/src/services/backup_service.dart:77`](lib/src/services/backup_service.dart:77): Creates timestamped backup and always keeps a "_latest" version.
-  - `_cleanupOldBackups(Directory backupDir)` [`lib/src/services/backup_service.dart:129`](lib/src/services/backup_service.dart:129): Cleans up old backups while preserving the latest file.
-  - `getAvailableBackups()` [`lib/src/services/backup_service.dart:158`](lib/src/services/backup_service.dart:158): Gets list of available backups.
-  - `restoreFromBackup(File backupFile)` [`lib/src/services/backup_service.dart:176`](lib/src/services/backup_service.dart:176): Restores from a specific backup file.
-  - `getDefaultBackupDirectory()` [`lib/src/services/backup_service.dart:196`](lib/src/services/backup_service.dart:196): Gets default backup directory.
+- `BackupService` class [`lib/src/services/backup_service.dart:9`](lib/src/services/backup_service.dart:9): Handles automatic backups with user-configurable settings and comprehensive error handling.
+  - `isBackupEnabled()` [`lib/src/services/backup_service.dart:27`](lib/src/services/backup_service.dart:27): Checks if automatic backups are enabled.
+  - `setBackupEnabled(bool enabled)` [`lib/src/services/backup_service.dart:33`](lib/src/services/backup_service.dart:33): Enables or disables automatic backups.
+  - `getBackupLocation()` [`lib/src/services/backup_service.dart:40`](lib/src/services/backup_service.dart:40): Gets the backup directory path.
+  - `setBackupLocation(String path)` [`lib/src/services/backup_service.dart:46`](lib/src/services/backup_service.dart:46): Sets the backup directory path.
+  - `getBackupRetentionDays()` [`lib/src/services/backup_service.dart:53`](lib/src/services/backup_service.dart:53): Gets backup retention days setting.
+  - `setBackupRetentionDays(int days)` [`lib/src/services/backup_service.dart:60`](lib/src/services/backup_service.dart:60): Sets backup retention days.
+  - `getLastBackupTime()` [`lib/src/services/backup_service.dart:67`](lib/src/services/backup_service.dart:67): Gets the last backup time.
+  - `getLastBackupSuccess()` [`lib/src/services/backup_service.dart:102`](lib/src/services/backup_service.dart:102): Gets last backup success status.
+  - `getLastBackupError()` [`lib/src/services/backup_service.dart:108`](lib/src/services/backup_service.dart:108): Gets last backup error message.
+  - `getBackupFailureCount()` [`lib/src/services/backup_service.dart:114`](lib/src/services/backup_service.dart:114): Gets consecutive backup failure count.
+  - `isBackupConsistentlyFailing()` [`lib/src/services/backup_service.dart:120`](lib/src/services/backup_service.dart:120): Checks if backups are consistently failing (3+ consecutive failures).
+  - `shouldShowBackupPrompt()` [`lib/src/services/backup_service.dart:137`](lib/src/services/backup_service.dart:137): Checks if backup prompt should be shown (after 1 day of first use, but not if backups are already enabled).
+  - `createBackup(List<DailyThing> items)` [`lib/src/services/backup_service.dart:208`](lib/src/services/backup_service.dart:208): Creates timestamped backup and always keeps a "latest" version with comprehensive error handling and permission checking.
+  - `_createBackupInDirectory()` [`lib/src/services/backup_service.dart:247`](lib/src/services/backup_service.dart:247): Creates backup in specified directory with write permission validation.
+  - `_cleanupOldBackups(Directory backupDir)` [`lib/src/services/backup_service.dart:300`](lib/src/services/backup_service.dart:300): Cleans up old backups while preserving the latest file.
+  - `getAvailableBackups()` [`lib/src/services/backup_service.dart:330`](lib/src/services/backup_service.dart:330): Gets list of available backups.
+  - `restoreFromBackup(File backupFile)` [`lib/src/services/backup_service.dart:348`](lib/src/services/backup_service.dart:348): Restores from a specific backup file.
+  - `getDefaultBackupDirectory()` [`lib/src/services/backup_service.dart:368`](lib/src/services/backup_service.dart:368): Gets default backup directory.
+  - `_getUserFriendlyErrorMessage()` [`lib/src/services/backup_service.dart:374`](lib/src/services/backup_service.dart:374): Converts technical error messages to user-friendly descriptions with Android permission guidance.
 
 ## lib/src/services/update_service.dart
 - `UpdateService` class [`lib/src/services/update_service.dart:14`](lib/src/services/update_service.dart:14): Handles app update checks, downloads, and installation.

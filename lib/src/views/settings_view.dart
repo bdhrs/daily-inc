@@ -1,11 +1,11 @@
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/services/backup_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class SettingsView extends StatefulWidget {
   final VoidCallback? onResetAllData;
@@ -31,7 +31,7 @@ class _SettingsViewState extends State<SettingsView> {
 
   // Screen dimmer setting
   bool _dimScreenMode = false;
-  
+
   // Minimalist mode setting
   bool _minimalistMode = false;
 
@@ -40,6 +40,9 @@ class _SettingsViewState extends State<SettingsView> {
   String _backupLocation = '';
   int _backupRetentionDays = 30;
   DateTime? _lastBackupTime;
+  bool? _lastBackupSuccess;
+  String? _lastBackupError;
+  int _backupFailureCount = 0;
 
   late TextEditingController _startOfDayMessageController;
   late TextEditingController _completionMessageController;
@@ -67,6 +70,9 @@ class _SettingsViewState extends State<SettingsView> {
     final backupService = BackupService();
     final defaultBackupPath = await backupService.getDefaultBackupDirectory();
 
+    // Load backup location separately since it's async
+    final savedBackupLocation = await backupService.getBackupLocation();
+
     setState(() {
       _showStartOfDayMessage = prefs.getBool('showStartOfDayMessage') ?? false;
       _startOfDayMessageText = prefs.getString('startOfDayMessageText') ??
@@ -81,16 +87,20 @@ class _SettingsViewState extends State<SettingsView> {
       _minimalistMode =
           prefs.getBool('minimalistMode') ?? false; // Load minimalist mode
 
-      // Load backup settings
+      // Load backup settings - use saved location or default
       _backupEnabled = prefs.getBool('backupEnabled') ?? false;
-      // Always use the default backup location
-      _backupLocation = defaultBackupPath;
+      _backupLocation = savedBackupLocation ?? defaultBackupPath;
       _backupRetentionDays = prefs.getInt('backupRetentionDays') ?? 30;
 
       final lastBackupTimestamp = prefs.getInt('lastBackupTime');
       _lastBackupTime = lastBackupTimestamp != null
           ? DateTime.fromMillisecondsSinceEpoch(lastBackupTimestamp)
           : null;
+
+      // Load backup status information
+      _lastBackupSuccess = prefs.getBool('lastBackupSuccess');
+      _lastBackupError = prefs.getString('lastBackupError');
+      _backupFailureCount = prefs.getInt('backupFailureCount') ?? 0;
     });
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
@@ -115,7 +125,8 @@ class _SettingsViewState extends State<SettingsView> {
 
     // Save backup settings
     await prefs.setBool('backupEnabled', _backupEnabled);
-    // No need to save backupLocation as it's always the default
+    final backupService = BackupService();
+    await backupService.setBackupLocation(_backupLocation);
     await prefs.setInt('backupRetentionDays', _backupRetentionDays);
 
     // Update the static variable in IncrementCalculator
@@ -132,18 +143,26 @@ class _SettingsViewState extends State<SettingsView> {
       final success = await backupService.createBackup(items);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success
-                ? 'Backup created successfully!'
-                : 'Backup failed. Check backup settings.'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
         if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Backup created successfully!'),
+              duration: Duration(seconds: 2),
+            ),
+          );
           // Reload settings to update last backup time
           await _loadSettings();
+        } else {
+          // Get the error message from backup service
+          final errorMessage = await backupService.getLastBackupError();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Backup failed: ${errorMessage ?? "Unknown error"}'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (e, s) {
@@ -152,6 +171,39 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Backup error: ${e.toString()}'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _chooseBackupDirectory() async {
+    try {
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+      if (selectedDirectory != null) {
+        setState(() {
+          _backupLocation = selectedDirectory;
+        });
+        await _saveSettings();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Backup location updated'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e, s) {
+      _log.warning('Error choosing backup directory', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting directory: ${e.toString()}'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -394,9 +446,22 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 8),
             const Text('Backup location:'),
             const SizedBox(height: 8),
-            Text(
-              _backupLocation,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _backupLocation,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: _chooseBackupDirectory,
+                  tooltip: 'Choose backup directory',
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             const Text('Keep backups for:'),
@@ -420,11 +485,58 @@ class _SettingsViewState extends State<SettingsView> {
                 Text('$_backupRetentionDays days'),
               ],
             ),
+            // Backup status indicators
             if (_lastBackupTime != null)
-              Text(
-                'Last backup: ${_lastBackupTime!.toString().split(' ')[0]} ${_lastBackupTime!.toString().split(' ')[1].substring(0, 5)}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              Row(
+                children: [
+                  Icon(
+                    _lastBackupSuccess == true
+                        ? Icons.check_circle
+                        : Icons.error_outline,
+                    size: 16,
+                    color: _lastBackupSuccess == true
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Last backup: ${_lastBackupTime!.toString().split(' ')[0]} ${_lastBackupTime!.toString().split(' ')[1].substring(0, 5)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _lastBackupSuccess == true
+                          ? Colors.green
+                          : Colors.orange,
+                    ),
+                  ),
+                ],
               ),
+
+            if (_lastBackupError != null && _lastBackupSuccess == false)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  'Error: ${_lastBackupError!}',
+                  style: const TextStyle(fontSize: 11, color: Colors.red),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+            if (_backupFailureCount >= 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning, size: 14, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Backups consistently failing ($_backupFailureCount attempts)',
+                      style: const TextStyle(fontSize: 11, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+
             const SizedBox(height: 16),
             ElevatedButton.icon(
               icon: const Icon(Icons.backup),
