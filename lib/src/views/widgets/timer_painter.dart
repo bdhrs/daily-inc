@@ -55,8 +55,8 @@ class TimerPainter extends CustomPainter {
     // Spokes - always draw when subdivisions are set
     if (subdivisions > 0) {
       final spokePaint = Paint()
-        ..color = ColorPalette.secondaryText.withAlpha((255 * 0.5).round())
-        ..strokeWidth = 2;
+        ..color = ColorPalette.lightText
+        ..strokeWidth = 3;
       for (int i = 0; i < subdivisions; i++) {
         final angle = -pi / 2 + 2 * pi * i / subdivisions;
         final start = center + Offset(cos(angle), sin(angle)) * (radius - 8);
