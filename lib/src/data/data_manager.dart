@@ -5,7 +5,6 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/services/backup_service.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -154,7 +153,7 @@ class DataManager {
     }
   }
 
-  Future<void> saveData(List<DailyThing> items, {BuildContext? context}) async {
+  Future<void> saveData(List<DailyThing> items) async {
     _log.info('saveData called with ${items.length} items.');
     try {
       final raw = await _readRawStore();
@@ -163,8 +162,8 @@ class DataManager {
       await _writeRawStore(raw);
       _log.info('Saved data to file-based storage.');
 
-      // Trigger automatic backup with context for notifications
-      await _triggerAutomaticBackup(items, context: context);
+      // Trigger automatic backup
+      await _triggerAutomaticBackup(items);
     } catch (e, s) {
       _log.severe('Error saving data to file', e, s);
     }
@@ -174,7 +173,7 @@ class DataManager {
     _log.info('addDailyThing called for item: ${newItem.name}');
     final items = await loadData();
     items.add(newItem);
-    await saveData(items, context: null);
+    await saveData(items);
     _log.info('Item added and data saved.');
   }
 
@@ -182,7 +181,7 @@ class DataManager {
     _log.info('deleteDailyThing called for item: ${itemToDelete.name}');
     final items = await loadData();
     items.removeWhere((item) => item.id == itemToDelete.id);
-    await saveData(items, context: null);
+    await saveData(items);
     _log.info('Item deleted and data saved.');
   }
 
@@ -193,7 +192,7 @@ class DataManager {
     if (index != -1) {
       _log.info('Item found at index $index, updating.');
       items[index] = updatedItem;
-      await saveData(items, context: null);
+      await saveData(items);
       _log.info('Item updated and data saved.');
     } else {
       _log.warning('Item with id ${updatedItem.id} not found for update.');
@@ -403,32 +402,11 @@ class DataManager {
     await _writeRawStore(raw);
   }
 
-  /// Trigger automatic backup after data is saved with optional context for notifications
-  Future<void> _triggerAutomaticBackup(List<DailyThing> items,
-      {BuildContext? context}) async {
+  /// Trigger automatic backup after data is saved
+  Future<void> _triggerAutomaticBackup(List<DailyThing> items) async {
     try {
       final backupService = BackupService();
-      final success = await backupService.createBackup(items);
-
-      // Show notification if context is provided and backup failed
-      if (context != null && !success) {
-        final errorMessage = await backupService.getLastBackupError();
-        final failureCount = await backupService.getBackupFailureCount();
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                failureCount >= 3
-                    ? 'Backups consistently failing: ${errorMessage ?? 'Unknown error'}'
-                    : 'Backup failed: ${errorMessage ?? 'Unknown error'}',
-              ),
-              duration: const Duration(seconds: 4),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+      await backupService.createBackup(items);
     } catch (e, s) {
       _log.warning('Automatic backup failed', e, s);
       // Don't rethrow - backup failure shouldn't prevent data saving

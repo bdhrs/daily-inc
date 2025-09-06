@@ -6,7 +6,6 @@ import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class BackupService {
   static const String _prefsKeyBackupEnabled = 'backupEnabled';
@@ -15,9 +14,6 @@ class BackupService {
   static const String _prefsKeyLastBackupTime = 'lastBackupTime';
   static const String _prefsKeyFirstAppUseDate = 'firstAppUseDate';
   static const String _prefsKeyBackupPromptShown = 'backupPromptShown';
-  static const String _prefsKeyLastBackupSuccess = 'lastBackupSuccess';
-  static const String _prefsKeyLastBackupError = 'lastBackupError';
-  static const String _prefsKeyBackupFailureCount = 'backupFailureCount';
 
   static const bool _defaultBackupEnabled = false;
   static const int _defaultBackupRetentionDays = 30;
@@ -77,50 +73,6 @@ class BackupService {
   Future<void> _setLastBackupTime(DateTime time) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_prefsKeyLastBackupTime, time.millisecondsSinceEpoch);
-  }
-
-  /// Set backup success status
-  Future<void> _setBackupSuccess(bool success, {String? errorMessage}) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefsKeyLastBackupSuccess, success);
-
-    if (errorMessage != null) {
-      await prefs.setString(_prefsKeyLastBackupError, errorMessage);
-    } else {
-      await prefs.remove(_prefsKeyLastBackupError);
-    }
-
-    // Track consecutive failures
-    if (!success) {
-      final currentFailures = prefs.getInt(_prefsKeyBackupFailureCount) ?? 0;
-      await prefs.setInt(_prefsKeyBackupFailureCount, currentFailures + 1);
-    } else {
-      await prefs.setInt(_prefsKeyBackupFailureCount, 0);
-    }
-  }
-
-  /// Get last backup success status
-  Future<bool?> getLastBackupSuccess() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_prefsKeyLastBackupSuccess);
-  }
-
-  /// Get last backup error message
-  Future<String?> getLastBackupError() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefsKeyLastBackupError);
-  }
-
-  /// Get consecutive backup failure count
-  Future<int> getBackupFailureCount() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_prefsKeyBackupFailureCount) ?? 0;
-  }
-
-  /// Check if backups are consistently failing
-  Future<bool> isBackupConsistentlyFailing() async {
-    final failureCount = await getBackupFailureCount();
-    return failureCount >= 3; // Consider it consistent after 3+ failures
   }
 
   /// Record first app use if not already recorded
@@ -214,16 +166,9 @@ class BackupService {
         return false;
       }
 
-      // Use configured backup location or fall back to default
-      final configuredLocation = await getBackupLocation();
-      final backupLocation = configuredLocation?.isNotEmpty == true
-          ? configuredLocation!
-          : await getDefaultBackupDirectory();
-
-      // Only set to default if no location is configured
-      if (configuredLocation?.isEmpty != false) {
-        await setBackupLocation(backupLocation);
-      }
+      // Always use the default backup directory to avoid permission issues on Android
+      final backupLocation = await getDefaultBackupDirectory();
+      await setBackupLocation(backupLocation); // Ensure setting is updated
 
       final backupDir = Directory(backupLocation);
       if (!backupDir.existsSync()) {
@@ -231,44 +176,16 @@ class BackupService {
         _log.info('Created backup directory: $backupLocation');
       }
 
-      final success = await _createBackupInDirectory(backupDir, items);
-      await _setBackupSuccess(success,
-          errorMessage:
-              success ? null : 'Failed to create backup in directory');
-      return success;
+      return await _createBackupInDirectory(backupDir, items);
     } catch (e, s) {
-      final errorMessage = _getUserFriendlyErrorMessage(e);
-      _log.severe('Error creating backup: $errorMessage', e, s);
-      await _setBackupSuccess(false, errorMessage: errorMessage);
+      _log.severe('Error creating backup', e, s);
       return false;
     }
   }
 
   /// Create a backup in the specified directory
-  Future<bool> _createBackupInDirectory(
-      Directory backupDir, List<DailyThing> items) async {
+  Future<bool> _createBackupInDirectory(Directory backupDir, List<DailyThing> items) async {
     try {
-      // Check if directory exists and is writable
-      if (!await backupDir.exists()) {
-        try {
-          await backupDir.create(recursive: true);
-          _log.info('Created backup directory: ${backupDir.path}');
-        } catch (e, s) {
-          final errorMessage = _getUserFriendlyErrorMessage(e);
-          _log.severe('Failed to create backup directory: $errorMessage', e, s);
-          return false;
-        }
-      }
-
-      // Check if we can write to the directory
-      final canWrite = await _canWriteToDirectory(backupDir.path);
-      if (!canWrite) {
-        final errorMessage =
-            'Cannot write to backup directory. Please choose a different location or check app permissions.';
-        _log.severe(errorMessage);
-        return false;
-      }
-
       // Generate backup filenames
       final timestamp = DateTime.now();
       final timestampedFilename =
@@ -306,14 +223,9 @@ class BackupService {
       // Clean up old backups (excluding the latest file)
       await _cleanupOldBackups(backupDir);
 
-      await _setBackupSuccess(true);
       return true;
     } catch (e, s) {
-      final errorMessage = _getUserFriendlyErrorMessage(e);
-      _log.severe(
-          'Error creating backup in directory ${backupDir.path}: $errorMessage',
-          e,
-          s);
+      _log.severe('Error creating backup in directory: ${backupDir.path}', e, s);
       return false;
     }
   }
@@ -390,133 +302,5 @@ class BackupService {
   Future<String> getDefaultBackupDirectory() async {
     final documentsDir = await getApplicationDocumentsDirectory();
     return '${documentsDir.path}/DailyIncBackups';
-  }
-
-  /// Check if we can write to a directory (handles Android scoped storage limitations)
-  Future<bool> _canWriteToDirectory(String directoryPath) async {
-    try {
-      final dir = Directory(directoryPath);
-
-      // For Android, we need to handle scoped storage limitations
-      if (Platform.isAndroid) {
-        // Request both storage permissions - the appropriate one will be used based on Android version
-        // For Android 10+ (SDK 29+), we need manageExternalStorage permission
-        // For older versions, we need storage permission
-        PermissionStatus status;
-
-        try {
-          // Try requesting manage external storage permission first (for Android 10+)
-          status = await Permission.manageExternalStorage.request();
-          if (!status.isGranted) {
-            // If that fails, try regular storage permission (for older Android versions)
-            status = await Permission.storage.request();
-            if (!status.isGranted) {
-              _log.severe(
-                  'Neither manage external storage nor storage permission granted');
-              return false;
-            }
-          }
-        } catch (e) {
-          // If manageExternalStorage is not available, try regular storage permission
-          status = await Permission.storage.request();
-          if (!status.isGranted) {
-            _log.severe('Storage permission not granted: $e');
-            return false;
-          }
-        }
-
-        // Check if this is a directory we can access with our current permissions
-        // For scoped storage, we might need to use different approaches
-
-        // Try to create a test file to check write permissions
-        final testFile = File(
-            '$directoryPath/.write_test_${DateTime.now().millisecondsSinceEpoch}');
-        try {
-          await testFile.writeAsString('test', flush: true);
-          await testFile.delete();
-          return true;
-        } catch (e) {
-          _log.fine('Cannot write to directory $directoryPath: $e');
-          return false;
-        }
-      }
-
-      // For non-Android platforms, check directory existence and writability
-      if (await dir.exists()) {
-        // Check if we can write by creating a test file
-        final testFile = File('${dir.path}/.write_test');
-        try {
-          await testFile.writeAsString('test', flush: true);
-          await testFile.delete();
-          return true;
-        } catch (e) {
-          _log.fine('Directory exists but not writable: $e');
-          return false;
-        }
-      }
-
-      // Try to create the directory
-      try {
-        await dir.create(recursive: true);
-        _log.info('Created backup directory: ${dir.path}');
-
-        // Verify we can write to it
-        final testFile = File('${dir.path}/.write_test');
-        await testFile.writeAsString('test', flush: true);
-        await testFile.delete();
-        return true;
-      } catch (e) {
-        _log.fine('Cannot create or write to directory: $e');
-        return false;
-      }
-    } catch (e, s) {
-      _log.warning('Error checking directory write access', e, s);
-      return false;
-    }
-  }
-
-  /// Check if Android version is 10 or higher (SDK 29+)
-  Future<bool> _isAndroid10OrHigher() async {
-    try {
-      // We'll use a simple approach to check Android version
-      // For Android 10+, the SDK version is 29 or higher
-      // Since we don't have device_info_plus imported, we'll use a simpler approach
-      return false; // For now, we'll assume older Android versions to be safe
-    } catch (e) {
-      _log.warning('Error checking Android version, assuming older version', e);
-      return false; // Assume older Android version if we can't determine
-    }
-  }
-
-  /// Convert technical error messages to user-friendly descriptions
-  String _getUserFriendlyErrorMessage(Object error) {
-    if (error is FileSystemException) {
-      if (error.osError?.errorCode == 13) {
-        return 'Permission denied - cannot write to backup location. Please grant storage permission in app settings or choose a different directory.';
-      } else if (error.osError?.errorCode == 1) {
-        return 'Operation not permitted - cannot write to backup location. Please check storage permissions or choose a different directory.';
-      } else if (error.osError?.errorCode == 2) {
-        return 'Backup directory not found or inaccessible';
-      } else if (error.osError?.errorCode == 30) {
-        return 'Storage is read-only - cannot write to backup location';
-      }
-      return 'File system error: ${error.message}';
-    } else if (error is PathAccessException) {
-      return 'Cannot access the specified backup location. Please choose a different directory or check storage permissions.';
-    } else if (error is FormatException) {
-      return 'Data format error during backup';
-    } else if (error is IOException) {
-      return 'Input/output error - storage may be full, unavailable, or read-only';
-    } else if (error.toString().contains('Permission denied')) {
-      return 'Permission denied - cannot access backup location. Please grant storage permission in app settings or choose a different directory.';
-    } else if (error.toString().contains('Read-only file system')) {
-      return 'Storage is read-only - cannot write to backup location. Please choose a different directory.';
-    } else if (error.toString().contains('Operation not permitted')) {
-      return 'Operation not permitted - cannot write to backup location. This is likely due to Android scoped storage restrictions. Please choose a different directory within the app\'s allowed storage areas.';
-    } else if (error.toString().contains('Permission denied') ||
-        error.toString().contains('permission')) {
-      return 'Permission issue - cannot access backup location. On Android 10+, apps have limited access to external storage. Please choose a directory within the app\'s Documents or Download folders, or use the built-in file picker to select a location.';
-    }
-    return 'Unexpected error: ${error.toString()}\n\nOn Android 10+, consider using the app\'s internal storage or selecting a location through the file picker for better compatibility.';
   }
 }

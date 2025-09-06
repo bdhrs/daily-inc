@@ -16,7 +16,6 @@ This document provides essential context for any AI Coding Agent to understand t
 - **REPS**: Activities tracked by repetitions, with a target that increases over time (e.g., push-ups, starting at 5 reps).
 - **CHECK**: Simple daily tasks that are either completed or not (e.g., drink water).
 - **PERCENTAGE**: Activities tracked by percentage completion (0-100%), with no start/end values or duration (e.g., project progress).
-- **TREND**: Improving +1, staying the same +0  or getting worse -1, with a comment.
 
 The core concept is that targets for REPS and MINUTES tasks adjust automatically based on rules defined when the task is created (start value, end value, duration in days) and the user's history (whether they completed the task on previous days). Missing days might pause progress or apply a penalty, while consistent completion leads to increments.
 
@@ -25,8 +24,6 @@ The application features:
 - Full-screen timer for MINUTES tasks.
 - Input dialogs for REPS tasks.
 - Toggle for CHECK tasks.
-- Slider for PERCENTAGE tasks.
-- Picker for TREND tasks.
 - Graphs to visualize progress over time.
 - Import/export of data to/from JSON.
 - Cross-platform support (Linux, Android, iOS, macOS, Web, Windows).
