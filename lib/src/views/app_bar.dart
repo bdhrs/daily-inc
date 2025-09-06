@@ -173,6 +173,8 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                   MaterialPageRoute(
                     builder: (context) => SettingsView(
                       onResetAllData: widget.onResetAllData,
+                      onDataRestored:
+                          widget.onRefreshDisplay, // Pass the callback
                     ),
                   ),
                 ).then((_) => widget.onRefreshHideWhenDoneSetting());

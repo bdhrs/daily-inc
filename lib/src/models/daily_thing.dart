@@ -187,7 +187,7 @@ class DailyThing {
     return IncrementCalculator.isDue(this, todayDate);
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeHistory = true}) {
     return {
       'id': id,
       'icon': icon,
@@ -197,7 +197,8 @@ class DailyThing {
       'startValue': startValue,
       'duration': duration,
       'endValue': endValue,
-      'history': history.map((entry) => entry.toJson()).toList(),
+      if (includeHistory)
+        'history': history.map((entry) => entry.toJson()).toList(),
       'nagTime': nagTime?.toIso8601String(),
       'nagMessage': nagMessage,
       'category': category,

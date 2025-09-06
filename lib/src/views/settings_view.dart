@@ -1,22 +1,29 @@
+import 'dart:io';
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/services/backup_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class SettingsView extends StatefulWidget {
   final VoidCallback? onResetAllData;
+  final VoidCallback? onDataRestored;
 
-  const SettingsView({super.key, this.onResetAllData});
+  const SettingsView({super.key, this.onResetAllData, this.onDataRestored});
 
   @override
   State<SettingsView> createState() => _SettingsViewState();
 }
 
 class _SettingsViewState extends State<SettingsView> {
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows);
+  bool get _isAndroid => !kIsWeb && Platform.isAndroid;
   final _log = Logger('SettingsView');
   final DataManager _dataManager = DataManager();
 
@@ -31,14 +38,15 @@ class _SettingsViewState extends State<SettingsView> {
 
   // Screen dimmer setting
   bool _dimScreenMode = false;
-  
+
   // Minimalist mode setting
   bool _minimalistMode = false;
 
   // Backup settings
   bool _backupEnabled = false;
-  String _backupLocation = '';
-  int _backupRetentionDays = 30;
+  final String _backupLocation = '';
+  String _backupPath = '';
+  String _templatePath = '';
   DateTime? _lastBackupTime;
 
   late TextEditingController _startOfDayMessageController;
@@ -52,6 +60,7 @@ class _SettingsViewState extends State<SettingsView> {
     _completionMessageController = TextEditingController();
     _backupLocationController = TextEditingController();
     _loadSettings();
+    _loadBackupPaths();
   }
 
   @override
@@ -64,8 +73,6 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final backupService = BackupService();
-    final defaultBackupPath = await backupService.getDefaultBackupDirectory();
 
     setState(() {
       _showStartOfDayMessage = prefs.getBool('showStartOfDayMessage') ?? false;
@@ -83,9 +90,6 @@ class _SettingsViewState extends State<SettingsView> {
 
       // Load backup settings
       _backupEnabled = prefs.getBool('backupEnabled') ?? false;
-      // Always use the default backup location
-      _backupLocation = defaultBackupPath;
-      _backupRetentionDays = prefs.getInt('backupRetentionDays') ?? 30;
 
       final lastBackupTimestamp = prefs.getInt('lastBackupTime');
       _lastBackupTime = lastBackupTimestamp != null
@@ -99,6 +103,16 @@ class _SettingsViewState extends State<SettingsView> {
     _startOfDayMessageController.text = _startOfDayMessageText;
     _completionMessageController.text = _completionMessageText;
     _backupLocationController.text = _backupLocation;
+  }
+
+  Future<void> _loadBackupPaths() async {
+    final backupService = BackupService();
+    final backupDir = await backupService.getBackupsDir();
+    final templateDir = await backupService.getTemplatesDir();
+    setState(() {
+      _backupPath = backupDir.path;
+      _templatePath = templateDir.path;
+    });
   }
 
   Future<void> _saveSettings() async {
@@ -116,7 +130,6 @@ class _SettingsViewState extends State<SettingsView> {
     // Save backup settings
     await prefs.setBool('backupEnabled', _backupEnabled);
     // No need to save backupLocation as it's always the default
-    await prefs.setInt('backupRetentionDays', _backupRetentionDays);
 
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
@@ -129,7 +142,7 @@ class _SettingsViewState extends State<SettingsView> {
       final dataManager = DataManager();
       final items = await dataManager.loadData();
 
-      final success = await backupService.createBackup(items);
+      final success = await backupService.createBackup(items, BackupType.full);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -154,6 +167,81 @@ class _SettingsViewState extends State<SettingsView> {
             content: Text('Backup error: ${e.toString()}'),
             duration: const Duration(seconds: 2),
           ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showRestoreDialog(BackupType type) async {
+    final backupService = BackupService();
+    final List<File> files;
+
+    if (type == BackupType.full) {
+      files = await backupService.getBackupFiles();
+    } else {
+      files = await backupService.getTemplateFiles();
+    }
+
+    if (files.isEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No ${type.name} backups found.')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final selectedFile = await showDialog<File>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text('Select ${type.name} to restore'),
+          children: files.map((file) {
+            final fileName = file.path.split('/').last;
+            return SimpleDialogOption(
+              onPressed: () {
+                Navigator.of(context).pop(file);
+              },
+              child: Text(fileName),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (selectedFile != null) {
+      _restoreBackup(selectedFile, type);
+    }
+  }
+
+  void _restoreBackup(File backupFile, BackupType type) async {
+    try {
+      final backupService = BackupService();
+      final List<DailyThing> restoredItems;
+
+      if (type == BackupType.full) {
+        restoredItems = await backupService.restoreFromBackup(backupFile);
+      } else {
+        restoredItems = await backupService.restoreFromTemplate(backupFile);
+      }
+
+      await _dataManager.saveData(restoredItems);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Restored from ${backupFile.path.split('/').last}')),
+        );
+        // Notify the main view to refresh its data
+        widget.onDataRestored?.call();
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      _log.severe('Error restoring backup: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error restoring backup: $e')),
         );
       }
     }
@@ -391,34 +479,98 @@ class _SettingsViewState extends State<SettingsView> {
           ),
 
           if (_backupEnabled) ...[
-            const SizedBox(height: 8),
-            const Text('Backup location:'),
-            const SizedBox(height: 8),
-            Text(
-              _backupLocation,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            const Text('Keep backups for:'),
-            Row(
-              children: [
-                Expanded(
-                  child: Slider(
-                    value: _backupRetentionDays.toDouble(),
-                    min: 7,
-                    max: 365,
-                    divisions: 12,
-                    label: '$_backupRetentionDays days',
-                    onChanged: (value) {
-                      setState(() {
-                        _backupRetentionDays = value.toInt();
-                      });
-                      _saveSettings();
+            if (_isDesktop) ...[
+              const SizedBox(height: 8),
+              const Text('Backup location:'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.folder, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _backupPath,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    tooltip: 'Copy backup path',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: _backupPath));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Backup path copied')),
+                      );
                     },
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('Template location:'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.folder_special, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _templatePath,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    tooltip: 'Copy template path',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: _templatePath));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Template path copied')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_isAndroid) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: ColorPalette.warningOrange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: ColorPalette.warningOrange),
                 ),
-                Text('$_backupRetentionDays days'),
-              ],
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Warning: App Uninstall Risk',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: ColorPalette.warningOrange,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Backups are stored in app-specific internal storage. '
+                      'If you uninstall the app, ALL backups will be PERMANENTLY DELETED. '
+                      'Consider manually exporting important backups.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Text(
+              'Backups are automatically managed. '
+              'The app keeps a history: all backups from the last 7 days, '
+              'one per week for the last month, one per month for the last year, '
+              'and one per year beyond that.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             if (_lastBackupTime != null)
               Text(
@@ -430,6 +582,18 @@ class _SettingsViewState extends State<SettingsView> {
               icon: const Icon(Icons.backup),
               label: const Text('Create Backup Now'),
               onPressed: _createManualBackup,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.restore),
+              label: const Text('Restore Backup'),
+              onPressed: () => _showRestoreDialog(BackupType.full),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.restore_page),
+              label: const Text('Restore from Template'),
+              onPressed: () => _showRestoreDialog(BackupType.template),
             ),
           ],
 

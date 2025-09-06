@@ -406,7 +406,7 @@ class DataManager {
   Future<void> _triggerAutomaticBackup(List<DailyThing> items) async {
     try {
       final backupService = BackupService();
-      await backupService.createBackup(items);
+      await backupService.createBackup(items, BackupType.full);
     } catch (e, s) {
       _log.warning('Automatic backup failed', e, s);
       // Don't rethrow - backup failure shouldn't prevent data saving
@@ -424,33 +424,10 @@ class DataManager {
         return thing.copyWith(history: []);
       }).toList();
 
-      final jsonData = {
-        'dailyThings': templateItems.map((thing) => thing.toJson()).toList(),
-        'savedAt': DateTime.now().toIso8601String(),
-        'isTemplate': true,
-      };
-      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-
-      // Get backup location from backup service
       final backupService = BackupService();
-      final backupLocation = await backupService.getBackupLocation();
-      if (backupLocation == null || backupLocation.isEmpty) {
-        _log.warning('Backup location not configured, skipping template save');
-        return;
-      }
+      await backupService.createBackup(templateItems, BackupType.template);
 
-      final backupDir = Directory(backupLocation);
-      if (!backupDir.existsSync()) {
-        backupDir.createSync(recursive: true);
-        _log.info('Created backup directory: $backupLocation');
-      }
-
-      // Save template file with correct name
-      final templateFile =
-          File('${backupDir.path}/daily_inc_latest_template.json');
-      await templateFile.writeAsString(jsonString);
-
-      _log.fine('Template saved successfully to: ${templateFile.path}');
+      _log.info('Template saved successfully to backup location');
     } catch (e, s) {
       _log.warning('Failed to save template to backup location', e, s);
       // Don't rethrow - template save failure shouldn't prevent normal operations

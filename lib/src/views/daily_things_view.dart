@@ -10,7 +10,6 @@ import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/percentage_input_dialog.dart';
 import 'package:daily_inc/src/views/trend_input_dialog.dart';
 import 'package:daily_inc/src/views/app_bar.dart';
-import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
 import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
@@ -18,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
 import 'package:daily_inc/src/views/widgets/filtering_helpers.dart';
 import 'package:daily_inc/src/services/update_service.dart';
-import 'package:daily_inc/src/services/backup_service.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,7 +34,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
     with WidgetsBindingObserver {
   final UpdateService _updateService = UpdateService();
   final DataManager _dataManager = DataManager();
-  final BackupService _backupService = BackupService();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
@@ -549,33 +546,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   Future<void> _maybeShowBackupPrompt() async {
-    try {
-      final shouldShow = await _backupService.shouldShowBackupPrompt();
-      if (!shouldShow || !mounted) return;
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-
-      // ignore: use_build_context_synchronously
-      final configureBackups =
-          await _backupService.showBackupSetupDialog(context);
-
-      if (configureBackups == true) {
-        // User wants to configure backups - navigate to settings
-        // ignore: use_build_context_synchronously
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SettingsView()),
-        ).then((_) {
-          _refreshDisplay();
-        });
-      }
-
-      // Mark prompt as shown regardless of user choice
-      await _backupService.markBackupPromptShown();
-    } catch (e, s) {
-      _log.severe('Error showing backup prompt', e, s);
-    }
+    // This functionality is removed for now.
   }
 
   Future<void> _resetAllData() async {
