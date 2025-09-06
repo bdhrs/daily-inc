@@ -1,4 +1,6 @@
-h# Project Map
+# Project Map
+
+Always read docs/AGENTS.md and docs/project_map.md to understand the context of the project.
 
 This document provides a map of the project, listing the location of all functions, classes, and important variables. Each entry also includes a simple one-line description in plain English.
 

@@ -1,5 +1,7 @@
 # Daily Inc Timer Flutter - Project Context
 
+Always read docs/AGENTS.md and docs/project_map.md to understand the context of the project.
+
 This document provides essential context for any AI Coding Agent to understand the **Daily Inc Timer** Flutter project, enabling effective assistance with development tasks.
 
 # Project Map
