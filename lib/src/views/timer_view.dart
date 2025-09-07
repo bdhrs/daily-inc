@@ -983,6 +983,7 @@ class _TimerViewState extends State<TimerView> {
   Widget build(BuildContext context) {
     double elapsedMinutesInCurrentSubdivision = 0;
     double totalMinutesInCurrentSubdivision = 0;
+    double overtimeMinutesInCurrentSubdivision = 0;
     if (!_isOvertime &&
         widget.item.subdivisions != null &&
         widget.item.subdivisions! > 1) {
@@ -993,6 +994,14 @@ class _TimerViewState extends State<TimerView> {
       elapsedMinutesInCurrentSubdivision =
           _currentElapsedTimeInMinutes - elapsedMinutesInCompletedSubdivisions;
       totalMinutesInCurrentSubdivision = subdivisionDurationInMinutes;
+    } else if (_isOvertime &&
+        widget.item.subdivisions != null &&
+        widget.item.subdivisions! > 1) {
+      final double subdivisionDurationInMinutes =
+          _todaysTargetMinutes / widget.item.subdivisions!;
+      final double overtimeMinutes = _overtimeSeconds / 60.0;
+      overtimeMinutesInCurrentSubdivision =
+          overtimeMinutes % subdivisionDurationInMinutes;
     }
 
     return PopScope(
@@ -1221,19 +1230,51 @@ class _TimerViewState extends State<TimerView> {
                                   key: const ValueKey('full_mode_overtime'),
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      '${_formatMinutesToMmSs(_todaysTargetMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: ColorPalette.lightText
-                                            .withAlpha((255 * 0.7).round()),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
                                     if (widget.item.subdivisions != null &&
                                         widget.item.subdivisions! > 1)
+                                      Stack(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: ColorPalette.lightText
+                                                    .withAlpha(
+                                                        (255 * 0.7).round()),
+                                              ),
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              '$_completedSubdivisions / ${widget.item.subdivisions!}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: ColorPalette.lightText
+                                                    .withAlpha(
+                                                        (255 * 0.7).round()),
+                                              ),
+                                            ),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              '${_formatMinutesToMmSs(overtimeMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(_todaysTargetMinutes / widget.item.subdivisions!)}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: ColorPalette.lightText
+                                                    .withAlpha(
+                                                        (255 * 0.7).round()),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    else
                                       Text(
-                                        '$_completedSubdivisions / ${widget.item.subdivisions}',
+                                        '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: ColorPalette.lightText
@@ -1264,7 +1305,7 @@ class _TimerViewState extends State<TimerView> {
                                         Align(
                                           alignment: Alignment.center,
                                           child: Text(
-                                            '$_completedSubdivisions / ${widget.item.subdivisions}',
+                                            '$_completedSubdivisions / ${widget.item.subdivisions!}',
                                             style: TextStyle(
                                               fontSize: 16,
                                               color: ColorPalette.lightText

@@ -197,6 +197,8 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks with initialMinimalistMode parameter to preserve mode during navigation; AppBar title fades using _shouldFadeUI in minimalist mode.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime; initializes _minimalistMode from initialMinimalistMode parameter before async preference load.
+  - `overtimeMinutesInCurrentSubdivision` variable [`lib/src/views/timer_view.dart:986`](lib/src/views/timer_view.dart:986): Calculates current overtime subdivision progress time in minutes.
+  - `overtimeSubdivisionIndex` variable [`lib/src/views/timer_view.dart:987`](lib/src/views/timer_view.dart:987): Calculates current overtime subdivision index as total subdivisions plus overtime progress.
   - `_navigateToNextTask()` method [`lib/src/views/timer_view.dart:550`](lib/src/views/timer_view.dart:550): Navigates to the next undone task in the list or exits to main UI, passing current _minimalistMode as initialMinimalistMode for new instances.
   - `_findNextUndoneTask()` method [`lib/src/views/timer_view.dart:500`](lib/src/views/timer_view.dart:500): Finds the next undone task in the list after the current item.
   - `_onTimerComplete()` method [`lib/src/views/timer_view.dart:625`](lib/src/views/timer_view.dart:625): Handles timer completion, calls _cancelFadeUITimer to show UI immediately when finished.
