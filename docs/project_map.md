@@ -181,14 +181,15 @@ This document provides a map of the project, listing the location of all functio
 - `TrendInputDialog` class [`lib/src/views/trend_input_dialog.dart:6`](lib/src/views/trend_input_dialog.dart:6): Dialog to enter trend for the day with optional comment.
 
 ## lib/src/views/settings_view.dart
-- `SettingsView` class [`lib/src/views/settings_view.dart:12`](lib/src/views/settings_view.dart:12): Settings screen for filters, data actions, and backup configuration.
-- `_SettingsViewState` class [`lib/src/views/settings_view.dart:20`](lib/src/views/settings_view.dart:20): Loads preferences and handles save/reset.
-  - `_isDesktop` getter [`lib/src/views/settings_view.dart:22`](lib/src/views/settings_view.dart:22): Checks if the current platform is desktop (Linux, macOS, or Windows).
-  - `_isAndroid` getter [`lib/src/views/settings_view.dart:23`](lib/src/views/settings_view.dart:23): Checks if the current platform is Android.
-  - `_showRestoreDialog(BackupType backupType)` [`lib/src/views/settings_view.dart:175`](lib/src/views/settings_view.dart:175): Shows a dialog to select a backup or template file to restore, with improved "not found" message.
-  - `_restoreBackup(File file, BackupType type)` [`lib/src/views/settings_view.dart:217`](lib/src/views/settings_view.dart:217): Handles the restoration process for both full backups and templates.
-  - `_loadBackupPaths()` [`lib/src/views/settings_view.dart:104`](lib/src/views/settings_view.dart:104): Loads the backup and template directory paths for display.
-  - `build(BuildContext context)` [`lib/src/views/settings_view.dart:313`](lib/src/views/settings_view.dart:313): Renders the settings UI, conditionally showing backup path info only on desktop platforms, explaining the new retention policy, and showing an Android uninstall warning.
+- `SettingsView` class [`lib/src/views/settings_view.dart:15`](lib/src/views/settings_view.dart:15): Settings screen for filters, data actions, and backup configuration.
+- `_SettingsViewState` class [`lib/src/views/settings_view.dart:25`](lib/src/views/settings_view.dart:25): Loads preferences and handles save/reset.
+  - `_isDesktop` getter [`lib/src/views/settings_view.dart:26`](lib/src/views/settings_view.dart:26): Checks if the current platform is desktop (Linux, macOS, or Windows).
+  - `_isAndroid` getter [`lib/src/views/settings_view.dart:28`](lib/src/views/settings_view.dart:28): Checks if the current platform is Android.
+  - `_formatBackupFilename(String filename)` [`lib/src/views/settings_view.dart:177`](lib/src/views/settings_view.dart:177): Converts timestamped backup/template filenames to user-friendly date/time format.
+  - `_showRestoreDialog(BackupType backupType)` [`lib/src/views/settings_view.dart:191`](lib/src/views/settings_view.dart:191): Shows a dialog to select a backup or template file to restore, displaying user-friendly timestamps.
+  - `_restoreBackup(File file, BackupType type)` [`lib/src/views/settings_view.dart:234`](lib/src/views/settings_view.dart:234): Handles the restoration process for both full backups and templates.
+  - `_loadBackupPaths()` [`lib/src/views/settings_view.dart:110`](lib/src/views/settings_view.dart:110): Loads the backup and template directory paths for display.
+  - `build(BuildContext context)` [`lib/src/views/settings_view.dart:328`](lib/src/views/settings_view.dart:328): Renders the settings UI, conditionally showing backup path info only on desktop platforms, explaining the new retention policy, and showing an Android uninstall warning.
 
 ## lib/src/views/history_view.dart
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.

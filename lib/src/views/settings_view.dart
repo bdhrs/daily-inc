@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+import 'package:intl/intl.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -172,6 +173,20 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
+  String _formatBackupFilename(String filename) {
+    // Extract timestamp part: after "backup_" or "template_", before ".json"
+    final prefix = filename.startsWith('backup_') ? 'backup_' : 'template_';
+    final timestampPart =
+        filename.substring(prefix.length, filename.length - 5);
+    try {
+      final dateTime = DateFormat('yyyy-MM-dd_HH-mm-ss').parse(timestampPart);
+      return DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    } catch (e) {
+      // Fallback to original filename if parsing fails
+      return filename;
+    }
+  }
+
   Future<void> _showRestoreDialog(BackupType type) async {
     final backupService = BackupService();
     final List<File> files;
@@ -198,11 +213,12 @@ class _SettingsViewState extends State<SettingsView> {
           title: Text('Select ${type.name} to restore'),
           children: files.map((file) {
             final fileName = file.path.split('/').last;
+            final formattedName = _formatBackupFilename(fileName);
             return SimpleDialogOption(
               onPressed: () {
                 Navigator.of(context).pop(file);
               },
-              child: Text(fileName),
+              child: Text(formattedName),
             );
           }).toList(),
         );
@@ -228,10 +244,10 @@ class _SettingsViewState extends State<SettingsView> {
       await _dataManager.saveData(restoredItems);
 
       if (mounted) {
+        final fileName = backupFile.path.split('/').last;
+        final formattedName = _formatBackupFilename(fileName);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Restored from ${backupFile.path.split('/').last}')),
+          SnackBar(content: Text('Restored from $formattedName')),
         );
         // Notify the main view to refresh its data
         widget.onDataRestored?.call();
