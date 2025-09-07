@@ -25,6 +25,7 @@ class TimerView extends StatefulWidget {
   final int? currentItemIndex; // Index of current item in the list
   final String?
       nextTaskName; // Name of the next task (for display when navigating)
+  final bool initialMinimalistMode;
 
   const TimerView({
     super.key,
@@ -35,6 +36,7 @@ class TimerView extends StatefulWidget {
     this.allItems,
     this.currentItemIndex,
     this.nextTaskName,
+    this.initialMinimalistMode = false,
   });
 
   @override
@@ -327,6 +329,9 @@ class _TimerViewState extends State<TimerView> {
     _todaysTargetMinutes = widget.item.todayValue;
     _initialTargetSeconds = _todaysTargetMinutes * 60;
 
+    // Set initial minimalist mode from parameter
+    _minimalistMode = widget.initialMinimalistMode;
+
     if (widget.startInOvertime) {
       _isOvertime = true;
       _isPaused = true;
@@ -335,7 +340,7 @@ class _TimerViewState extends State<TimerView> {
 
     // Load dim screen mode preference
     _loadDimScreenPreference();
-    // Load minimalist mode preference
+    // Load minimalist mode preference (may override if different)
     _loadMinimalistModePreference();
 
     // Initialize next task name if provided
@@ -930,6 +935,7 @@ class _TimerViewState extends State<TimerView> {
               allItems: widget.allItems,
               currentItemIndex: widget.allItems?.indexOf(nextTask),
               nextTaskName: nextTaskName, // Pass the next task name
+              initialMinimalistMode: _minimalistMode,
             ),
           ),
         );

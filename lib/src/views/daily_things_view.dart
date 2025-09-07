@@ -353,8 +353,13 @@ class _DailyThingsViewState extends State<DailyThingsView>
     }
   }
 
-  void _showFullscreenTimer(DailyThing item, {bool startInOvertime = false}) {
+  Future<void> _showFullscreenTimer(DailyThing item,
+      {bool startInOvertime = false}) async {
     _log.info('Showing fullscreen timer for: ${item.name}');
+
+    // Load minimalist mode preference
+    final prefs = await SharedPreferences.getInstance();
+    final minimalistMode = prefs.getBool('minimalistMode') ?? false;
 
     // Enable immersive mode when entering timer view
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -363,7 +368,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
     final currentIndex =
         _dailyThings.indexWhere((thing) => thing.id == item.id);
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TimerView(
@@ -377,11 +382,11 @@ class _DailyThingsViewState extends State<DailyThingsView>
           startInOvertime: startInOvertime,
           allItems: _dailyThings,
           currentItemIndex: currentIndex,
+          initialMinimalistMode: minimalistMode,
         ),
       ),
-    ).then((_) {
-      _checkAndShowCompletionSnackbar();
-    });
+    );
+    _checkAndShowCompletionSnackbar();
   }
 
   void _showAboutDialog() async {
