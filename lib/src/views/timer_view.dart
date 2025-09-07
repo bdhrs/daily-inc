@@ -502,8 +502,10 @@ class _TimerViewState extends State<TimerView> {
         _timer?.cancel();
         WakelockPlus.disable();
 
-        // Cancel fade UI timer when pausing
-        _cancelFadeUITimer();
+        // Ensure UI is visible when pausing
+        _shouldFadeUI = false;
+        _fadeUITimer?.cancel();
+        _fadeUITimer = null;
       }
     });
   }
@@ -636,6 +638,7 @@ class _TimerViewState extends State<TimerView> {
     // Update UI state immediately to show completion
     setState(() {
       _isPaused = true;
+      _shouldFadeUI = false;
       if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
         _completedSubdivisions = widget.item.subdivisions!;
       }
@@ -644,6 +647,10 @@ class _TimerViewState extends State<TimerView> {
       // Show the next task arrow when timer completes
       _showNextTaskArrow = true;
     });
+
+    // Cancel fade UI timer when timer completes
+    _fadeUITimer?.cancel();
+    _fadeUITimer = null;
 
     // Disable wakelock immediately
     WakelockPlus.disable();
@@ -1166,11 +1173,13 @@ class _TimerViewState extends State<TimerView> {
                     ),
                   ),
               ],
-              title: _minimalistMode
-                  ? AnimatedOpacity(
-                      opacity: _showNextTaskName ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 2000),
-                      child: Text(
+              title: AnimatedOpacity(
+                opacity: _minimalistMode && !_isPaused
+                    ? (_shouldFadeUI ? 0.0 : 1.0)
+                    : 1.0,
+                duration: const Duration(milliseconds: 500),
+                child: (widget.nextTaskName != null && _showNextTaskName
+                    ? Text(
                         _nextTaskName,
                         style: const TextStyle(
                           fontSize: 18,
@@ -1178,17 +1187,17 @@ class _TimerViewState extends State<TimerView> {
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                      ),
-                    )
-                  : Text(
-                      widget.item.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                      )
+                    : Text(
+                        widget.item.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )),
+              ),
               centerTitle: true,
               elevation: 0,
             ),

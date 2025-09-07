@@ -195,11 +195,11 @@ This document provides a map of the project, listing the location of all functio
 - `HistoryView` class [`lib/src/views/history_view.dart:8`](lib/src/views/history_view.dart:8): A screen to view and edit the history of a daily item.
 
 ## lib/src/views/timer_view.dart
-- `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks with initialMinimalistMode parameter to preserve mode during navigation.
+- `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks with initialMinimalistMode parameter to preserve mode during navigation; AppBar title fades using _shouldFadeUI in minimalist mode.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime; initializes _minimalistMode from initialMinimalistMode parameter before async preference load.
   - `_navigateToNextTask()` method [`lib/src/views/timer_view.dart:550`](lib/src/views/timer_view.dart:550): Navigates to the next undone task in the list or exits to main UI, passing current _minimalistMode as initialMinimalistMode for new instances.
   - `_findNextUndoneTask()` method [`lib/src/views/timer_view.dart:500`](lib/src/views/timer_view.dart:500): Finds the next undone task in the list after the current item.
-
+  - `_onTimerComplete()` method [`lib/src/views/timer_view.dart:625`](lib/src/views/timer_view.dart:625): Handles timer completion, calls _cancelFadeUITimer to show UI immediately when finished.
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
 - `showThemedSnackBar(...)` [`lib/src/views/widgets/daily_things_helpers.dart:36`](lib/src/views/widgets/daily_things_helpers.dart:36): Shows a themed snackbar.
