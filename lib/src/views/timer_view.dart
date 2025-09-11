@@ -15,6 +15,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/core/time_converter.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -85,6 +86,10 @@ class _TimerViewState extends State<TimerView> {
   bool _shouldFadeUI = false;
   Timer? _fadeUITimer;
 
+  // Note view mode variable and current item reference
+  bool _isNoteViewMode = false;
+  late DailyThing _currentItem;
+
   double get _currentElapsedTimeInMinutes {
     if (_isOvertime) {
       final overtimeMinutes = _overtimeSeconds / 60.0;
@@ -102,7 +107,7 @@ class _TimerViewState extends State<TimerView> {
     final todayDate = DateTime(today.year, today.month, today.day);
 
     HistoryEntry? todaysEntry;
-    for (final entry in widget.item.history) {
+    for (final entry in _currentItem.history) {
       final entryDate =
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       if (entryDate == todayDate) {
@@ -142,89 +147,59 @@ class _TimerViewState extends State<TimerView> {
     await prefs.setBool('minimalistMode', value);
   }
 
-  void _showNoteDialog() {
-    final notesController = TextEditingController(text: widget.item.notes);
-    bool isEditing = false;
+  /// Shows the note dialog directly in edit mode for the Note View
+  void _showNoteDialogInEditMode() {
+    final notesController = TextEditingController(text: _currentItem.notes);
 
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Note'),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.height * 0.8,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Calculate a dynamic font size based on the available height
-                    final double fontSize = constraints.maxHeight / 20;
+        return AlertDialog(
+          title: const Text('Edit Note'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate a dynamic font size based on the available height
+                final double fontSize = constraints.maxHeight / 20;
 
-                    return SingleChildScrollView(
-                      child: isEditing
-                          ? TextField(
-                              controller: notesController,
-                              autofocus: true,
-                              decoration: const InputDecoration(
-                                  hintText: 'Enter your note...'),
-                              maxLines: null,
-                              keyboardType: TextInputType.multiline,
-                              style: TextStyle(fontSize: fontSize),
-                            )
-                          : Text(
-                              notesController.text.isEmpty
-                                  ? 'No note for this item.'
-                                  : notesController.text,
-                              style: TextStyle(fontSize: fontSize),
-                            ),
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                if (isEditing) ...[
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        isEditing = false;
-                        // Reset controller to original text if user cancels
-                        notesController.text = widget.item.notes ?? '';
-                      });
-                    },
-                    child: const Text('Cancel'),
+                return SingleChildScrollView(
+                  child: TextField(
+                    controller: notesController,
+                    autofocus: true,
+                    decoration:
+                        const InputDecoration(hintText: 'Enter your note...'),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    style: TextStyle(fontSize: fontSize),
                   ),
-                  TextButton(
-                    onPressed: () async {
-                      final updatedItem =
-                          widget.item.copyWith(notes: notesController.text);
-                      await widget.dataManager.updateDailyThing(updatedItem);
-                      // No need to call setState in the main widget,
-                      // as the underlying data has changed and will be reflected
-                      // if the widget rebuilds for other reasons.
-                      setState(() {
-                        isEditing = false;
-                      });
-                    },
-                    child: const Text('Save'),
-                  ),
-                ] else ...[
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        isEditing = true;
-                      });
-                    },
-                    child: const Text('Edit'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
-                  ),
-                ]
-              ],
-            );
-          },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final updatedItem =
+                    _currentItem.copyWith(notes: notesController.text);
+                await widget.dataManager.updateDailyThing(updatedItem);
+                Navigator.of(context).pop();
+                // Update the current item with the new notes and stay in note view mode
+                if (mounted) {
+                  setState(() {
+                    _currentItem = updatedItem;
+                    _isNoteViewMode = true;
+                  });
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
         );
       },
     );
@@ -261,6 +236,12 @@ class _TimerViewState extends State<TimerView> {
     _saveMinimalistModePreference(_minimalistMode);
   }
 
+  void _toggleNoteViewMode() {
+    setState(() {
+      _isNoteViewMode = !_isNoteViewMode;
+    });
+  }
+
   void _startFadeUITimer() {
     // Cancel any existing fade timer
     _cancelFadeUITimer();
@@ -285,6 +266,193 @@ class _TimerViewState extends State<TimerView> {
         _shouldFadeUI = false;
       });
     }
+  }
+
+  /// Builds the Note View UI when in note view mode
+  Widget _buildNoteView(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) return;
+        // When back button is pressed in note view mode, just toggle back to normal mode
+        _toggleNoteViewMode();
+      },
+      child: Scaffold(
+        backgroundColor: ColorPalette.darkBackground,
+        appBar: AppBar(
+          backgroundColor: ColorPalette.darkBackground,
+          title: Text(
+            _currentItem.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          centerTitle: true,
+          elevation: 0,
+          // Add a close button to the app bar
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _toggleNoteViewMode,
+          ),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top Information Bar
+                _buildNoteViewTopBar(),
+                const SizedBox(height: 16),
+                // Main Notes Display
+                Expanded(
+                  child: _buildNoteViewNotesDisplay(),
+                ),
+                const SizedBox(height: 16),
+                // Bottom Action Buttons
+                _buildNoteViewBottomButtons(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the Top Information Bar for Note View mode
+  Widget _buildNoteViewTopBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: ColorPalette.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Left Side: Timer Control Button (fixed width to prevent layout shifts)
+          SizedBox(
+            width: 120, // Fixed width to prevent layout shifts
+            child: ElevatedButton(
+              onPressed: _toggleTimer,
+              child: Text(
+                _getButtonText(),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Center: Time Display
+          Expanded(
+            child: Text(
+              _isOvertime
+                  ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
+                  : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: ColorPalette.lightText,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Right Side: Subdivision Display (only if subdivisions are enabled)
+          if (_currentItem.subdivisions != null &&
+              _currentItem.subdivisions! > 1)
+            SizedBox(
+              width: 80, // Fixed width for consistent layout
+              child: Text(
+                '$_completedSubdivisions / ${_currentItem.subdivisions}',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: ColorPalette.lightText,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the Main Notes Display for Note View mode
+  Widget _buildNoteViewNotesDisplay() {
+    final notes = _currentItem.notes ?? '';
+
+    if (notes.isEmpty) {
+      return Center(
+        child: Text(
+          'No notes for this item.',
+          style: TextStyle(
+            fontSize: 20,
+            color: ColorPalette.lightText.withValues(alpha: 0.7),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorPalette.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SingleChildScrollView(
+        child: MarkdownBody(
+          data: notes,
+          styleSheet: MarkdownStyleSheet(
+            p: TextStyle(
+              fontSize: 25,
+              color: ColorPalette.lightText,
+              height: 1.5,
+            ),
+            h1: TextStyle(
+              fontSize: 40,
+              color: ColorPalette.lightText,
+              fontWeight: FontWeight.bold,
+            ),
+            h2: TextStyle(
+              fontSize: 35,
+              color: ColorPalette.lightText,
+              fontWeight: FontWeight.bold,
+            ),
+            h3: TextStyle(
+              fontSize: 30,
+              color: ColorPalette.lightText,
+              fontWeight: FontWeight.bold,
+            ),
+            strong: const TextStyle(fontWeight: FontWeight.bold),
+            em: const TextStyle(fontStyle: FontStyle.italic),
+            // Add more styles as needed for lists, etc.
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the Bottom Action Buttons for Note View mode
+  Widget _buildNoteViewBottomButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed:
+                _showNoteDialogInEditMode, // Use the new edit mode dialog
+            child: const Text('Edit Note'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _toggleNoteViewMode, // Close note view mode
+            child: const Text('Close'),
+          ),
+        ),
+      ],
+    );
   }
 
   void _startDimmingProcess() {
@@ -329,6 +497,9 @@ class _TimerViewState extends State<TimerView> {
     _todaysTargetMinutes = widget.item.todayValue;
     _initialTargetSeconds = _todaysTargetMinutes * 60;
 
+    // Initialize the current item reference
+    _currentItem = widget.item;
+
     // Set initial minimalist mode from parameter
     _minimalistMode = widget.initialMinimalistMode;
 
@@ -371,7 +542,7 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Searching for history entry for date: $todayDate');
 
     HistoryEntry? todayEntry;
-    for (final entry in widget.item.history) {
+    for (final entry in _currentItem.history) {
       final entryDate = DateUtils.dateOnly(entry.date);
       if (entryDate == todayDate) {
         // Find any entry for today, regardless of completion state.
@@ -404,15 +575,16 @@ class _TimerViewState extends State<TimerView> {
         _remainingSeconds = 0.0;
 
         // Calculate completed subdivisions for overtime mode using precise floating-point
-        if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+        if (_currentItem.subdivisions != null &&
+            _currentItem.subdivisions! > 1) {
           final totalSeconds = (_todaysTargetMinutes * 60);
-          final subdivisionInterval = totalSeconds / widget.item.subdivisions!;
+          final subdivisionInterval = totalSeconds / _currentItem.subdivisions!;
           if (subdivisionInterval > 0) {
             final elapsedSeconds = totalSeconds + _overtimeSeconds;
             // Use precise calculation to match the new timer logic
             _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
                 .floor()
-                .clamp(0, widget.item.subdivisions! * 2); // Allow for overtime
+                .clamp(0, _currentItem.subdivisions! * 2); // Allow for overtime
           }
         }
       } else {
@@ -421,15 +593,15 @@ class _TimerViewState extends State<TimerView> {
       }
 
       // Calculate already completed subdivisions using precise floating-point
-      if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
+      if (_currentItem.subdivisions != null && _currentItem.subdivisions! > 1) {
         final totalSeconds = (_todaysTargetMinutes * 60);
-        final subdivisionInterval = totalSeconds / widget.item.subdivisions!;
+        final subdivisionInterval = totalSeconds / _currentItem.subdivisions!;
         if (subdivisionInterval > 0) {
           final elapsedSeconds = totalSeconds - _remainingSeconds;
           // Use precise calculation to match the new timer logic
           _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
               .floor()
-              .clamp(0, widget.item.subdivisions! - 1);
+              .clamp(0, _currentItem.subdivisions! - 1);
         }
       }
     } else {
@@ -511,7 +683,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   void _runOvertime() {
-    final subdivisions = widget.item.subdivisions;
+    final subdivisions = _currentItem.subdivisions;
     final totalSeconds = (_todaysTargetMinutes * 60);
 
     // Calculate precise subdivision interval without rounding
@@ -559,7 +731,7 @@ class _TimerViewState extends State<TimerView> {
       return;
     }
 
-    final subdivisions = widget.item.subdivisions;
+    final subdivisions = _currentItem.subdivisions;
     if (subdivisions != null && subdivisions > 1) {
       final totalSeconds = (_todaysTargetMinutes * 60);
 
@@ -639,8 +811,8 @@ class _TimerViewState extends State<TimerView> {
     setState(() {
       _isPaused = true;
       _shouldFadeUI = false;
-      if (widget.item.subdivisions != null && widget.item.subdivisions! > 1) {
-        _completedSubdivisions = widget.item.subdivisions!;
+      if (_currentItem.subdivisions != null && _currentItem.subdivisions! > 1) {
+        _completedSubdivisions = _currentItem.subdivisions!;
       }
       _log.info('Timer paused in onTimerComplete');
 
@@ -766,7 +938,7 @@ class _TimerViewState extends State<TimerView> {
 
     // Remove any existing entry for today to prevent duplicates.
     // This ensures we are always updating or creating the day's progress.
-    final updatedHistory = widget.item.history
+    final updatedHistory = _currentItem.history
         .where((entry) => !DateUtils.isSameDay(entry.date, today))
         .toList()
       ..add(newEntry);
@@ -781,9 +953,9 @@ class _TimerViewState extends State<TimerView> {
     HistoryEntry? todayEntry;
     int todayEntryIndex = -1;
 
-    for (int i = 0; i < widget.item.history.length; i++) {
-      if (DateUtils.isSameDay(widget.item.history[i].date, today)) {
-        todayEntry = widget.item.history[i];
+    for (int i = 0; i < _currentItem.history.length; i++) {
+      if (DateUtils.isSameDay(_currentItem.history[i].date, today)) {
+        todayEntry = _currentItem.history[i];
         todayEntryIndex = i;
         break;
       }
@@ -801,7 +973,7 @@ class _TimerViewState extends State<TimerView> {
       return;
     }
 
-    final updatedHistory = List<HistoryEntry>.from(widget.item.history);
+    final updatedHistory = List<HistoryEntry>.from(_currentItem.history);
 
     if (todayEntry != null) {
       // Update existing entry
@@ -956,26 +1128,26 @@ class _TimerViewState extends State<TimerView> {
 
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
     return DailyThing(
-      id: widget.item.id,
-      icon: widget.item.icon,
-      name: widget.item.name,
-      itemType: widget.item.itemType,
-      startDate: widget.item.startDate,
-      startValue: widget.item.startValue,
-      duration: widget.item.duration,
-      endValue: widget.item.endValue,
+      id: _currentItem.id,
+      icon: _currentItem.icon,
+      name: _currentItem.name,
+      itemType: _currentItem.itemType,
+      startDate: _currentItem.startDate,
+      startValue: _currentItem.startValue,
+      duration: _currentItem.duration,
+      endValue: _currentItem.endValue,
       history: updatedHistory,
-      nagTime: widget.item.nagTime,
-      nagMessage: widget.item.nagMessage,
-      category: widget.item.category,
-      isPaused: widget.item.isPaused,
-      intervalType: widget.item.intervalType,
-      intervalValue: widget.item.intervalValue,
-      intervalWeekdays: widget.item.intervalWeekdays,
-      bellSoundPath: widget.item.bellSoundPath, // Pass the bell sound path
-      subdivisions: widget.item.subdivisions,
-      subdivisionBellSoundPath: widget.item.subdivisionBellSoundPath,
-      notes: widget.item.notes,
+      nagTime: _currentItem.nagTime,
+      nagMessage: _currentItem.nagMessage,
+      category: _currentItem.category,
+      isPaused: _currentItem.isPaused,
+      intervalType: _currentItem.intervalType,
+      intervalValue: _currentItem.intervalValue,
+      intervalWeekdays: _currentItem.intervalWeekdays,
+      bellSoundPath: _currentItem.bellSoundPath, // Pass the bell sound path
+      subdivisions: _currentItem.subdivisions,
+      subdivisionBellSoundPath: _currentItem.subdivisionBellSoundPath,
+      notes: _currentItem.notes,
     );
   }
 
@@ -985,23 +1157,28 @@ class _TimerViewState extends State<TimerView> {
     double totalMinutesInCurrentSubdivision = 0;
     double overtimeMinutesInCurrentSubdivision = 0;
     if (!_isOvertime &&
-        widget.item.subdivisions != null &&
-        widget.item.subdivisions! > 1) {
+        _currentItem.subdivisions != null &&
+        _currentItem.subdivisions! > 1) {
       final double subdivisionDurationInMinutes =
-          _todaysTargetMinutes / widget.item.subdivisions!;
+          _todaysTargetMinutes / _currentItem.subdivisions!;
       final double elapsedMinutesInCompletedSubdivisions =
           _completedSubdivisions * subdivisionDurationInMinutes;
       elapsedMinutesInCurrentSubdivision =
           _currentElapsedTimeInMinutes - elapsedMinutesInCompletedSubdivisions;
       totalMinutesInCurrentSubdivision = subdivisionDurationInMinutes;
     } else if (_isOvertime &&
-        widget.item.subdivisions != null &&
-        widget.item.subdivisions! > 1) {
+        _currentItem.subdivisions != null &&
+        _currentItem.subdivisions! > 1) {
       final double subdivisionDurationInMinutes =
-          _todaysTargetMinutes / widget.item.subdivisions!;
+          _todaysTargetMinutes / _currentItem.subdivisions!;
       final double overtimeMinutes = _overtimeSeconds / 60.0;
       overtimeMinutesInCurrentSubdivision =
           overtimeMinutes % subdivisionDurationInMinutes;
+    }
+
+    // If in note view mode, render the note view UI instead
+    if (_isNoteViewMode) {
+      return _buildNoteView(context);
     }
 
     return PopScope(
@@ -1051,8 +1228,8 @@ class _TimerViewState extends State<TimerView> {
                         _toggleMinimalistMode();
                       } else if (result == 'edit') {
                         _editItem();
-                      } else if (result == 'view_note') {
-                        _showNoteDialog();
+                      } else if (result == 'show_note_view') {
+                        _toggleNoteViewMode();
                       }
                     },
                     itemBuilder: (BuildContext context) =>
@@ -1095,15 +1272,15 @@ class _TimerViewState extends State<TimerView> {
                           ],
                         ),
                       ),
-                      if (widget.item.notes != null &&
-                          widget.item.notes!.isNotEmpty)
+                      if (_currentItem.notes != null &&
+                          _currentItem.notes!.isNotEmpty)
                         PopupMenuItem<String>(
-                          value: 'view_note',
+                          value: 'show_note_view',
                           child: Row(
                             children: [
                               const Icon(Icons.note),
                               const SizedBox(width: 8),
-                              const Text('View Note'),
+                              const Text('Show Note View'),
                             ],
                           ),
                         ),
@@ -1122,8 +1299,8 @@ class _TimerViewState extends State<TimerView> {
                           _toggleMinimalistMode();
                         } else if (result == 'edit') {
                           _editItem();
-                        } else if (result == 'view_note') {
-                          _showNoteDialog();
+                        } else if (result == 'show_note_view') {
+                          _toggleNoteViewMode();
                         }
                       },
                       itemBuilder: (BuildContext context) =>
@@ -1166,15 +1343,15 @@ class _TimerViewState extends State<TimerView> {
                             ],
                           ),
                         ),
-                        if (widget.item.notes != null &&
-                            widget.item.notes!.isNotEmpty)
+                        if (_currentItem.notes != null &&
+                            _currentItem.notes!.isNotEmpty)
                           PopupMenuItem<String>(
-                            value: 'view_note',
+                            value: 'show_note_view',
                             child: Row(
                               children: [
                                 const Icon(Icons.note),
                                 const SizedBox(width: 8),
-                                const Text('View Note'),
+                                const Text('Show Note View'),
                               ],
                             ),
                           ),
@@ -1198,7 +1375,7 @@ class _TimerViewState extends State<TimerView> {
                         overflow: TextOverflow.ellipsis,
                       )
                     : Text(
-                        widget.item.name,
+                        _currentItem.name,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1230,8 +1407,8 @@ class _TimerViewState extends State<TimerView> {
                                   key: const ValueKey('full_mode_overtime'),
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (widget.item.subdivisions != null &&
-                                        widget.item.subdivisions! > 1)
+                                    if (_currentItem.subdivisions != null &&
+                                        _currentItem.subdivisions! > 1)
                                       Stack(
                                         children: [
                                           Align(
@@ -1249,7 +1426,7 @@ class _TimerViewState extends State<TimerView> {
                                           Align(
                                             alignment: Alignment.center,
                                             child: Text(
-                                              '$_completedSubdivisions / ${widget.item.subdivisions!}',
+                                              '$_completedSubdivisions / ${_currentItem.subdivisions!}',
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 color: ColorPalette.lightText
@@ -1261,7 +1438,7 @@ class _TimerViewState extends State<TimerView> {
                                           Align(
                                             alignment: Alignment.centerRight,
                                             child: Text(
-                                              '${_formatMinutesToMmSs(overtimeMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(_todaysTargetMinutes / widget.item.subdivisions!)}',
+                                              '${_formatMinutesToMmSs(overtimeMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(_todaysTargetMinutes / _currentItem.subdivisions!)}',
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 color: ColorPalette.lightText
@@ -1284,8 +1461,8 @@ class _TimerViewState extends State<TimerView> {
                                       ),
                                   ],
                                 )
-                              : (widget.item.subdivisions != null &&
-                                      widget.item.subdivisions! > 1)
+                              : (_currentItem.subdivisions != null &&
+                                      _currentItem.subdivisions! > 1)
                                   ? Stack(
                                       key: const ValueKey(
                                           'full_mode_subdivisions'),
@@ -1305,7 +1482,7 @@ class _TimerViewState extends State<TimerView> {
                                         Align(
                                           alignment: Alignment.center,
                                           child: Text(
-                                            '$_completedSubdivisions / ${widget.item.subdivisions!}',
+                                            '$_completedSubdivisions / ${_currentItem.subdivisions!}',
                                             style: TextStyle(
                                               fontSize: 16,
                                               color: ColorPalette.lightText
@@ -1449,7 +1626,7 @@ class _TimerViewState extends State<TimerView> {
           painter: TimerPainter(
             totalTime: _todaysTargetMinutes,
             elapsedTime: _currentElapsedTimeInMinutes,
-            subdivisions: widget.item.subdivisions ?? 0,
+            subdivisions: _currentItem.subdivisions ?? 0,
           ),
           child: SizedBox(
             width: constraints.maxWidth,
@@ -1483,7 +1660,7 @@ class _TimerViewState extends State<TimerView> {
         painter: TimerPainter(
           totalTime: _todaysTargetMinutes,
           elapsedTime: _currentElapsedTimeInMinutes,
-          subdivisions: widget.item.subdivisions ?? 0,
+          subdivisions: _currentItem.subdivisions ?? 0,
         ),
         child: SizedBox(
           width: constraints.maxWidth,
@@ -1559,7 +1736,7 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Playing timer complete notification');
 
     try {
-      final bellPath = (widget.item.bellSoundPath ?? 'assets/bells/bell1.mp3')
+      final bellPath = (_currentItem.bellSoundPath ?? 'assets/bells/bell1.mp3')
           .replaceFirst('assets/', '');
       // Don't await the play operation - let it run in background
       _audioPlayer.play(AssetSource(bellPath));
@@ -1573,7 +1750,7 @@ class _TimerViewState extends State<TimerView> {
 
     try {
       final bellPath =
-          (widget.item.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
+          (_currentItem.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
               .replaceFirst('assets/', '');
       // Stop any currently playing subdivision bell to ensure the new one plays
       await _subdivisionAudioPlayer.stop();
@@ -1585,7 +1762,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   void _editItem() async {
-    _log.info('Editing item: ${widget.item.name}');
+    _log.info('Editing item: ${_currentItem.name}');
 
     // Cancel any running timer
     _timer?.cancel();
@@ -1603,7 +1780,7 @@ class _TimerViewState extends State<TimerView> {
       MaterialPageRoute(
         builder: (context) => AddEditDailyItemView(
           dataManager: widget.dataManager,
-          dailyThing: widget.item,
+          dailyThing: _currentItem,
           onSubmitCallback: () {
             _log.info('Edit item callback triggered.');
           },
@@ -1614,18 +1791,11 @@ class _TimerViewState extends State<TimerView> {
     if (updatedItem != null) {
       _log.info('Item updated: ${updatedItem.name}');
 
-      // Update the widget with the new item
+      // Update the current item reference
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TimerView(
-              item: updatedItem,
-              dataManager: widget.dataManager,
-              onExitCallback: widget.onExitCallback,
-            ),
-          ),
-        );
+        setState(() {
+          _currentItem = updatedItem;
+        });
       }
     } else {
       _log.info('Edit cancelled.');

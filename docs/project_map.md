@@ -1,3 +1,33 @@
+# Overview of Daily Inc App
+
+This document provides essential context for any AI Coding Agent to understand the **Daily Inc Timer** Flutter project, enabling effective assistance with development tasks.
+
+**Daily Inc** is a Flutter application designed to help users build and maintain daily habits through incremental progress. It allows users to track four types of activities:
+- **MINUTES**: Activities tracked with a countdown timer (e.g., meditation for 10 minutes).
+- **REPS**: Activities tracked by repetitions, with a target that increases over time (e.g., push-ups, starting at 5 reps).
+- **CHECK**: Simple daily tasks that are either completed or not (e.g., drink water).
+- **PERCENTAGE**: Activities tracked by percentage completion (0-100%), with no start/end values or duration (e.g., project progress).
+
+The core concept is that targets for REPS and MINUTES tasks adjust automatically based on rules defined when the task is created (start value, end value, duration in days) and the user's history (whether they completed the task on previous days). Missing days might pause progress or apply a penalty, while consistent completion leads to increments.
+
+The application features:
+- A main list view of daily tasks.
+- Full-screen timer for MINUTES tasks.
+- Input dialogs for REPS tasks.
+- Toggle for CHECK tasks.
+- Graphs to visualize progress over time.
+- Import/export of data to/from JSON.
+- Cross-platform support (Linux, Android, iOS, macOS, Web, Windows).
+
+# Technology Stack
+
+- **Language:** Dart
+- **Framework:** Flutter
+- **State Management:** The project appears to use a combination of `setState` and potentially the `Get` package (indicated in `pubspec.yaml`), though much of the state management seems custom or widget-based.
+- **Local Data Storage:** Custom logic using `shared_preferences` for settings and simple data, and likely file I/O (`path_provider`) for the main JSON data file.
+- **UI:** Flutter's Material Design widgets.
+- **Architecture:** A structured MVC-like approach with `lib/src` containing `core`, `data`, `models`, `services`, `theme`, `views`, and `widgets` subdirectories.
+
 # Project Map
 
 Always read docs/AGENTS.md and docs/project_map.md to understand the context of the project.
@@ -197,11 +227,59 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/timer_view.dart
 - `TimerView` class [`lib/src/views/timer_view.dart:11`](lib/src/views/timer_view.dart:11): A full-screen, minimalist timer for 'Minutes' tasks with initialMinimalistMode parameter to preserve mode during navigation; AppBar title fades using _shouldFadeUI in minimalist mode.
 - `_TimerViewState` class [`lib/src/views/timer_view.dart:27`](lib/src/views/timer_view.dart:27): Manages all timer states: countdown, paused, finished, and overtime; initializes _minimalistMode from initialMinimalistMode parameter before async preference load.
-  - `overtimeMinutesInCurrentSubdivision` variable [`lib/src/views/timer_view.dart:986`](lib/src/views/timer_view.dart:986): Calculates current overtime subdivision progress time in minutes.
-  - `overtimeSubdivisionIndex` variable [`lib/src/views/timer_view.dart:987`](lib/src/views/timer_view.dart:987): Calculates current overtime subdivision index as total subdivisions plus overtime progress.
-  - `_navigateToNextTask()` method [`lib/src/views/timer_view.dart:550`](lib/src/views/timer_view.dart:550): Navigates to the next undone task in the list or exits to main UI, passing current _minimalistMode as initialMinimalistMode for new instances.
-  - `_findNextUndoneTask()` method [`lib/src/views/timer_view.dart:500`](lib/src/views/timer_view.dart:500): Finds the next undone task in the list after the current item.
-  - `_onTimerComplete()` method [`lib/src/views/timer_view.dart:625`](lib/src/views/timer_view.dart:625): Handles timer completion, calls _cancelFadeUITimer to show UI immediately when finished.
+  - `_remainingSeconds` variable [`lib/src/views/timer_view.dart:28`](lib/src/views/timer_view.dart:28): Tracks the remaining time in seconds for the countdown timer.
+  - `_isPaused` variable [`lib/src/views/timer_view.dart:29`](lib/src/views/timer_view.dart:29): Indicates whether the timer is currently paused.
+  - `_hasStarted` variable [`lib/src/views/timer_view.dart:30`](lib/src/views/timer_view.dart:30): Tracks whether the timer has been started at least once.
+  - `_isOvertime` variable [`lib/src/views/timer_view.dart:32`](lib/src/views/timer_view.dart:32): Indicates whether the timer is in overtime mode (after completing the target).
+  - `_overtimeSeconds` variable [`lib/src/views/timer_view.dart:33`](lib/src/views/timer_view.dart:33): Tracks elapsed overtime in seconds.
+  - `_completedSubdivisions` variable [`lib/src/views/timer_view.dart:34`](lib/src/views/timer_view.dart:34): Counts completed subdivisions for bell notifications.
+  - `_todaysTargetMinutes` variable [`lib/src/views/timer_view.dart:46`](lib/src/views/timer_view.dart:46): Stores today's target time in minutes for the current task.
+  - `_initialTargetSeconds` variable [`lib/src/views/timer_view.dart:47`](lib/src/views/timer_view.dart:47): Stores the initial target time in seconds.
+  - `_dimScreenMode` variable [`lib/src/views/timer_view.dart:53`](lib/src/views/timer_view.dart:53): Tracks whether dim screen mode is enabled.
+  - `_minimalistMode` variable [`lib/src/views/timer_view.dart:57`](lib/src/views/timer_view.dart:57): Tracks whether minimalist mode is enabled.
+  - `_shouldFadeUI` variable [`lib/src/views/timer_view.dart:60`](lib/src/views/timer_view.dart:60): Controls UI element fading in minimalist mode.
+  - `_isNoteViewMode` variable [`lib/src/views/timer_view.dart:64`](lib/src/views/timer_view.dart:64): Tracks whether note view mode is active.
+  - `_currentItem` variable [`lib/src/views/timer_view.dart:65`](lib/src/views/timer_view.dart:65): Reference to the current DailyThing item being timed.
+  - `_currentElapsedTimeInMinutes` getter [`lib/src/views/timer_view.dart:67`](lib/src/views/timer_view.dart:67): Calculates and returns the current elapsed time in minutes.
+  - `_formatMinutesToMmSs()` method [`lib/src/views/timer_view.dart:92`](lib/src/views/timer_view.dart:92): Formats minutes to MM:SS string representation.
+  - `_loadDimScreenPreference()` method [`lib/src/views/timer_view.dart:96`](lib/src/views/timer_view.dart:96): Loads dim screen preference from shared preferences.
+  - `_saveDimScreenPreference()` method [`lib/src/views/timer_view.dart:103`](lib/src/views/timer_view.dart:103): Saves dim screen preference to shared preferences.
+  - `_loadMinimalistModePreference()` method [`lib/src/views/timer_view.dart:109`](lib/src/views/timer_view.dart:109): Loads minimalist mode preference from shared preferences.
+  - `_saveMinimalistModePreference()` method [`lib/src/views/timer_view.dart:116`](lib/src/views/timer_view.dart:116): Saves minimalist mode preference to shared preferences.
+  - `_showNoteDialogInEditMode()` method [`lib/src/views/timer_view.dart:124`](lib/src/views/timer_view.dart:124): Shows the note editing dialog in edit mode.
+  - `_toggleDimScreenMode()` method [`lib/src/views/timer_view.dart:172`](lib/src/views/timer_view.dart:172): Toggles dim screen mode on/off.
+  - `_toggleMinimalistMode()` method [`lib/src/views/timer_view.dart:187`](lib/src/views/timer_view.dart:187): Toggles minimalist mode on/off.
+  - `_toggleNoteViewMode()` method [`lib/src/views/timer_view.dart:203`](lib/src/views/timer_view.dart:203): Toggles note view mode on/off.
+  - `_startFadeUITimer()` method [`lib/src/views/timer_view.dart:210`](lib/src/views/timer_view.dart:210): Starts the UI fade timer in minimalist mode.
+  - `_cancelFadeUITimer()` method [`lib/src/views/timer_view.dart:224`](lib/src/views/timer_view.dart:224): Cancels the UI fade timer.
+  - `_buildNoteView()` method [`lib/src/views/timer_view.dart:239`](lib/src/views/timer_view.dart:239): Builds the complete note view UI.
+  - `_buildNoteViewTopBar()` method [`lib/src/views/timer_view.dart:278`](lib/src/views/timer_view.dart:278): Builds the top information bar for the note view with fixed-width elements (120px for button, 80px for subdivisions) to prevent layout shifts when button text changes.
+  - `_buildNoteViewNotesDisplay()` method [`lib/src/views/timer_view.dart:315`](lib/src/views/timer_view.dart:315): Builds the main notes display with increased font sizes (paragraph: 25, h1: 40, h2: 35, h3: 30) for better readability.
+  - `_buildNoteViewBottomButtons()` method [`lib/src/views/timer_view.dart:354`](lib/src/views/timer_view.dart:354): Builds the bottom action buttons for the note view.
+  - `_startDimmingProcess()` method [`lib/src/views/timer_view.dart:373`](lib/src/views/timer_view.dart:373): Starts the screen dimming process.
+  - `_restoreScreenBrightness()` method [`lib/src/views/timer_view.dart:402`](lib/src/views/timer_view.dart:402): Restores screen brightness to normal.
+  - `initState()` method [`lib/src/views/timer_view.dart:413`](lib/src/views/timer_view.dart:413): Initializes the timer state, loads preferences, and sets up initial values.
+  - `dispose()` method [`lib/src/views/timer_view.dart:496`](lib/src/views/timer_view.dart:496): Cleans up resources when the widget is disposed.
+  - `_toggleTimer()` method [`lib/src/views/timer_view.dart:508`](lib/src/views/timer_view.dart:508): Toggles the timer between running and paused states.
+  - `_runOvertime()` method [`lib/src/views/timer_view.dart:562`](lib/src/views/timer_view.dart:562): Runs the overtime timer with subdivision tracking.
+  - `_runCountdown()` method [`lib/src/views/timer_view.dart:591`](lib/src/views/timer_view.dart:591): Runs the countdown timer with subdivision tracking.
+  - `_onTimerComplete()` method [`lib/src/views/timer_view.dart:679`](lib/src/views/timer_view.dart:679): Handles timer completion, plays sound, and shows next task arrow.
+  - `_exitTimerDisplay()` method [`lib/src/views/timer_view.dart:712`](lib/src/views/timer_view.dart:712): Handles exiting the timer display, saving progress if needed.
+  - `_showSaveDialog()` method [`lib/src/views/timer_view.dart:772`](lib/src/views/timer_view.dart:772): Shows a dialog to confirm saving progress.
+  - `_saveProgress()` method [`lib/src/views/timer_view.dart:797`](lib/src/views/timer_view.dart:797): Saves the current progress to the data manager.
+  - `_saveCommentOnly()` method [`lib/src/views/timer_view.dart:835`](lib/src/views/timer_view.dart:835): Saves only the comment without changing progress values.
+  - `_findNextUndoneTask()` method [`lib/src/views/timer_view.dart:894`](lib/src/views/timer_view.dart:894): Finds the next undone task in the list after the current item.
+  - `_navigateToNextTask()` method [`lib/src/views/timer_view.dart:964`](lib/src/views/timer_view.dart:964): Navigates to the next undone task in the list or exits to main UI, passing current _minimalistMode as initialMinimalistMode for new instances.
+  - `_createUpdatedItem()` method [`lib/src/views/timer_view.dart:1034`](lib/src/views/timer_view.dart:1034): Creates an updated DailyThing item with new history.
+  - `build()` method [`lib/src/views/timer_view.dart:1064`](lib/src/views/timer_view.dart:1064): Builds the main timer UI or note view UI based on the current mode.
+  - `_getButtonText()` method [`lib/src/views/timer_view.dart:1221`](lib/src/views/timer_view.dart:1221): Returns the appropriate text for the timer control button.
+  - `_buildCountdownView()` method [`lib/src/views/timer_view.dart:1233`](lib/src/views/timer_view.dart:1233): Builds the countdown timer display view.
+  - `_buildOvertimeView()` method [`lib/src/views/timer_view.dart:1256`](lib/src/views/timer_view.dart:1256): Builds the overtime timer display view.
+  - `_buildCommentField()` method [`lib/src/views/timer_view.dart:1279`](lib/src/views/timer_view.dart:1279): Builds the comment input field.
+  - `_playTimerCompleteNotification()` method [`lib/src/views/timer_view.dart:1322`](lib/src/views/timer_view.dart:1322): Plays the timer completion sound.
+  - `_playSubdivisionBell()` method [`lib/src/views/timer_view.dart:1337`](lib/src/views/timer_view.dart:1337): Plays the subdivision bell sound.
+  - `_editItem()` method [`lib/src/views/timer_view.dart:1353`](lib/src/views/timer_view.dart:1353): Opens the item editing view.
+
 ## lib/src/views/widgets/daily_things_helpers.dart
 - `getNextUndoneIndex(List<DailyThing> items)` [`lib/src/views/widgets/daily_things_helpers.dart:10`](lib/src/views/widgets/daily_things_helpers.dart:10): Finds the index of the next undone item in a list.
 - `showThemedSnackBar(...)` [`lib/src/views/widgets/daily_things_helpers.dart:36`](lib/src/views/widgets/daily_things_helpers.dart:36): Shows a themed snackbar.
