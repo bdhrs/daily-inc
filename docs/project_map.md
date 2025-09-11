@@ -152,13 +152,13 @@ This document provides a map of the project, listing the location of all functio
   - `_cleanupOldBackups()` [`lib/src/services/backup_service.dart:207`](lib/src/services/backup_service.dart:207): Implements a tiered retention policy to manage backup files.
 
 ## lib/src/services/update_service.dart
-- `UpdateService` class [`lib/src/services/update_service.dart:14`](lib/src/services/update_service.dart:14): Handles app update checks, downloads, and installation.
-  - `getLatestRelease()` [`lib/src/services/update_service.dart:11`](lib/src/services/update_service.dart:11): Fetches release details from the GitHub API.
-  - `getCurrentAppVersion()` [`lib/src/services/update_service.dart:28`](lib/src/services/update_service.dart:28): Retrieves the current installed app version.
-  - `isUpdateAvailable()` [`lib/src/services/update_service.dart:33`](lib/src/services/update_service.dart:33): Checks if a newer version is available on GitHub.
-  - `getDownloadUrl()` [`lib/src/services/update_service.dart:61`](lib/src/services/update_service.dart:61): Figures out the correct asset download URL for the platform.
-  - `downloadUpdate()` [`lib/src/services/update_service.dart:78`](lib/src/services/update_service.dart:78): Returns release URL but does not actually download the update (not implemented).
-  - `installUpdate()` [`lib/src/services/update_service.dart:93`](lib/src/services/update_service.dart:93): Stub method that does not actually install updates (not implemented).
+- `UpdateService` class [`lib/src/services/update_service.dart:10`](lib/src/services/update_service.dart:10): Handles app update checks, downloads, and installation.
+  - `getLatestRelease()` [`lib/src/services/update_service.dart:13`](lib/src/services/update_service.dart:13): Fetches release details from the GitHub API.
+  - `getCurrentAppVersion()` [`lib/src/services/update_service.dart:30`](lib/src/services/update_service.dart:30): Retrieves the current installed app version.
+  - `isUpdateAvailable()` [`lib/src/services/update_service.dart:35`](lib/src/services/update_service.dart:35): Checks if a newer version is available on GitHub.
+  - `getDownloadUrl()` [`lib/src/services/update_service.dart:63`](lib/src/services/update_service.dart:63): Figures out the correct asset download URL for the platform.
+  - `downloadUpdate()` [`lib/src/services/update_service.dart:82`](lib/src/services/update_service.dart:82): Downloads the update APK file to external storage.
+  - `installUpdate()` [`lib/src/services/update_service.dart:104`](lib/src/services/update_service.dart:104): Installs the downloaded APK update file.
 
 ## lib/src/theme/app_theme.dart
 - `AppTheme` class [`lib/src/theme/app_theme.dart:5`](lib/src/theme/app_theme.dart:5): Central place for the app's dark theme look and feel.

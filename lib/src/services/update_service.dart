@@ -1,9 +1,11 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
   final _log = Logger('UpdateService');
@@ -60,45 +62,55 @@ class UpdateService {
 
   Future<String?> getDownloadUrl() async {
     final release = await getLatestRelease();
-    if (release == null) {
+    if (release == null || release['assets'] == null) {
       return null;
     }
 
-    // Get the HTML URL for the release page instead of direct download URL
-    final releaseUrl = release['html_url'] as String?;
-    if (releaseUrl != null) {
-      _log.info('Release URL: $releaseUrl');
-      return releaseUrl;
+    final assets = release['assets'] as List;
+    for (var asset in assets) {
+      final name = asset['name'] as String;
+      if (name.endsWith('.apk')) {
+        final url = asset['browser_download_url'] as String;
+        _log.info('Found APK asset: $name at $url');
+        return url;
+      }
+    }
+    _log.warning('No APK asset found in release assets');
+    return null;
+  }
+
+  Future<File> downloadUpdate() async {
+    final url = await getDownloadUrl();
+    if (url == null) {
+      throw Exception('No APK URL found');
+    }
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to download APK: ${response.statusCode}');
+    }
+
+    final dir = await getExternalStorageDirectory();
+    if (dir == null) {
+      throw Exception('External storage directory not found');
+    }
+
+    final apkFile = File('${dir.path}/DailyInc_update.apk');
+    await apkFile.writeAsBytes(response.bodyBytes);
+    _log.info('APK downloaded to ${apkFile.path}');
+    return apkFile;
+  }
+
+  Future<void> installUpdate(File apkFile) async {
+    if (Platform.isAndroid) {
+      final uri = Uri.file(apkFile.path);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        _log.warning('Could not launch APK file: ${apkFile.path}');
+      }
     } else {
-      _log.warning('No release URL found in the latest release.');
-      return null;
-    }
-  }
-
-  Future<String?> downloadUpdate(String url) async {
-    try {
-      _log.info('Release URL is accessible: $url');
-      _log.warning(
-          'DEBUG: downloadUpdate() called but only returns URL - no actual download implemented');
-      _log.warning(
-          'DEBUG: This is likely why automatic installation fails - no APK download logic');
-      return url;
-    } catch (e, st) {
-      _log.severe(
-          'An unexpected error occurred while checking release URL', e, st);
-      return null;
-    }
-  }
-
-  Future<bool> installUpdate(String apkPath) async {
-    try {
-      _log.warning('DEBUG: installUpdate() called but not implemented');
-      _log.warning(
-          'DEBUG: This is why automatic installation fails - no installation logic');
-      return false;
-    } catch (e, st) {
-      _log.severe('Error installing update', e, st);
-      return false;
+      _log.warning('InstallUpdate not implemented for this platform');
     }
   }
 }

@@ -8,6 +8,10 @@
 - you MUST always read docs/project_map.md to understand the context of the project.
 - you MUST always update docs/project_map.md if there are any code changes.
 
+## Dependencies
+- you MUST add or delete dependencies to `pubspec.yaml`
+- you MUST then run `flutter pub get` to update the dependencies 
+
 ## Reading files
 - you MUST always read the whole file to get the whole context
 - you MUST NEVER read files in chunks, otherwise you miss the bigger context
