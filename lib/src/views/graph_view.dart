@@ -61,6 +61,21 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
     if (widget.dailyThing.itemType == ItemType.check) {
       _minY = 0;
       _maxY = 1.2;
+    } else if (widget.dailyThing.itemType == ItemType.trend) {
+      // For trend items, allow negative values
+      if (_spots.isEmpty) {
+        _minY = -1;
+        _maxY = 1;
+      } else {
+        final values = _spots.map((s) => s.y);
+        final minValue = values.reduce(min);
+        final maxValue = values.reduce(max);
+        final range = maxValue - minValue;
+        final padding = range * 0.1; // 10% padding
+
+        _minY = minValue - padding;
+        _maxY = maxValue + padding;
+      }
     } else {
       final maxValue =
           _spots.isEmpty ? 0.0 : _spots.map((s) => s.y).reduce(max);
@@ -142,6 +157,12 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
           DateTime(entry.date.year, entry.date.month, entry.date.day);
       historyMap[dateKey] = entry;
     }
+
+    // For trend items, calculate accumulated values
+    if (widget.dailyThing.itemType == ItemType.trend) {
+      return _buildTrendSpots(dates, historyMap);
+    }
+
     final spots = <FlSpot>[];
     for (final d in dates) {
       final entry = historyMap[d];
@@ -155,6 +176,26 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
       }
       spots.add(FlSpot(GraphStyleHelpers.epochDays(d), y));
     }
+    return spots;
+  }
+
+  /// Builds spots for trend items with accumulated values
+  List<FlSpot> _buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
+    final spots = <FlSpot>[];
+    double accumulatedValue = 0.0;
+
+    for (final date in dates) {
+      final entry = historyMap[date];
+
+      if (entry != null && entry.actualValue != null) {
+        // Add today's trend to the accumulated value
+        accumulatedValue += entry.actualValue!;
+      }
+      // If no entry for this date, keep the previous accumulated value
+
+      spots.add(FlSpot(GraphStyleHelpers.epochDays(date), accumulatedValue));
+    }
+
     return spots;
   }
 

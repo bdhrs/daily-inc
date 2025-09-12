@@ -308,6 +308,9 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/widgets/mini_graph_widget.dart
 - `MiniGraphWidget` class [`lib/src/views/widgets/mini_graph_widget.dart:8`](lib/src/views/widgets/mini_graph_widget.dart:8): A simplified graph widget showing the last 14 days of data for a daily item directly in the expanded view.
+  - `_buildSpots()` method [`lib/src/views/widgets/mini_graph_widget.dart:14`](lib/src/views/widgets/mini_graph_widget.dart:14): Extracts data points for the graph, handling trend items with accumulated values.
+  - `_buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap)` method [`lib/src/views/widgets/mini_graph_widget.dart:35`](lib/src/views/widgets/mini_graph_widget.dart:35): Builds spots for trend items with accumulated values (today's value = yesterday + today's trend).
+  - `_calculateMaxY(List<FlSpot> spots)` method [`lib/src/views/widgets/mini_graph_widget.dart:60`](lib/src/views/widgets/mini_graph_widget.dart:60): Calculates the Y-axis range, allowing negative values for trend items.
 
 ## lib/src/views/widgets/timer_display.dart
 - `TimerDisplayWidget` class [`lib/src/views/widgets/timer_display.dart:10`](lib/src/views/widgets/timer_display.dart:10): A widget that displays the timer with circular visualization and time text for both countdown and overtime modes.
@@ -362,3 +365,15 @@ This document provides a map of the project, listing the location of all functio
 
 ## lib/src/views/widgets/dimming_overlay.dart
 - `DimmingOverlayWidget` class [`lib/src/views/widgets/dimming_overlay.dart:6`](lib/src/views/widgets/dimming_overlay.dart:6): A widget that displays the screen dimming overlay for the timer view with tap gesture handling to temporarily restore visibility.
+
+## lib/src/views/graph_view.dart
+- `GraphView` class [`lib/src/views/graph_view.dart:11`](lib/src/views/graph_view.dart:11): A full-screen graph view for individual daily items with time range selection and trend line display.
+  - `_buildSpots()` method [`lib/src/views/graph_view.dart:137`](lib/src/views/graph_view.dart:137): Builds data points for the graph, handling trend items with accumulated values.
+  - `_buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap)` method [`lib/src/views/graph_view.dart:149`](lib/src/views/graph_view.dart:149): Builds spots for trend items with accumulated values (today's value = yesterday + today's trend).
+  - `_calculateRanges()` method [`lib/src/views/graph_view.dart:59`](lib/src/views/graph_view.dart:59): Calculates graph Y-axis ranges, allowing negative values for trend items.
+
+## lib/src/views/category_graph_view.dart
+- `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:12`](lib/src/views/category_graph_view.dart:12): Shows graphs of progress for each category with time range filtering.
+  - `_processCategoryData()` method [`lib/src/views/category_graph_view.dart:58`](lib/src/views/category_graph_view.dart:58): Processes category data, handling trend items with accumulated values.
+  - `_getTrendAccumulatedValue(DailyThing thing, DateTime targetDate)` method [`lib/src/views/category_graph_view.dart:395`](lib/src/views/category_graph_view.dart:395): Calculates the accumulated value for a trend item up to the specified date.
+  - `_categoryHasTrendItems(String category)` method [`lib/src/views/category_graph_view.dart:412`](lib/src/views/category_graph_view.dart:412): Checks if a category contains any trend items.

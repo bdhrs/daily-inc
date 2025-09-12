@@ -32,6 +32,11 @@ class MiniGraphWidget extends StatelessWidget {
       historyMap[dateKey] = entry;
     }
 
+    // For trend items, calculate accumulated values
+    if (dailyThing.itemType == ItemType.trend) {
+      return _buildTrendSpots(dates, historyMap);
+    }
+
     // Build spots for each day
     final spots = <FlSpot>[];
     for (int i = 0; i < dates.length; i++) {
@@ -57,13 +62,47 @@ class MiniGraphWidget extends StatelessWidget {
     return spots;
   }
 
+  /// Builds spots for trend items with accumulated values
+  List<FlSpot> _buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
+    final spots = <FlSpot>[];
+    double accumulatedValue = 0.0;
+
+    for (final date in dates) {
+      final entry = historyMap[date];
+
+      if (entry != null && entry.actualValue != null) {
+        // Add today's trend to the accumulated value
+        accumulatedValue += entry.actualValue!;
+      }
+      // If no entry for this date, keep the previous accumulated value
+
+      // Convert date to epoch days for FlChart
+      final epochDays = date.millisecondsSinceEpoch / (24 * 60 * 1000);
+      spots.add(FlSpot(epochDays.toDouble(), accumulatedValue));
+    }
+
+    return spots;
+  }
+
   /// Calculates the Y-axis range for the graph
   double _calculateMaxY(List<FlSpot> spots) {
     if (dailyThing.itemType == ItemType.check) {
       return 1.2; // For check items, we only need 0-1 range
     }
 
-    final maxValue = spots.isEmpty ? 0.0 : spots.map((s) => s.y).reduce(max);
+    if (spots.isEmpty) return 1.0;
+
+    final values = spots.map((s) => s.y);
+    final maxValue = values.reduce(max);
+    final minValue = values.reduce(min);
+
+    // For trend items, ensure we have enough range to show negative values
+    if (dailyThing.itemType == ItemType.trend) {
+      final range = maxValue - minValue;
+      final padding = range * 0.1; // 10% padding
+      return maxValue + padding;
+    }
+
     return maxValue == 0 ? 1 : maxValue * 1.1; // Add 10% padding
   }
 
@@ -71,7 +110,9 @@ class MiniGraphWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final spots = _buildSpots();
     final maxY = _calculateMaxY(spots);
-    final minY = 0.0;
+    final minY = dailyThing.itemType == ItemType.trend && spots.isNotEmpty
+        ? spots.map((s) => s.y).reduce(min) * 1.1 // Allow negative values with padding
+        : 0.0;
 
     return GestureDetector(
       onTap: () {

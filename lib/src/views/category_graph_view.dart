@@ -165,15 +165,21 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
 
         double total = 0;
         for (final thing in items) {
-          final sameDayEntries = thing.history.where((e) {
-            final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-            return entryDate == currentDate;
-          });
-          for (final e in sameDayEntries) {
-            if (thing.itemType == ItemType.check) {
-              if (e.doneToday) total += 1.0;
-            } else {
-              if (e.actualValue != null) total += e.actualValue!;
+          if (thing.itemType == ItemType.trend) {
+            // For trend items, use accumulated value
+            final accumulatedValue = _getTrendAccumulatedValue(thing, currentDate);
+            total += accumulatedValue;
+          } else {
+            final sameDayEntries = thing.history.where((e) {
+              final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
+              return entryDate == currentDate;
+            });
+            for (final e in sameDayEntries) {
+              if (thing.itemType == ItemType.check) {
+                if (e.doneToday) total += 1.0;
+              } else {
+                if (e.actualValue != null) total += e.actualValue!;
+              }
             }
           }
         }
@@ -217,10 +223,22 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
 
   Widget _buildCategoryGraph(
       String category, Map<DateTime, double> dateTotals, BuildContext context) {
+    double minY = 0;
     double maxY = 0;
     if (dateTotals.isNotEmpty) {
-      maxY = dateTotals.values.reduce(max);
-      maxY = maxY == 0 ? 1 : maxY * 1.1;
+      final values = dateTotals.values;
+      final minValue = values.reduce(min);
+      final maxValue = values.reduce(max);
+
+      // Check if this category contains trend items (which can have negative accumulated values)
+      final hasTrendItems = _categoryHasTrendItems(category);
+      if (hasTrendItems && minValue < 0) {
+        minY = minValue * 1.1; // Allow negative values with padding
+        maxY = maxValue == 0 ? 1 : maxValue * 1.1;
+      } else {
+        minY = 0;
+        maxY = maxValue == 0 ? 1 : maxValue * 1.1;
+      }
     } else {
       maxY = 1;
     }
@@ -245,7 +263,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
                       .floorToDouble(),
                   maxX: GraphStyleHelpers.epochDays(sortedDates.last)
                       .ceilToDouble(),
-                  minY: 0,
+                  minY: minY,
                   maxY: maxY,
                   lineBarsData: [
                     LineChartBarData(
@@ -262,7 +280,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
                     ),
                     // Trend line
                     LineChartBarData(
-                      spots: _calculateCategoryTrendLine(dateTotals, 0, maxY),
+                      spots: _calculateCategoryTrendLine(dateTotals, minY, maxY),
                       color: Colors.white,
                       barWidth: 2.5,
                       isCurved: true,
@@ -272,9 +290,9 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
                       belowBarData: BarAreaData(show: false),
                     ),
                   ],
-                  titlesData: buildAxisTitles(context, 0, maxY),
+                  titlesData: buildAxisTitles(context, minY, maxY),
                   borderData: GraphStyleHelpers.getBorderData(),
-                  gridData: buildGridData(0, maxY),
+                  gridData: buildGridData(minY, maxY),
                   lineTouchData: LineTouchData(
                     enabled: true,
                     getTouchedSpotIndicator: (bar, spots) => spots
@@ -364,6 +382,41 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
     ];
   }
   
+  /// Calculates the accumulated value for a trend item up to the specified date
+  double _getTrendAccumulatedValue(DailyThing thing, DateTime targetDate) {
+    // Sort history entries by date
+    final sortedHistory = thing.history.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    double accumulatedValue = 0.0;
+
+    for (final entry in sortedHistory) {
+      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+
+      // Stop if we've reached beyond the target date
+      if (entryDate.isAfter(targetDate)) break;
+
+      if (entry.actualValue != null) {
+        accumulatedValue += entry.actualValue!;
+      }
+    }
+
+    return accumulatedValue;
+  }
+
+  /// Checks if a category contains any trend items
+  bool _categoryHasTrendItems(String category) {
+    final itemsByCategory = <String, List<DailyThing>>{};
+    for (final thing in widget.dailyThings) {
+      if (thing.category.isNotEmpty) {
+        itemsByCategory.putIfAbsent(thing.category, () => []).add(thing);
+      }
+    }
+
+    final items = itemsByCategory[category] ?? [];
+    return items.any((thing) => thing.itemType == ItemType.trend);
+  }
+
   /// Builds the touch tooltip data for the category graph.
   LineTouchTooltipData _buildCategoryTouchTooltipData(Map<DateTime, double> dateTotals) {
     return LineTouchTooltipData(
@@ -374,7 +427,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
           }
           final d = GraphStyleHelpers.dateFromEpochDays(s.x.floorToDouble());
           final value = s.y.toStringAsFixed(1);
-          
+
           return LineTooltipItem(
             '${DateFormat('M/d').format(d)}\n',
             const TextStyle(
