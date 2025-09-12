@@ -123,6 +123,11 @@ class _HistoryViewState extends State<HistoryView> {
   }
 
   Future<void> _saveChanges() async {
+    if (_isAddingEntry) {
+      if (!_saveNewEntry()) {
+        return;
+      }
+    }
     debugPrint(
         'History before saving: ${_history.map((e) => e.comment).toList()}');
     final updatedItem = widget.item.copyWith(history: _history);
@@ -138,6 +143,7 @@ class _HistoryViewState extends State<HistoryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('History saved successfully')),
       );
+      Navigator.of(context).pop();
     }
   }
 
@@ -156,14 +162,14 @@ class _HistoryViewState extends State<HistoryView> {
     });
   }
 
-  void _saveNewEntry() {
+  bool _saveNewEntry() {
     // Validate target value
     final targetValueStr = _newTargetValueController.text;
     if (targetValueStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Target value cannot be empty')),
       );
-      return;
+      return false;
     }
 
     final targetValue = double.tryParse(targetValueStr);
@@ -171,7 +177,7 @@ class _HistoryViewState extends State<HistoryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid target value')),
       );
-      return;
+      return false;
     }
 
     // Validate actual value if provided
@@ -182,7 +188,7 @@ class _HistoryViewState extends State<HistoryView> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid actual value')),
         );
-        return;
+        return false;
       }
     }
 
@@ -194,7 +200,7 @@ class _HistoryViewState extends State<HistoryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid date format')),
       );
-      return;
+      return false;
     }
 
     // Check if an entry with the same date already exists
@@ -209,7 +215,7 @@ class _HistoryViewState extends State<HistoryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('An entry with this date already exists')),
       );
-      return;
+      return false;
     }
 
     final newEntry = HistoryEntry(
@@ -240,9 +246,7 @@ class _HistoryViewState extends State<HistoryView> {
       );
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Entry added successfully')),
-    );
+    return true;
   }
 
   void _cancelAddingEntry() {
@@ -333,11 +337,11 @@ class _HistoryViewState extends State<HistoryView> {
           title: Text('Edit History: ${widget.item.name}'),
           actions: [
             if (!_isAddingEntry)
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: _startAddingEntry,
-                tooltip: 'Add Entry',
-              ),
+             IconButton(
+               icon: const Icon(Icons.add),
+               onPressed: _startAddingEntry,
+               tooltip: 'Add a New Entry',
+             ),
             if (_isAddingEntry)
               IconButton(
                 icon: const Icon(Icons.close),
@@ -347,7 +351,7 @@ class _HistoryViewState extends State<HistoryView> {
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: _saveChanges,
-              tooltip: 'Save Changes',
+              tooltip: 'Save Changes and Exit',
             ),
           ],
         ),
@@ -464,15 +468,13 @@ class _HistoryViewState extends State<HistoryView> {
                           ),
                         ),
                       ),
-                      DataCell(
-                        IconButton(
-                          icon: const Icon(Icons.save),
-                          onPressed: _isDateInvalid ? null : _saveNewEntry,
-                          tooltip: _isDateInvalid
-                              ? 'Date already exists'
-                              : 'Save Entry',
-                        ),
-                      ),
+                       DataCell(
+                         IconButton(
+                           icon: const Icon(Icons.delete),
+                           onPressed: _cancelAddingEntry,
+                           tooltip: 'Cancel Adding Entry',
+                         ),
+                       ),
                     ],
                   ),
                 ..._history.map((entry) {
