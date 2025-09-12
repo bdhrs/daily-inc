@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:daily_inc/src/theme/color_palette.dart';
 
 class NextTaskArrow extends StatefulWidget {
   final VoidCallback onTap;
@@ -63,22 +64,24 @@ class _NextTaskArrowState extends State<NextTaskArrow>
     //    - Hide when timer is running (!isPaused)
     //    - Show when timer is paused (isPaused)
     // 3. In all other cases, show the arrow
-    
+
     bool showArrow = widget.isVisible;
-    
+
     if (widget.isMinimalistMode && widget.isOvertime) {
       // In minimalist mode during overtime, hide when timer is running
       showArrow = showArrow && widget.isPaused;
     }
 
     // In minimalist mode when timer is running, fade out the arrow like other UI elements
-    final bool shouldFadeOut = widget.isMinimalistMode && !widget.isPaused && showArrow;
+    final bool shouldFadeOut =
+        widget.isMinimalistMode && !widget.isPaused && showArrow;
 
     return Visibility(
       visible: showArrow,
       child: Positioned(
         right: 20,
-        bottom: MediaQuery.of(context).size.height * 0.33, // About 1/3 from bottom
+        bottom:
+            MediaQuery.of(context).size.height * 0.33, // About 1/3 from bottom
         child: AnimatedOpacity(
           opacity: shouldFadeOut ? (widget.shouldFadeUI ? 0.0 : 1.0) : 1.0,
           duration: const Duration(milliseconds: 500),
@@ -88,7 +91,7 @@ class _NextTaskArrowState extends State<NextTaskArrow>
               onPressed: widget.onTap,
               icon: const Icon(
                 Icons.arrow_forward,
-                color: Colors.white,
+                color: ColorPalette.lightText,
                 size: 36,
               ),
             ),

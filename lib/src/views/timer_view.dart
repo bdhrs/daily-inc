@@ -1,21 +1,25 @@
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/views/helpers/audio_helper.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/views/helpers/timer_logic.dart';
+import 'package:daily_inc/src/views/helpers/timer_state.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/widgets/next_task_arrow.dart';
+import 'package:daily_inc/src/views/widgets/note_view.dart';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:daily_inc/src/views/widgets/timer_painter.dart';
+import 'package:daily_inc/src/views/widgets/timer_display.dart';
+import 'package:daily_inc/src/views/widgets/comment_input.dart';
+import 'package:daily_inc/src/views/widgets/timer_controls.dart';
+import 'package:daily_inc/src/views/widgets/subdivision_display.dart';
+import 'package:daily_inc/src/views/widgets/dimming_overlay.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:daily_inc/src/core/time_converter.dart';
 import 'package:screen_brightness/screen_brightness.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 class TimerView extends StatefulWidget {
   final DailyThing item;
@@ -56,8 +60,7 @@ class _TimerViewState extends State<TimerView> {
   double _preciseElapsedSeconds = 0.0;
   double _preciseSubdivisionInterval = 0.0;
   int _lastTriggeredSubdivision = -1;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _subdivisionAudioPlayer = AudioPlayer();
+  final AudioHelper _audioHelper = AudioHelper();
   final _log = Logger('TimerView');
   final _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
@@ -71,7 +74,6 @@ class _TimerViewState extends State<TimerView> {
   Timer? _nextTaskNameTimer;
 
   late double _todaysTargetMinutes;
-  late double _initialTargetSeconds;
 
   // Screen dimmer variables
   bool _dimScreenMode = false;
@@ -89,39 +91,6 @@ class _TimerViewState extends State<TimerView> {
   // Note view mode variable and current item reference
   bool _isNoteViewMode = false;
   late DailyThing _currentItem;
-
-  double get _currentElapsedTimeInMinutes {
-    if (_isOvertime) {
-      final overtimeMinutes = _overtimeSeconds / 60.0;
-      return _todaysTargetMinutes + overtimeMinutes;
-    }
-
-    if (_hasStarted) {
-      final elapsedSeconds = _initialTargetSeconds - _remainingSeconds;
-      final sessionElapsedMinutes = elapsedSeconds / 60.0;
-      return sessionElapsedMinutes;
-    }
-
-    // For non-started case, we need to check persisted value
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    HistoryEntry? todaysEntry;
-    for (final entry in _currentItem.history) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-      if (entryDate == todayDate) {
-        todaysEntry = entry;
-        break;
-      }
-    }
-
-    return todaysEntry?.actualValue ?? 0.0;
-  }
-
-  String _formatMinutesToMmSs(double minutesValue) {
-    return TimeConverter.toMmSsString(minutesValue, padZeroes: true);
-  }
 
   Future<void> _loadDimScreenPreference() async {
     final prefs = await SharedPreferences.getInstance();
@@ -268,193 +237,6 @@ class _TimerViewState extends State<TimerView> {
     }
   }
 
-  /// Builds the Note View UI when in note view mode
-  Widget _buildNoteView(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) return;
-        // When back button is pressed in note view mode, just toggle back to normal mode
-        _toggleNoteViewMode();
-      },
-      child: Scaffold(
-        backgroundColor: ColorPalette.darkBackground,
-        appBar: AppBar(
-          backgroundColor: ColorPalette.darkBackground,
-          title: Text(
-            _currentItem.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          centerTitle: true,
-          elevation: 0,
-          // Add a close button to the app bar
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: _toggleNoteViewMode,
-          ),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top Information Bar
-                _buildNoteViewTopBar(),
-                const SizedBox(height: 16),
-                // Main Notes Display
-                Expanded(
-                  child: _buildNoteViewNotesDisplay(),
-                ),
-                const SizedBox(height: 16),
-                // Bottom Action Buttons
-                _buildNoteViewBottomButtons(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Builds the Top Information Bar for Note View mode
-  Widget _buildNoteViewTopBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: ColorPalette.cardBackground,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          // Left Side: Timer Control Button (fixed width to prevent layout shifts)
-          SizedBox(
-            width: 120, // Fixed width to prevent layout shifts
-            child: ElevatedButton(
-              onPressed: _toggleTimer,
-              child: Text(
-                _getButtonText(),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Center: Time Display
-          Expanded(
-            child: Text(
-              _isOvertime
-                  ? '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}'
-                  : '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: ColorPalette.lightText,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Right Side: Subdivision Display (only if subdivisions are enabled)
-          if (_currentItem.subdivisions != null &&
-              _currentItem.subdivisions! > 1)
-            SizedBox(
-              width: 80, // Fixed width for consistent layout
-              child: Text(
-                '$_completedSubdivisions / ${_currentItem.subdivisions}',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: ColorPalette.lightText,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the Main Notes Display for Note View mode
-  Widget _buildNoteViewNotesDisplay() {
-    final notes = _currentItem.notes ?? '';
-
-    if (notes.isEmpty) {
-      return Center(
-        child: Text(
-          'No notes for this item.',
-          style: TextStyle(
-            fontSize: 20,
-            color: ColorPalette.lightText.withValues(alpha: 0.7),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: ColorPalette.cardBackground,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        child: MarkdownBody(
-          data: notes,
-          styleSheet: MarkdownStyleSheet(
-            p: TextStyle(
-              fontSize: 25,
-              color: ColorPalette.lightText,
-              height: 1.5,
-            ),
-            h1: TextStyle(
-              fontSize: 40,
-              color: ColorPalette.lightText,
-              fontWeight: FontWeight.bold,
-            ),
-            h2: TextStyle(
-              fontSize: 35,
-              color: ColorPalette.lightText,
-              fontWeight: FontWeight.bold,
-            ),
-            h3: TextStyle(
-              fontSize: 30,
-              color: ColorPalette.lightText,
-              fontWeight: FontWeight.bold,
-            ),
-            strong: const TextStyle(fontWeight: FontWeight.bold),
-            em: const TextStyle(fontStyle: FontStyle.italic),
-            // Add more styles as needed for lists, etc.
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Builds the Bottom Action Buttons for Note View mode
-  Widget _buildNoteViewBottomButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed:
-                _showNoteDialogInEditMode, // Use the new edit mode dialog
-            child: const Text('Edit Note'),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _toggleNoteViewMode, // Close note view mode
-            child: const Text('Close'),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _startDimmingProcess() {
     // Check if we should dim the screen
     if (!_dimScreenMode || _isDimming || _isPaused) return;
@@ -493,21 +275,11 @@ class _TimerViewState extends State<TimerView> {
   @override
   void initState() {
     super.initState();
-    // Initialize target values first
-    _todaysTargetMinutes = widget.item.todayValue;
-    _initialTargetSeconds = _todaysTargetMinutes * 60;
-
     // Initialize the current item reference
     _currentItem = widget.item;
 
     // Set initial minimalist mode from parameter
     _minimalistMode = widget.initialMinimalistMode;
-
-    if (widget.startInOvertime) {
-      _isOvertime = true;
-      _isPaused = true;
-      _hasStarted = true;
-    }
 
     // Load dim screen mode preference
     _loadDimScreenPreference();
@@ -530,84 +302,22 @@ class _TimerViewState extends State<TimerView> {
       });
     }
 
-    _log.info('--- TIMER INITIALIZATION START ---');
-    _log.info('Item Name: ${widget.item.name}');
-    _log.info('Item Type: ${widget.item.itemType}');
-    _log.info('Start Value: ${widget.item.startValue}');
-    _log.info('End Value: ${widget.item.endValue}');
-    _log.info('Calculated Increment: ${widget.item.increment}');
-    _log.info('Calculated Daily Target (todayValue): $_todaysTargetMinutes');
+    // Initialize timer state using helper
+    final initialState = TimerStateHelper.initializeTimerState(
+      item: widget.item,
+      startInOvertime: widget.startInOvertime,
+      commentController: _commentController,
+      currentItem: _currentItem,
+    );
 
-    final todayDate = DateUtils.dateOnly(DateTime.now());
-    _log.info('Searching for history entry for date: $todayDate');
-
-    HistoryEntry? todayEntry;
-    for (final entry in _currentItem.history) {
-      final entryDate = DateUtils.dateOnly(entry.date);
-      if (entryDate == todayDate) {
-        // Find any entry for today, regardless of completion state.
-        // This is crucial for correctly resuming overtime.
-        todayEntry = entry;
-        _log.info(
-            'Found entry for today (done: ${entry.doneToday}, actual: ${entry.actualValue}).');
-        break;
-      }
-    }
-
-    if (todayEntry != null) {
-      // Load existing comment
-      if (todayEntry.comment != null && todayEntry.comment!.isNotEmpty) {
-        _commentController.text = todayEntry.comment!;
-      }
-
-      final dailyTarget = _todaysTargetMinutes;
-      final completedMinutes = todayEntry.actualValue ?? 0.0;
-      // Use epsilon comparison to handle floating-point precision issues
-      final epsilon = 0.0001; // Small tolerance for floating-point comparison
-      if (widget.startInOvertime ||
-          (completedMinutes - dailyTarget).abs() < epsilon ||
-          completedMinutes > dailyTarget) {
-        _isOvertime = true;
-        _isPaused = true;
-        _hasStarted = true;
-        final overtimeMinutes = completedMinutes - dailyTarget;
-        _overtimeSeconds = (overtimeMinutes > 0) ? (overtimeMinutes * 60) : 0.0;
-        _remainingSeconds = 0.0;
-
-        // Calculate completed subdivisions for overtime mode using precise floating-point
-        if (_currentItem.subdivisions != null &&
-            _currentItem.subdivisions! > 1) {
-          final totalSeconds = (_todaysTargetMinutes * 60);
-          final subdivisionInterval = totalSeconds / _currentItem.subdivisions!;
-          if (subdivisionInterval > 0) {
-            final elapsedSeconds = totalSeconds + _overtimeSeconds;
-            // Use precise calculation to match the new timer logic
-            _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
-                .floor()
-                .clamp(0, _currentItem.subdivisions! * 2); // Allow for overtime
-          }
-        }
-      } else {
-        final remainingMinutes = dailyTarget - completedMinutes;
-        _remainingSeconds = (remainingMinutes * 60);
-      }
-
-      // Calculate already completed subdivisions using precise floating-point
-      if (_currentItem.subdivisions != null && _currentItem.subdivisions! > 1) {
-        final totalSeconds = (_todaysTargetMinutes * 60);
-        final subdivisionInterval = totalSeconds / _currentItem.subdivisions!;
-        if (subdivisionInterval > 0) {
-          final elapsedSeconds = totalSeconds - _remainingSeconds;
-          // Use precise calculation to match the new timer logic
-          _completedSubdivisions = (elapsedSeconds / subdivisionInterval)
-              .floor()
-              .clamp(0, _currentItem.subdivisions! - 1);
-        }
-      }
-    } else {
-      _remainingSeconds = _initialTargetSeconds;
-    }
-    _log.info('--- TIMER INITIALIZATION END ---');
+    // Update state variables with initialized values
+    _todaysTargetMinutes = initialState['todaysTargetMinutes'] as double;
+    _isOvertime = initialState['isOvertime'] as bool;
+    _isPaused = initialState['isPaused'] as bool;
+    _hasStarted = initialState['hasStarted'] as bool;
+    _remainingSeconds = initialState['remainingSeconds'] as double;
+    _overtimeSeconds = initialState['overtimeSeconds'] as double;
+    _completedSubdivisions = initialState['completedSubdivisions'] as int;
     _commentFocusNode.addListener(() {
       setState(() {});
     });
@@ -620,7 +330,7 @@ class _TimerViewState extends State<TimerView> {
     _dimTimer?.cancel();
     _commentController.dispose();
     _commentFocusNode.dispose();
-    _subdivisionAudioPlayer.dispose();
+    _audioHelper.dispose();
     _nextTaskNameTimer?.cancel();
     _fadeUITimer?.cancel();
     WakelockPlus.disable();
@@ -712,7 +422,7 @@ class _TimerViewState extends State<TimerView> {
           // Only play bell when we cross into a new subdivision
           if (currentSubdivision > _lastTriggeredSubdivision &&
               currentSubdivision > 0) {
-            _playSubdivisionBell();
+            _audioHelper.playSubdivisionBell(_currentItem);
             _lastTriggeredSubdivision = currentSubdivision;
             _completedSubdivisions = currentSubdivision;
           }
@@ -767,7 +477,7 @@ class _TimerViewState extends State<TimerView> {
             // Only play bell when we cross into a new subdivision (and not at the very start)
             if (currentSubdivision > _lastTriggeredSubdivision &&
                 currentSubdivision > 0) {
-              _playSubdivisionBell();
+              _audioHelper.playSubdivisionBell(_currentItem);
               _lastTriggeredSubdivision = currentSubdivision;
               _completedSubdivisions = currentSubdivision;
             }
@@ -805,7 +515,7 @@ class _TimerViewState extends State<TimerView> {
     }
 
     // Play the bell sound immediately for instant feedback
-    _playTimerCompleteNotification();
+    _audioHelper.playTimerCompleteNotification(_currentItem);
 
     // Update UI state immediately to show completion
     setState(() {
@@ -921,18 +631,39 @@ class _TimerViewState extends State<TimerView> {
     final today = DateUtils.dateOnly(DateTime.now());
     // Use epsilon comparison to handle floating-point precision issues
     final epsilon = 0.0001; // Small tolerance for floating-point comparison
-    final elapsed = _currentElapsedTimeInMinutes;
+    final elapsed = TimerLogicHelper.calculateCurrentElapsedTimeInMinutes(
+      isOvertime: _isOvertime,
+      hasStarted: _hasStarted,
+      todaysTargetMinutes: _todaysTargetMinutes,
+      remainingSeconds: _remainingSeconds,
+      overtimeSeconds: _overtimeSeconds,
+      currentItem: _currentItem,
+    );
     final target = _todaysTargetMinutes;
     final isDone = (elapsed - target).abs() < epsilon || elapsed > target;
 
     _log.info(
-        'Saving progress. Done: $isDone, Time: ${_currentElapsedTimeInMinutes.toStringAsFixed(2)} min');
+        'Saving progress. Done: $isDone, Time: ${TimerLogicHelper.calculateCurrentElapsedTimeInMinutes(
+      isOvertime: _isOvertime,
+      hasStarted: _hasStarted,
+      todaysTargetMinutes: _todaysTargetMinutes,
+      remainingSeconds: _remainingSeconds,
+      overtimeSeconds: _overtimeSeconds,
+      currentItem: _currentItem,
+    ).toStringAsFixed(2)} min');
 
     final newEntry = HistoryEntry(
       date: today,
       targetValue: _todaysTargetMinutes,
       doneToday: isDone,
-      actualValue: _currentElapsedTimeInMinutes,
+      actualValue: TimerLogicHelper.calculateCurrentElapsedTimeInMinutes(
+        isOvertime: _isOvertime,
+        hasStarted: _hasStarted,
+        todaysTargetMinutes: _todaysTargetMinutes,
+        remainingSeconds: _remainingSeconds,
+        overtimeSeconds: _overtimeSeconds,
+        currentItem: _currentItem,
+      ),
       comment: _commentController.text,
     );
 
@@ -998,84 +729,12 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Comment saved successfully.');
   }
 
-  /// Finds the next undone task in the list after the current item
-  DailyThing? _findNextUndoneTask() {
-    // If we don't have the full list or current index, we can't navigate
-    if (widget.allItems == null || widget.currentItemIndex == null) {
-      return null;
-    }
-
-    // Start from the next item
-    for (int i = widget.currentItemIndex! + 1;
-        i < widget.allItems!.length;
-        i++) {
-      final item = widget.allItems![i];
-
-      // Check if the item is undone based on its type
-      switch (item.itemType) {
-        case ItemType.check:
-          if (!item.completedForToday) {
-            return item;
-          }
-          break;
-        case ItemType.reps:
-          // For reps, check if no actual value has been entered today
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final hasActualValueToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            return entryDate == todayDate && entry.actualValue != null;
-          });
-          if (!hasActualValueToday) {
-            return item;
-          }
-          break;
-        case ItemType.minutes:
-          // For minutes, check if not completed
-          if (!item.completedForToday) {
-            return item;
-          }
-          break;
-        case ItemType.percentage:
-          // For percentage, check if no entry for today or entry has 0 value
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final todayEntry = item.history.cast<HistoryEntry?>().firstWhere(
-                (entry) =>
-                    entry != null &&
-                    DateTime(entry.date.year, entry.date.month,
-                            entry.date.day) ==
-                        todayDate,
-                orElse: () => null,
-              );
-          if (todayEntry == null || (todayEntry.actualValue ?? 0) == 0) {
-            return item;
-          }
-          break;
-        case ItemType.trend:
-          // For trend, check if no entry for today
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final hasEntryToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            return entryDate == todayDate;
-          });
-          if (!hasEntryToday) {
-            return item;
-          }
-          break;
-      }
-    }
-
-    // No more undone tasks
-    return null;
-  }
-
   /// Navigates to the next task or exits to main UI
   void _navigateToNextTask() async {
-    final nextTask = _findNextUndoneTask();
+    final nextTask = TimerStateHelper.findNextUndoneTask(
+      allItems: widget.allItems,
+      currentItemIndex: widget.currentItemIndex,
+    );
 
     if (nextTask == null) {
       // No more tasks, exit to main UI
@@ -1153,32 +812,30 @@ class _TimerViewState extends State<TimerView> {
 
   @override
   Widget build(BuildContext context) {
-    double elapsedMinutesInCurrentSubdivision = 0;
-    double totalMinutesInCurrentSubdivision = 0;
-    double overtimeMinutesInCurrentSubdivision = 0;
-    if (!_isOvertime &&
-        _currentItem.subdivisions != null &&
-        _currentItem.subdivisions! > 1) {
-      final double subdivisionDurationInMinutes =
-          _todaysTargetMinutes / _currentItem.subdivisions!;
-      final double elapsedMinutesInCompletedSubdivisions =
-          _completedSubdivisions * subdivisionDurationInMinutes;
-      elapsedMinutesInCurrentSubdivision =
-          _currentElapsedTimeInMinutes - elapsedMinutesInCompletedSubdivisions;
-      totalMinutesInCurrentSubdivision = subdivisionDurationInMinutes;
-    } else if (_isOvertime &&
-        _currentItem.subdivisions != null &&
-        _currentItem.subdivisions! > 1) {
-      final double subdivisionDurationInMinutes =
-          _todaysTargetMinutes / _currentItem.subdivisions!;
-      final double overtimeMinutes = _overtimeSeconds / 60.0;
-      overtimeMinutesInCurrentSubdivision =
-          overtimeMinutes % subdivisionDurationInMinutes;
-    }
-
     // If in note view mode, render the note view UI instead
     if (_isNoteViewMode) {
-      return _buildNoteView(context);
+      return NoteViewWidget(
+        currentItem: _currentItem,
+        isOvertime: _isOvertime,
+        isPaused: _isPaused,
+        todaysTargetMinutes: _todaysTargetMinutes,
+        overtimeSeconds: _overtimeSeconds,
+        currentElapsedTimeInMinutes:
+            TimerLogicHelper.calculateCurrentElapsedTimeInMinutes(
+          isOvertime: _isOvertime,
+          hasStarted: _hasStarted,
+          todaysTargetMinutes: _todaysTargetMinutes,
+          remainingSeconds: _remainingSeconds,
+          overtimeSeconds: _overtimeSeconds,
+          currentItem: _currentItem,
+        ),
+        completedSubdivisions: _completedSubdivisions,
+        subdivisions: _currentItem.subdivisions,
+        getButtonText: _getButtonText,
+        toggleTimer: _toggleTimer,
+        toggleNoteViewMode: _toggleNoteViewMode,
+        showNoteDialogInEditMode: _showNoteDialogInEditMode,
+      );
     }
 
     return PopScope(
@@ -1402,131 +1059,61 @@ class _TimerViewState extends State<TimerView> {
                         );
                       },
                       child: !_minimalistMode
-                          ? _isOvertime
-                              ? Column(
-                                  key: const ValueKey('full_mode_overtime'),
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (_currentItem.subdivisions != null &&
-                                        _currentItem.subdivisions! > 1)
-                                      Stack(
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: ColorPalette.lightText
-                                                    .withAlpha(
-                                                        (255 * 0.7).round()),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              '$_completedSubdivisions / ${_currentItem.subdivisions!}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: ColorPalette.lightText
-                                                    .withAlpha(
-                                                        (255 * 0.7).round()),
-                                              ),
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: Text(
-                                              '${_formatMinutesToMmSs(overtimeMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(_todaysTargetMinutes / _currentItem.subdivisions!)}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: ColorPalette.lightText
-                                                    .withAlpha(
-                                                        (255 * 0.7).round()),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    else
-                                      Text(
-                                        '${_formatMinutesToMmSs(_todaysTargetMinutes)} + ${_formatMinutesToMmSs(_overtimeSeconds / 60.0)}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: ColorPalette.lightText
-                                              .withAlpha((255 * 0.7).round()),
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                  ],
-                                )
-                              : (_currentItem.subdivisions != null &&
-                                      _currentItem.subdivisions! > 1)
-                                  ? Stack(
-                                      key: const ValueKey(
-                                          'full_mode_subdivisions'),
-                                      children: [
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ColorPalette.lightText
-                                                  .withAlpha(
-                                                      (255 * 0.7).round()),
-                                            ),
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            '$_completedSubdivisions / ${_currentItem.subdivisions!}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ColorPalette.lightText
-                                                  .withAlpha(
-                                                      (255 * 0.7).round()),
-                                            ),
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${_formatMinutesToMmSs(elapsedMinutesInCurrentSubdivision)} / ${_formatMinutesToMmSs(totalMinutesInCurrentSubdivision)}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: ColorPalette.lightText
-                                                  .withAlpha(
-                                                      (255 * 0.7).round()),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Text(
-                                      '${_formatMinutesToMmSs(_currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(_todaysTargetMinutes)}',
-                                      key: const ValueKey('full_mode_normal'),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: ColorPalette.lightText
-                                            .withAlpha((255 * 0.7).round()),
-                                      ),
-                                    )
+                          ? SubdivisionDisplayWidget(
+                              key: const ValueKey('full_mode_subdivisions'),
+                              isOvertime: _isOvertime,
+                              completedSubdivisions: _completedSubdivisions,
+                              totalSubdivisions: _currentItem.subdivisions,
+                              todaysTargetMinutes: _todaysTargetMinutes,
+                              overtimeSeconds: _overtimeSeconds,
+                              currentElapsedTimeInMinutes: TimerLogicHelper
+                                  .calculateCurrentElapsedTimeInMinutes(
+                                isOvertime: _isOvertime,
+                                hasStarted: _hasStarted,
+                                todaysTargetMinutes: _todaysTargetMinutes,
+                                remainingSeconds: _remainingSeconds,
+                                overtimeSeconds: _overtimeSeconds,
+                                currentItem: _currentItem,
+                              ),
+                              formatMinutesToMmSs:
+                                  TimerLogicHelper.formatMinutesToMmSs,
+                            )
                           : const SizedBox.shrink(
                               key: ValueKey('minimalist_mode')),
                     ),
                     Expanded(
-                      child: _isOvertime
-                          ? _buildOvertimeView()
-                          : _buildCountdownView(),
+                      child: TimerDisplayWidget(
+                        totalTime: _todaysTargetMinutes,
+                        elapsedTime: TimerLogicHelper
+                            .calculateCurrentElapsedTimeInMinutes(
+                          isOvertime: _isOvertime,
+                          hasStarted: _hasStarted,
+                          todaysTargetMinutes: _todaysTargetMinutes,
+                          remainingSeconds: _remainingSeconds,
+                          overtimeSeconds: _overtimeSeconds,
+                          currentItem: _currentItem,
+                        ),
+                        subdivisions: _currentItem.subdivisions ?? 0,
+                        onTap: _toggleTimer,
+                        isOvertime: _isOvertime,
+                      ),
                     ),
                     // Comment field - always present in layout but visibility controlled by logic
                     SizedBox(
                       height: 50, // Fixed height to prevent layout shifts
-                      child: _buildCommentField(),
+                      child: CommentInputWidget(
+                        commentController: _commentController,
+                        commentFocusNode: _commentFocusNode,
+                        minimalistMode: _minimalistMode,
+                        isOvertime: _isOvertime,
+                        isPaused: _isPaused,
+                        remainingSeconds: _remainingSeconds,
+                        shouldFadeUI: _shouldFadeUI,
+                        onTap: () {
+                          FocusScope.of(context)
+                              .requestFocus(_commentFocusNode);
+                        },
+                      ),
                     ),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -1537,31 +1124,11 @@ class _TimerViewState extends State<TimerView> {
                         );
                       },
                       child: !_minimalistMode
-                          ? Column(
+                          ? TimerControlsWidget(
                               key: const ValueKey('full_mode_controls'),
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _toggleTimer,
-                                        child: Text(
-                                          _getButtonText(),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _exitTimerDisplay,
-                                        child: const Text('Exit'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              getButtonText: _getButtonText,
+                              toggleTimer: _toggleTimer,
+                              exitTimerDisplay: _exitTimerDisplay,
                             )
                           : const SizedBox.shrink(
                               key: ValueKey('minimalist_mode_controls')),
@@ -1572,29 +1139,13 @@ class _TimerViewState extends State<TimerView> {
             ),
           ),
           // Dimming overlay
-          if (_dimScreenMode && _dimOpacity > 0.0)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  // Cancel any existing dimming timer
-                  _dimTimer?.cancel();
-                  // Temporarily restore visibility when tapped
-                  setState(() {
-                    _dimOpacity = 0.0;
-                    _isDimming = false;
-                  });
-                  // Restart dimming after a delay if still in dim mode and timer is running
-                  Future.delayed(const Duration(seconds: 3), () {
-                    if (!_isPaused && _dimScreenMode && mounted) {
-                      _startDimmingProcess();
-                    }
-                  });
-                },
-                child: Container(
-                  color: Color.fromARGB((_dimOpacity * 255).round(), 0, 0, 0),
-                ),
-              ),
-            ),
+          DimmingOverlayWidget(
+            dimScreenMode: _dimScreenMode,
+            dimOpacity: _dimOpacity,
+            isPaused: _isPaused,
+            startDimmingProcess: _startDimmingProcess,
+            restoreScreenBrightness: _restoreScreenBrightness,
+          ),
           // Next task arrow button
           NextTaskArrow(
             onTap: _navigateToNextTask,
@@ -1617,148 +1168,6 @@ class _TimerViewState extends State<TimerView> {
       return _isPaused ? 'Continue' : 'Pause';
     }
     return _isPaused ? 'Start' : 'Pause';
-  }
-
-  Widget _buildCountdownView() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return CustomPaint(
-          painter: TimerPainter(
-            totalTime: _todaysTargetMinutes,
-            elapsedTime: _currentElapsedTimeInMinutes,
-            subdivisions: _currentItem.subdivisions ?? 0,
-          ),
-          child: SizedBox(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: GestureDetector(
-                onTap: _toggleTimer,
-                child: Text(
-                  _formatMinutesToMmSs(
-                      (_todaysTargetMinutes - _currentElapsedTimeInMinutes)
-                          .clamp(0.0, double.infinity)),
-                  style: GoogleFonts.robotoMono(
-                    fontWeight: FontWeight.bold,
-                    color: ColorPalette.lightText,
-                  ),
-                  textAlign: TextAlign.center,
-                  softWrap: false,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOvertimeView() {
-    return LayoutBuilder(builder: (context, constraints) {
-      return CustomPaint(
-        painter: TimerPainter(
-          totalTime: _todaysTargetMinutes,
-          elapsedTime: _currentElapsedTimeInMinutes,
-          subdivisions: _currentItem.subdivisions ?? 0,
-        ),
-        child: SizedBox(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: GestureDetector(
-              onTap: _toggleTimer,
-              child: Text(
-                _formatMinutesToMmSs(_currentElapsedTimeInMinutes),
-                style: GoogleFonts.robotoMono(
-                  fontWeight: FontWeight.bold,
-                  color: ColorPalette.lightText,
-                ),
-                textAlign: TextAlign.center,
-                softWrap: false,
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildCommentField() {
-    // In minimalist mode:
-    // - When timer is running in overtime, hide the comment field
-    // - When timer is paused in overtime, show the comment field
-    // - When timer is finished (at 0 seconds) but not in overtime, show the comment field
-    final bool showCommentField = !_minimalistMode ||
-        (_isOvertime ? _isPaused : (_remainingSeconds <= 0 && !_isOvertime));
-
-    // In minimalist mode when timer is running, fade out the comment field like other UI elements
-    final bool shouldFadeOut =
-        _minimalistMode && !_isPaused && showCommentField;
-
-    return Opacity(
-      opacity: showCommentField ? 1.0 : 0.0,
-      child: IgnorePointer(
-        ignoring: !showCommentField,
-        child: AnimatedOpacity(
-          opacity: shouldFadeOut ? (_shouldFadeUI ? 0.0 : 1.0) : 1.0,
-          duration: const Duration(milliseconds: 500),
-          child: GestureDetector(
-            onTap: () {
-              FocusScope.of(context).requestFocus(_commentFocusNode);
-            },
-            child: TextField(
-              controller: _commentController,
-              focusNode: _commentFocusNode,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'add a comment',
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: _commentFocusNode.hasFocus ||
-                        _commentController.text.isNotEmpty
-                    ? const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      )
-                    : InputBorder.none,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _playTimerCompleteNotification() async {
-    _log.info('Playing timer complete notification');
-
-    try {
-      final bellPath = (_currentItem.bellSoundPath ?? 'assets/bells/bell1.mp3')
-          .replaceFirst('assets/', '');
-      // Don't await the play operation - let it run in background
-      _audioPlayer.play(AssetSource(bellPath));
-    } catch (e) {
-      _log.warning('Failed to play bell sound: $e');
-    }
-  }
-
-  Future<void> _playSubdivisionBell() async {
-    _log.info('Playing subdivision bell');
-
-    try {
-      final bellPath =
-          (_currentItem.subdivisionBellSoundPath ?? 'assets/bells/bell1.mp3')
-              .replaceFirst('assets/', '');
-      // Stop any currently playing subdivision bell to ensure the new one plays
-      await _subdivisionAudioPlayer.stop();
-      // Don't await the play operation - let it run in background
-      _subdivisionAudioPlayer.play(AssetSource(bellPath));
-    } catch (e) {
-      _log.warning('Failed to play subdivision bell sound: $e');
-    }
   }
 
   void _editItem() async {
