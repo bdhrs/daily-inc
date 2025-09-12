@@ -483,8 +483,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image(
-                    image: NetworkImage(
-                        'https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png'),
+                    image: AssetImage('assets/icon/cc-license.png'),
                     width: 88,
                     height: 31,
                   ),
