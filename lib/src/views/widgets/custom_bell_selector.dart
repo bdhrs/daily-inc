@@ -9,7 +9,8 @@ class CustomBellSelectorDialog extends StatefulWidget {
   const CustomBellSelectorDialog({super.key, this.initialBellSoundPath});
 
   @override
-  State<CustomBellSelectorDialog> createState() => _CustomBellSelectorDialogState();
+  State<CustomBellSelectorDialog> createState() =>
+      _CustomBellSelectorDialogState();
 }
 
 class _CustomBellSelectorDialogState extends State<CustomBellSelectorDialog> {
@@ -50,7 +51,8 @@ class _CustomBellSelectorDialogState extends State<CustomBellSelectorDialog> {
 
   Future<void> _playBellSound(String path) async {
     try {
-      final assetPath = path.replaceFirst('assets/', ''); // Remove leading 'assets/'
+      final assetPath =
+          path.replaceFirst('assets/', ''); // Remove leading 'assets/'
       if (_currentlyPlayingPath == path) {
         _log.info('Stopping currently playing sound: $path');
         await _audioPlayer.stop();
@@ -100,7 +102,9 @@ class _CustomBellSelectorDialogState extends State<CustomBellSelectorDialog> {
               return ListTile(
                 title: Text(fileName),
                 leading: Icon(
-                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
                   color: isSelected ? Colors.white : null,
                 ),
                 trailing: IconButton(
@@ -111,7 +115,9 @@ class _CustomBellSelectorDialogState extends State<CustomBellSelectorDialog> {
                 ),
                 onTap: () => _selectBellSound(path),
                 selected: isSelected,
-                            selectedTileColor: Theme.of(context).primaryColor.withAlpha((255 * 0.1).round()),
+                selectedTileColor: Theme.of(context)
+                    .primaryColor
+                    .withAlpha((255 * 0.1).round()),
               );
             }).toList(),
           ),

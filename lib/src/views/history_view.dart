@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
@@ -337,11 +339,11 @@ class _HistoryViewState extends State<HistoryView> {
           title: Text('Edit History: ${widget.item.name}'),
           actions: [
             if (!_isAddingEntry)
-             IconButton(
-               icon: const Icon(Icons.add),
-               onPressed: _startAddingEntry,
-               tooltip: 'Add a New Entry',
-             ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _startAddingEntry,
+                tooltip: 'Add a New Entry',
+              ),
             if (_isAddingEntry)
               IconButton(
                 icon: const Icon(Icons.close),
@@ -459,6 +461,9 @@ class _HistoryViewState extends State<HistoryView> {
                           child: TextFormField(
                             controller: _newCommentController,
                             style: const TextStyle(fontSize: 14.0),
+                            textCapitalization: Platform.isAndroid
+                                ? TextCapitalization.sentences
+                                : TextCapitalization.none,
                             decoration: const InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(
@@ -468,13 +473,13 @@ class _HistoryViewState extends State<HistoryView> {
                           ),
                         ),
                       ),
-                       DataCell(
-                         IconButton(
-                           icon: const Icon(Icons.delete),
-                           onPressed: _cancelAddingEntry,
-                           tooltip: 'Cancel Adding Entry',
-                         ),
-                       ),
+                      DataCell(
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: _cancelAddingEntry,
+                          tooltip: 'Cancel Adding Entry',
+                        ),
+                      ),
                     ],
                   ),
                 ..._history.map((entry) {
@@ -550,8 +555,8 @@ class _HistoryViewState extends State<HistoryView> {
                                   doneToday: true,
                                   actualValue: targetValue,
                                 );
-                                final controller =
-                                    _actualControllers[_getEntryKey(currentEntry)];
+                                final controller = _actualControllers[
+                                    _getEntryKey(currentEntry)];
                                 if (controller != null) {
                                   controller.text =
                                       _numberFormat.format(targetValue);
@@ -571,6 +576,9 @@ class _HistoryViewState extends State<HistoryView> {
                             controller:
                                 _commentControllers[_getEntryKey(entry)]!,
                             style: const TextStyle(fontSize: 14.0),
+                            textCapitalization: Platform.isAndroid
+                                ? TextCapitalization.sentences
+                                : TextCapitalization.none,
                             decoration: const InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(

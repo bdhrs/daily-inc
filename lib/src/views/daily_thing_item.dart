@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
@@ -60,6 +62,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
           content: TextField(
             controller: notesController,
             autofocus: true,
+            textCapitalization: Platform.isAndroid
+                ? TextCapitalization.words
+                : TextCapitalization.none,
             decoration: const InputDecoration(hintText: 'Enter your note...'),
             maxLines: null,
             keyboardType: TextInputType.multiline,

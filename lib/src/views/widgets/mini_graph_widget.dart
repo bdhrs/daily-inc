@@ -63,7 +63,8 @@ class MiniGraphWidget extends StatelessWidget {
   }
 
   /// Builds spots for trend items with accumulated values
-  List<FlSpot> _buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
+  List<FlSpot> _buildTrendSpots(
+      List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
     final spots = <FlSpot>[];
     double accumulatedValue = 0.0;
 
@@ -111,7 +112,8 @@ class MiniGraphWidget extends StatelessWidget {
     final spots = _buildSpots();
     final maxY = _calculateMaxY(spots);
     final minY = dailyThing.itemType == ItemType.trend && spots.isNotEmpty
-        ? spots.map((s) => s.y).reduce(min) * 1.1 // Allow negative values with padding
+        ? spots.map((s) => s.y).reduce(min) *
+            1.1 // Allow negative values with padding
         : 0.0;
 
     return GestureDetector(

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/views/helpers/audio_helper.dart';
@@ -137,6 +139,9 @@ class _TimerViewState extends State<TimerView> {
                   child: TextField(
                     controller: notesController,
                     autofocus: true,
+                    textCapitalization: Platform.isAndroid
+                        ? TextCapitalization.words
+                        : TextCapitalization.none,
                     decoration:
                         const InputDecoration(hintText: 'Enter your note...'),
                     maxLines: null,

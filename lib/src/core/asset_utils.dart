@@ -3,7 +3,8 @@ import 'package:flutter/services.dart' show rootBundle;
 
 class AssetUtils {
   static Future<List<String>> getBellSoundPaths() async {
-    final assetManifestString = await rootBundle.loadString('AssetManifest.json');
+    final assetManifestString =
+        await rootBundle.loadString('AssetManifest.json');
     final Map<String, dynamic> assetManifest = json.decode(assetManifestString);
 
     final bellSoundPaths = <String>[];

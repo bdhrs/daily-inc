@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -89,6 +91,9 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
     return TextField(
       controller: _commentController,
       focusNode: _commentFocusNode,
+      textCapitalization: Platform.isAndroid
+          ? TextCapitalization.sentences
+          : TextCapitalization.none,
       decoration: const InputDecoration(
         hintText: 'Add an optional comment',
         border: OutlineInputBorder(),

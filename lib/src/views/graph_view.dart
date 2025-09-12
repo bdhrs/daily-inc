@@ -16,21 +16,22 @@ class GraphView extends StatefulWidget {
   State<GraphView> createState() => _GraphViewState();
 }
 
-class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphView> {
+class _GraphViewState extends State<GraphView>
+    with BaseGraphStateMixin<GraphView> {
   double _minY = 0;
   double _maxY = 0;
   final _log = Logger('GraphView');
   List<FlSpot> _spots = [];
-  
+
   @override
   String get prefsKey => 'graph_time_range_preference';
-  
+
   @override
   double get minY => _minY;
-  
+
   @override
   double get maxY => _maxY;
-  
+
   @override
   List<FlSpot> get spots => _spots;
 
@@ -100,8 +101,10 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
         padding: const EdgeInsets.all(24),
         child: LineChart(
           LineChartData(
-            minX: GraphStyleHelpers.epochDays(_getFilteredDates().first).floorToDouble(),
-            maxX: GraphStyleHelpers.epochDays(_getFilteredDates().last).ceilToDouble(),
+            minX: GraphStyleHelpers.epochDays(_getFilteredDates().first)
+                .floorToDouble(),
+            maxX: GraphStyleHelpers.epochDays(_getFilteredDates().last)
+                .ceilToDouble(),
             minY: _minY,
             maxY: _maxY,
             lineBarsData: [
@@ -141,7 +144,10 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
                       ))
                   .toList(),
               handleBuiltInTouches: true,
-              touchTooltipData: buildTouchTooltipData(_spots, widget.dailyThing.history, GraphStyleHelpers.dateFromEpochDays),
+              touchTooltipData: buildTouchTooltipData(
+                  _spots,
+                  widget.dailyThing.history,
+                  GraphStyleHelpers.dateFromEpochDays),
             ),
           ),
         ),
@@ -180,7 +186,8 @@ class _GraphViewState extends State<GraphView> with BaseGraphStateMixin<GraphVie
   }
 
   /// Builds spots for trend items with accumulated values
-  List<FlSpot> _buildTrendSpots(List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
+  List<FlSpot> _buildTrendSpots(
+      List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
     final spots = <FlSpot>[];
     double accumulatedValue = 0.0;
 

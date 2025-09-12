@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:intl/intl.dart';
 
@@ -177,6 +179,9 @@ class _AddHistoryEntryDialogState extends State<AddHistoryEntryDialog> {
               // Comment
               TextFormField(
                 controller: _commentController,
+                textCapitalization: Platform.isAndroid
+                    ? TextCapitalization.sentences
+                    : TextCapitalization.none,
                 decoration: const InputDecoration(
                   labelText: 'Comment (optional)',
                   prefixIcon: Icon(Icons.comment),

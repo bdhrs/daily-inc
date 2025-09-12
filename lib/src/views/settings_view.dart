@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -356,6 +357,9 @@ class _SettingsViewState extends State<SettingsView> {
               padding:
                   const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
               child: TextField(
+                textCapitalization: Platform.isAndroid
+                    ? TextCapitalization.sentences
+                    : TextCapitalization.none,
                 decoration: const InputDecoration(
                   labelText: 'Start of day message',
                   border: OutlineInputBorder(),
@@ -386,6 +390,9 @@ class _SettingsViewState extends State<SettingsView> {
               padding:
                   const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
               child: TextField(
+                textCapitalization: Platform.isAndroid
+                    ? TextCapitalization.sentences
+                    : TextCapitalization.none,
                 decoration: const InputDecoration(
                   labelText: 'Completion message',
                   border: OutlineInputBorder(),

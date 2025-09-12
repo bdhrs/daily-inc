@@ -88,9 +88,9 @@ Future<bool> saveJsonToFile({
   try {
     final jsonString = const JsonEncoder.withIndent('  ').convert(json);
     final bytes = utf8.encode(jsonString);
-    
+
     String? outputFile;
-    
+
     if (Platform.isLinux) {
       // On Linux, use ANY file type
       outputFile = await FilePicker.platform.saveFile(
@@ -109,10 +109,9 @@ Future<bool> saveJsonToFile({
         bytes: bytes,
       );
     }
-    
+
     if (outputFile != null || Platform.isAndroid || Platform.isIOS) {
-      showThemedSnackBar(
-          context: context, message: 'File saved successfully');
+      showThemedSnackBar(context: context, message: 'File saved successfully');
       return true;
     }
     return false;

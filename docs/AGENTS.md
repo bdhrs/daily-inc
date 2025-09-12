@@ -20,9 +20,11 @@
 - you MUST NEVER run the project with `flutter run`, the user will take care of that
 - you MUST NEVER build the project with `flutter build`, the user will take care of that
 
-## Testing and Analysis
-- you MUST run `flutter analyze` after completing a coding task to check for breaking changes
+## Testing, Analysis & Auto-formatting
+- you MUST run `flutter analyze` after completing a coding task to check for syntax errors
 - you MUST run `flutter test` after completing a coding task to check for breaking changes
+- you MUST run `dart format lib` after completing a coding task to auto-format all Dart files
+
 
 ## Coding conventions
 - you MUST follow the existing code style and conventions when making changes.
@@ -39,7 +41,7 @@
 ## Completion
 - After completing any task, you MUST follow these instructions
 1. you MUST ask the user if they are happy with the changes and have tested them
-2. ONLY if they are happy, you MUST provide a one line, lowercase, simple git commit message.
+2. when they are happy, you MUST provide a one line, lowercase, simple git commit message.
 3. you MUST NEVER run `git commit`
 
 

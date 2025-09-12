@@ -17,21 +17,22 @@ class CategoryGraphView extends StatefulWidget {
   State<CategoryGraphView> createState() => _CategoryGraphViewState();
 }
 
-class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphStateMixin {
+class _CategoryGraphViewState extends State<CategoryGraphView>
+    with BaseGraphStateMixin {
   final _log = Logger('CategoryGraphView');
-  
+
   final Map<String, Map<DateTime, double>> _categoryData = {};
-  
+
   @override
   String get prefsKey => 'category_graph_time_range_preference';
-  
+
   // These are not used directly in this view, but required by the mixin
   @override
   double get minY => 0;
-  
+
   @override
   double get maxY => 0;
-  
+
   @override
   List<FlSpot> get spots => [];
 
@@ -167,7 +168,8 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
         for (final thing in items) {
           if (thing.itemType == ItemType.trend) {
             // For trend items, use accumulated value
-            final accumulatedValue = _getTrendAccumulatedValue(thing, currentDate);
+            final accumulatedValue =
+                _getTrendAccumulatedValue(thing, currentDate);
             total += accumulatedValue;
           } else {
             final sameDayEntries = thing.history.where((e) {
@@ -280,7 +282,8 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
                     ),
                     // Trend line
                     LineChartBarData(
-                      spots: _calculateCategoryTrendLine(dateTotals, minY, maxY),
+                      spots:
+                          _calculateCategoryTrendLine(dateTotals, minY, maxY),
                       color: Colors.white,
                       barWidth: 2.5,
                       isCurved: true,
@@ -301,7 +304,8 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
                               FlDotData(show: false),
                             ))
                         .toList(),
-                    touchTooltipData: _buildCategoryTouchTooltipData(dateTotals),
+                    touchTooltipData:
+                        _buildCategoryTouchTooltipData(dateTotals),
                   ),
                 ),
               ),
@@ -381,7 +385,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
       FlSpot(lastX, lastY),
     ];
   }
-  
+
   /// Calculates the accumulated value for a trend item up to the specified date
   double _getTrendAccumulatedValue(DailyThing thing, DateTime targetDate) {
     // Sort history entries by date
@@ -391,7 +395,8 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
     double accumulatedValue = 0.0;
 
     for (final entry in sortedHistory) {
-      final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      final entryDate =
+          DateTime(entry.date.year, entry.date.month, entry.date.day);
 
       // Stop if we've reached beyond the target date
       if (entryDate.isAfter(targetDate)) break;
@@ -418,11 +423,13 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
   }
 
   /// Builds the touch tooltip data for the category graph.
-  LineTouchTooltipData _buildCategoryTouchTooltipData(Map<DateTime, double> dateTotals) {
+  LineTouchTooltipData _buildCategoryTouchTooltipData(
+      Map<DateTime, double> dateTotals) {
     return LineTouchTooltipData(
       getTooltipItems: (touchedSpots) {
         return touchedSpots.map((s) {
-          if (s.barIndex == 1) { // Trend line
+          if (s.barIndex == 1) {
+            // Trend line
             return null;
           }
           final d = GraphStyleHelpers.dateFromEpochDays(s.x.floorToDouble());
@@ -431,9 +438,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView> with BaseGraphSta
           return LineTooltipItem(
             '${DateFormat('M/d').format(d)}\n',
             const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14),
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
             children: [
               TextSpan(
                 text: value,

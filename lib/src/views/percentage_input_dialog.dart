@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
@@ -102,6 +104,9 @@ class _PercentageInputDialogState extends State<PercentageInputDialog> {
           // Comment field
           TextField(
             controller: _commentController,
+            textCapitalization: Platform.isAndroid
+                ? TextCapitalization.sentences
+                : TextCapitalization.none,
             decoration: const InputDecoration(
               labelText: 'Comment',
               border: OutlineInputBorder(),

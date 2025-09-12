@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/core/value_converter.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
@@ -1466,7 +1468,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   ),
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
-                  textCapitalization: TextCapitalization.sentences,
+                  textCapitalization: Platform.isAndroid
+                      ? TextCapitalization.words
+                      : TextCapitalization.none,
                 ),
                 const SizedBox(height: 24),
                 Row(

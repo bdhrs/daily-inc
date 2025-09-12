@@ -41,7 +41,9 @@ class ValueConverter {
       // To trend from other types
       if (newType == ItemType.trend) {
         if (original.itemType == ItemType.check) {
-          return value == 1.0 ? 1.0 : 0.0; // Done -> improving, not done -> same
+          return value == 1.0
+              ? 1.0
+              : 0.0; // Done -> improving, not done -> same
         }
         return value != 0 ? 1.0 : 0.0; // non-zero -> improving, zero -> same
       }

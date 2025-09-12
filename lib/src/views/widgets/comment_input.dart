@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 /// A widget that displays the comment input field with visibility logic based on timer state.
@@ -53,6 +55,9 @@ class CommentInputWidget extends StatelessWidget {
               controller: commentController,
               focusNode: commentFocusNode,
               textAlign: TextAlign.center,
+              textCapitalization: Platform.isAndroid
+                  ? TextCapitalization.sentences
+                  : TextCapitalization.none,
               style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'add a comment',

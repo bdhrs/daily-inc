@@ -28,7 +28,7 @@ class HistoryEntry {
       'comment': comment,
       'snoozed': snoozed,
     };
-    
+
     return json;
   }
 
