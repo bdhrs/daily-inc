@@ -882,6 +882,26 @@ class _TimerViewState extends State<TimerView> {
                     )
                   : null,
               actions: [
+                // Note icon - only show when notes exist
+                if (_currentItem.notes != null &&
+                    _currentItem.notes!.isNotEmpty)
+                  if (!(_minimalistMode && !_isPaused))
+                    IconButton(
+                      icon: const Icon(Icons.sticky_note_2), // Better note icon
+                      onPressed: _toggleNoteViewMode,
+                      tooltip: 'View Notes',
+                    )
+                  else
+                    AnimatedOpacity(
+                      opacity: _shouldFadeUI ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: IconButton(
+                        icon:
+                            const Icon(Icons.sticky_note_2), // Better note icon
+                        onPressed: _toggleNoteViewMode,
+                        tooltip: 'View Notes',
+                      ),
+                    ),
                 if (!(_minimalistMode && !_isPaused))
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
@@ -892,8 +912,6 @@ class _TimerViewState extends State<TimerView> {
                         _toggleMinimalistMode();
                       } else if (result == 'edit') {
                         _editItem();
-                      } else if (result == 'show_note_view') {
-                        _toggleNoteViewMode();
                       }
                     },
                     itemBuilder: (BuildContext context) =>
@@ -936,18 +954,6 @@ class _TimerViewState extends State<TimerView> {
                           ],
                         ),
                       ),
-                      if (_currentItem.notes != null &&
-                          _currentItem.notes!.isNotEmpty)
-                        PopupMenuItem<String>(
-                          value: 'show_note_view',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.note),
-                              const SizedBox(width: 8),
-                              const Text('Show Note View'),
-                            ],
-                          ),
-                        ),
                     ],
                   )
                 else
@@ -963,8 +969,6 @@ class _TimerViewState extends State<TimerView> {
                           _toggleMinimalistMode();
                         } else if (result == 'edit') {
                           _editItem();
-                        } else if (result == 'show_note_view') {
-                          _toggleNoteViewMode();
                         }
                       },
                       itemBuilder: (BuildContext context) =>
@@ -1007,18 +1011,6 @@ class _TimerViewState extends State<TimerView> {
                             ],
                           ),
                         ),
-                        if (_currentItem.notes != null &&
-                            _currentItem.notes!.isNotEmpty)
-                          PopupMenuItem<String>(
-                            value: 'show_note_view',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.note),
-                                const SizedBox(width: 8),
-                                const Text('Show Note View'),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   ),
