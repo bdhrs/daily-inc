@@ -21,14 +21,20 @@ class TimerControlsWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: 8), // Reduced from 12 to save vertical space
         Row(
           children: [
             Expanded(
               child: ElevatedButton(
                 onPressed: toggleTimer,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8), // Reduced padding
+                  minimumSize: const Size(0, 40), // Set minimum height
+                ),
                 child: Text(
                   getButtonText(),
+                  style: const TextStyle(fontSize: 14), // Smaller font size
                 ),
               ),
             ),
@@ -36,7 +42,15 @@ class TimerControlsWidget extends StatelessWidget {
             Expanded(
               child: ElevatedButton(
                 onPressed: exitTimerDisplay,
-                child: const Text('Exit'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8), // Reduced padding
+                  minimumSize: const Size(0, 40), // Set minimum height
+                ),
+                child: const Text(
+                  'Exit',
+                  style: TextStyle(fontSize: 14), // Smaller font size
+                ),
               ),
             ),
           ],

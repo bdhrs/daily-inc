@@ -99,7 +99,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
             child: Text(
               '${formatMinutesToMmSs(todaysTargetMinutes)} + ${formatMinutesToMmSs(overtimeSeconds / 60.0)}',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Reduced from 16 to save vertical space
                 color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
               ),
             ),
@@ -109,7 +109,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
             child: Text(
               '$completedSubdivisions / $totalSubdivisions',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Reduced from 16 to save vertical space
                 color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
               ),
             ),
@@ -119,7 +119,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
             child: Text(
               '${formatMinutesToMmSs(overtimeMinutesInCurrentSubdivision)} / ${formatMinutesToMmSs(todaysTargetMinutes / totalSubdivisions!)}',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Reduced from 16 to save vertical space
                 color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
               ),
             ),
@@ -130,7 +130,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
       return Text(
         '${formatMinutesToMmSs(todaysTargetMinutes)} + ${formatMinutesToMmSs(overtimeSeconds / 60.0)}',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 14, // Reduced from 16 to save vertical space
           color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
         ),
         textAlign: TextAlign.center,
@@ -150,7 +150,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
           child: Text(
             '${formatMinutesToMmSs(currentElapsedTimeInMinutes)} / ${formatMinutesToMmSs(todaysTargetMinutes)}',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14, // Reduced from 16 to save vertical space
               color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
             ),
           ),
@@ -160,7 +160,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
           child: Text(
             '$completedSubdivisions / $totalSubdivisions',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14, // Reduced from 16 to save vertical space
               color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
             ),
           ),
@@ -170,7 +170,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
           child: Text(
             '${formatMinutesToMmSs(elapsedMinutesInCurrentSubdivision)} / ${formatMinutesToMmSs(totalMinutesInCurrentSubdivision)}',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14, // Reduced from 16 to save vertical space
               color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
             ),
           ),
@@ -185,7 +185,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
       '${formatMinutesToMmSs(currentElapsedTimeInMinutes)} / ${formatMinutesToMmSs(todaysTargetMinutes)}',
       textAlign: TextAlign.center,
       style: TextStyle(
-        fontSize: 16,
+        fontSize: 14, // Reduced from 16 to save vertical space
         color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
       ),
     );

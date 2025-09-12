@@ -861,6 +861,8 @@ class _TimerViewState extends State<TimerView> {
             backgroundColor: ColorPalette.darkBackground,
             appBar: AppBar(
               backgroundColor: ColorPalette.darkBackground,
+              toolbarHeight:
+                  48, // Reduced from default ~56 to save vertical space
               automaticallyImplyLeading: !(_minimalistMode && !_isPaused),
               leading: (_minimalistMode && !_isPaused)
                   ? AnimatedOpacity(
@@ -1030,7 +1032,7 @@ class _TimerViewState extends State<TimerView> {
                     ? Text(
                         _nextTaskName,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16, // Reduced from 18 to save space
                           fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
@@ -1039,7 +1041,7 @@ class _TimerViewState extends State<TimerView> {
                     : Text(
                         _currentItem.name,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16, // Reduced from 18 to save space
                           fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
@@ -1051,7 +1053,7 @@ class _TimerViewState extends State<TimerView> {
             ),
             body: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(12.0), // Reduced from 16.0
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1105,7 +1107,7 @@ class _TimerViewState extends State<TimerView> {
                     ),
                     // Comment field - always present in layout but visibility controlled by logic
                     SizedBox(
-                      height: 50, // Fixed height to prevent layout shifts
+                      height: 40, // Reduced from 50 to save vertical space
                       child: CommentInputWidget(
                         commentController: _commentController,
                         commentFocusNode: _commentFocusNode,

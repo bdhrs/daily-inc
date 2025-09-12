@@ -47,10 +47,11 @@ class NoteViewWidget extends StatelessWidget {
         backgroundColor: ColorPalette.darkBackground,
         appBar: AppBar(
           backgroundColor: ColorPalette.darkBackground,
+          toolbarHeight: 48, // Reduced from default ~56 to save vertical space
           title: Text(
             currentItem.name,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 16, // Reduced from 18 to save space
               fontWeight: FontWeight.w700,
             ),
             maxLines: 1,
@@ -66,18 +67,18 @@ class NoteViewWidget extends StatelessWidget {
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0), // Reduced from 16.0
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top Information Bar
                 _buildNoteViewTopBar(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12), // Reduced from 16
                 // Main Notes Display
                 Expanded(
                   child: _buildNoteViewNotesDisplay(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12), // Reduced from 16
                 // Bottom Action Buttons
                 _buildNoteViewBottomButtons(),
               ],
@@ -91,7 +92,8 @@ class NoteViewWidget extends StatelessWidget {
   /// Builds the Top Information Bar for Note View mode
   Widget _buildNoteViewTopBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 12, vertical: 8), // Reduced padding
       decoration: BoxDecoration(
         color: ColorPalette.cardBackground,
         borderRadius: BorderRadius.circular(8),
@@ -100,16 +102,22 @@ class NoteViewWidget extends StatelessWidget {
         children: [
           // Left Side: Timer Control Button (fixed width to prevent layout shifts)
           SizedBox(
-            width: 120, // Fixed width to prevent layout shifts
+            width: 100, // Reduced width to save space
             child: ElevatedButton(
               onPressed: toggleTimer,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 6), // Reduced padding
+                minimumSize: const Size(0, 32), // Smaller minimum height
+              ),
               child: Text(
                 getButtonText(),
                 textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12), // Smaller font size
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12), // Reduced spacing
           // Center: Time Display
           Expanded(
             child: Text(
@@ -118,22 +126,22 @@ class NoteViewWidget extends StatelessWidget {
                   : '${_formatMinutesToMmSs(currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(todaysTargetMinutes)}',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Reduced from 16 to save space
                 color: ColorPalette.lightText,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12), // Reduced spacing
           // Right Side: Subdivision Display (only if subdivisions are enabled)
           if (subdivisions != null && subdivisions! > 1)
             SizedBox(
-              width: 80, // Fixed width for consistent layout
+              width: 70, // Reduced width
               child: Text(
                 '$completedSubdivisions / $subdivisions',
                 textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14, // Reduced from 16 to save space
                   color: ColorPalette.lightText,
                 ),
               ),
@@ -160,7 +168,7 @@ class NoteViewWidget extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12), // Reduced from 16
       decoration: BoxDecoration(
         color: ColorPalette.cardBackground,
         borderRadius: BorderRadius.circular(8),
@@ -205,14 +213,30 @@ class NoteViewWidget extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: showNoteDialogInEditMode, // Use the new edit mode dialog
-            child: const Text('Edit Note'),
+            style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 8), // Reduced padding
+              minimumSize: const Size(0, 40), // Set minimum height
+            ),
+            child: const Text(
+              'Edit Note',
+              style: TextStyle(fontSize: 14), // Smaller font size
+            ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
             onPressed: toggleNoteViewMode, // Close note view mode
-            child: const Text('Close'),
+            style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 8), // Reduced padding
+              minimumSize: const Size(0, 40), // Set minimum height
+            ),
+            child: const Text(
+              'Close',
+              style: TextStyle(fontSize: 14), // Smaller font size
+            ),
           ),
         ),
       ],

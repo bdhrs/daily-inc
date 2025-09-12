@@ -62,8 +62,8 @@ class CommentInputWidget extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: 'add a comment',
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6), // Reduced padding
                 border: commentFocusNode.hasFocus ||
                         commentController.text.isNotEmpty
                     ? const OutlineInputBorder(
