@@ -41,8 +41,7 @@
 ## Completion
 - After completing any task, you MUST follow these instructions
 1. you MUST ask the user if they are happy with the changes and have tested them
-2. you MUST provide a one line, lowercase, simple git commit message.
-3. you MUST NEVER run `git commit`
+2. you MUST NEVER run `git commit` or any git command that modifies the repository state.
 
 
 ## Gemini CLI

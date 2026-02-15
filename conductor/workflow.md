@@ -1,7 +1,7 @@
 # Development Workflow
 
 ## Principles
-- **No Automated Commits:** The agent MUST NOT perform git commits. All committing is handled manually by the user.
+- **No Automated Commits:** The agent MUST NOT perform git commits. All committing is handled manually by the user. The agent must never use the `git` command to stage, commit, or push changes.
 - **Focus on Critical Testing:** Tests are required for core logic, especially progression calculations and notification scheduling.
 - **Task Verification:** Every task must be verified by the agent before being marked complete.
 
