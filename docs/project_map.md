@@ -385,7 +385,19 @@ This document provides a map of the project, listing the location of all functio
   - `_calculateRanges()` method [`lib/src/views/graph_view.dart:59`](lib/src/views/graph_view.dart:59): Calculates graph Y-axis ranges, allowing negative values for trend items.
 
 ## lib/src/views/category_graph_view.dart
+
 - `CategoryGraphView` class [`lib/src/views/category_graph_view.dart:12`](lib/src/views/category_graph_view.dart:12): Shows graphs of progress for each category with time range filtering.
+
   - `_processCategoryData()` method [`lib/src/views/category_graph_view.dart:58`](lib/src/views/category_graph_view.dart:58): Processes category data, handling trend items with accumulated values.
+
   - `_getTrendAccumulatedValue(DailyThing thing, DateTime targetDate)` method [`lib/src/views/category_graph_view.dart:395`](lib/src/views/category_graph_view.dart:395): Calculates the accumulated value for a trend item up to the specified date.
+
   - `_categoryHasTrendItems(String category)` method [`lib/src/views/category_graph_view.dart:412`](lib/src/views/category_graph_view.dart:412): Checks if a category contains any trend items.
+
+
+
+# Conductor Tracks
+
+
+
+- [Android Update Process Simplification (android_update_fix_20260215)](../conductor/tracks/android_update_fix_20260215/index.md): Fixes and simplifies the update process for Android.

@@ -1,22 +1,33 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 
 class UpdateService {
   final _log = Logger('UpdateService');
+  final _dio = Dio();
+
+  Future<bool> hasInstallPermission() async {
+    if (!Platform.isAndroid) return true;
+    return await Permission.requestInstallPackages.isGranted;
+  }
+
+  Future<bool> requestInstallPermission() async {
+    if (!Platform.isAndroid) return true;
+    final status = await Permission.requestInstallPackages.request();
+    return status.isGranted;
+  }
 
   Future<Map<String, dynamic>?> getLatestRelease() async {
-    final url = Uri.parse(
-        'https://api.github.com/repos/bdhrs/daily-inc/releases/latest');
+    final url = 'https://api.github.com/repos/bdhrs/daily-inc/releases/latest';
     try {
-      final response = await http.get(url);
+      final response = await _dio.get(url);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        return response.data as Map<String, dynamic>;
       } else {
         _log.warning('Failed to get latest release: ${response.statusCode}');
         return null;
@@ -79,35 +90,52 @@ class UpdateService {
     return null;
   }
 
-  Future<File> downloadUpdate() async {
+  Future<File> downloadUpdate({
+    void Function(int count, int total)? onProgress,
+    String? savePath,
+  }) async {
     final url = await getDownloadUrl();
     if (url == null) {
       throw Exception('No APK URL found');
     }
 
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) {
-      throw Exception('Failed to download APK: ${response.statusCode}');
+    String finalPath;
+    if (savePath != null) {
+      finalPath = savePath;
+    } else {
+      final dir = await getTemporaryDirectory();
+      finalPath = '${dir.path}/DailyInc_update.apk';
     }
 
-    final dir = await getExternalStorageDirectory();
-    if (dir == null) {
-      throw Exception('External storage directory not found');
-    }
+    _log.info('Downloading APK to $finalPath');
 
-    final apkFile = File('${dir.path}/DailyInc_update.apk');
-    await apkFile.writeAsBytes(response.bodyBytes);
-    _log.info('APK downloaded to ${apkFile.path}');
-    return apkFile;
+    await _dio.download(
+      url,
+      finalPath,
+      onReceiveProgress: onProgress,
+    );
+
+    _log.info('APK downloaded successfully');
+    return File(finalPath);
+  }
+
+  Future<void> deleteDownloadedUpdate(File apkFile) async {
+    try {
+      if (await apkFile.exists()) {
+        await apkFile.delete();
+        _log.info('Temporary APK file deleted: ${apkFile.path}');
+      }
+    } catch (e) {
+      _log.warning('Failed to delete temporary APK file: $e');
+    }
   }
 
   Future<void> installUpdate(File apkFile) async {
     if (Platform.isAndroid) {
-      final uri = Uri.file(apkFile.path);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        _log.warning('Could not launch APK file: ${apkFile.path}');
+      final result = await OpenFilex.open(apkFile.path);
+      if (result.type != ResultType.done) {
+        _log.warning('Could not open APK file: ${result.message}');
+        throw Exception('Failed to open APK: ${result.message}');
       }
     } else {
       _log.warning('InstallUpdate not implemented for this platform');

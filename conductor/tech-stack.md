@@ -26,3 +26,4 @@
 ## Networking & System
 - **HTTP Client:** `dio` for update checks and potential external API interactions.
 - **App Metadata:** `package_info_plus` and `url_launcher`.
+- **Updates & Files:** `open_filex` for APK installation and `file_picker` for manual download location selection.

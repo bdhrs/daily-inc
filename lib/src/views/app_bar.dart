@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 
 class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool updateAvailable;
@@ -62,6 +64,183 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
+  final UpdateService _updateService = UpdateService();
+
+  Future<void> _handleUpdate() async {
+    if (Platform.isAndroid) {
+      final hasPermission = await _updateService.hasInstallPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          final bool? proceed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Update Permission Required'),
+              content: const Text(
+                  'To install updates automatically, Daily Inc needs permission to install unknown apps. \n\nWould you like to grant this permission now, or manually save the update file?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Save Manually'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Grant Permission'),
+                ),
+              ],
+            ),
+          );
+
+          if (proceed == true) {
+            final granted = await _updateService.requestInstallPermission();
+            if (granted) {
+              _startAutomatedUpdate();
+            } else {
+              _startManualUpdate();
+            }
+          } else if (proceed == false) {
+            _startManualUpdate();
+          }
+        }
+      } else {
+        _startAutomatedUpdate();
+      }
+    } else {
+      // Non-Android platforms, just open URL for now as per current behavior
+      final url = await _updateService.getDownloadUrl();
+      if (url != null) {
+        if (await launchUrl(Uri.parse(url))) {
+          widget.log.info('Opened download URL in browser: $url');
+        }
+      }
+    }
+  }
+
+  void _startAutomatedUpdate() async {
+    File? apkFile;
+    try {
+      if (!mounted) return;
+
+      apkFile = await _downloadWithProgress();
+      if (apkFile != null) {
+        await _updateService.installUpdate(apkFile);
+      }
+    } catch (e) {
+      widget.log.severe('Automated update failed', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Installation failed: $e')),
+        );
+        _startManualUpdate(); // Fallback to manual save if automated fails
+      }
+    } finally {
+      if (apkFile != null) {
+        await _updateService.deleteDownloadedUpdate(apkFile);
+      }
+    }
+  }
+
+  void _startManualUpdate() async {
+    try {
+      final String? selectedDirectory =
+          await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory == null) return;
+
+      if (!mounted) return;
+
+      final savePath = '$selectedDirectory/DailyInc_update.apk';
+      final apkFile = await _downloadWithProgress(savePath: savePath);
+
+      if (apkFile != null && mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Download Complete'),
+            content: Text(
+                'Update file saved to:\n$savePath\n\nPlease open this file to install the update.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      widget.log.severe('Manual update failed', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<File?> _downloadWithProgress({String? savePath}) async {
+    double progress = 0;
+    bool cancelled = false;
+
+    return showDialog<File>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Start download once dialog is built
+            _updateService
+                .downloadUpdate(
+              savePath: savePath,
+              onProgress: (count, total) {
+                if (total > 0 && !cancelled) {
+                  setDialogState(() {
+                    progress = count / total;
+                  });
+                }
+              },
+            )
+                .then((file) {
+              if (!cancelled) {
+                Navigator.of(context).pop(file);
+              }
+            }).catchError((e) {
+              if (!cancelled) {
+                widget.log.severe('Download error', e);
+                Navigator.of(context).pop(null);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Download failed: $e')),
+                  );
+                }
+              }
+            });
+
+            return AlertDialog(
+              title: const Text('Downloading Update'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(
+                      value: progress > 0 ? progress : null),
+                  const SizedBox(height: 16),
+                  Text('${(progress * 100).toStringAsFixed(1)}%'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    cancelled = true;
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -74,41 +253,7 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
               Icons.download,
               color: ColorPalette.primaryBlue,
             ),
-            onPressed: () async {
-              // Get the latest release URL and open it in browser
-              final updateService = UpdateService();
-              final url = await updateService.getDownloadUrl();
-              if (url != null) {
-                // Open the URL in browser
-                if (await launchUrl(Uri.parse(url))) {
-                  // Successfully opened URL
-                  widget.log.info('Opened download URL in browser: $url');
-                } else {
-                  // Failed to open URL
-                  widget.log.warning('Could not launch download URL: $url');
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Could not open download page in browser.'),
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                }
-              } else {
-                // Could not get download URL
-                widget.log.warning('Could not get download URL from GitHub');
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Could not get download URL.'),
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-                }
-              }
-            },
+            onPressed: _handleUpdate,
           ),
         // Essential actions that should always be visible
         IconButton(
