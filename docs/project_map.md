@@ -400,4 +400,12 @@ This document provides a map of the project, listing the location of all functio
 
 
 
-- [Android Update Process Simplification (android_update_fix_20260215)](../conductor/tracks/android_update_fix_20260215/index.md): Fixes and simplifies the update process for Android.
+
+
+
+
+- [Android Update Process Simplification (android_update_fix_20260215)](../conductor/archive/android_update_fix_20260215/index.md): Fixes and simplifies the update process for Android.
+
+
+
+
