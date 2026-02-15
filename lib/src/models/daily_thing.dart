@@ -31,6 +31,7 @@ class DailyThing {
   final String? subdivisionBellSoundPath;
   final String? notes;
   final bool isArchived; // New field for archive status
+  final bool notificationEnabled; // Enable nag notifications
 
   DailyThing({
     String? id,
@@ -54,6 +55,7 @@ class DailyThing {
     this.subdivisionBellSoundPath,
     this.notes,
     this.isArchived = false, // Default to false
+    this.notificationEnabled = false, // Default to false
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -211,6 +213,7 @@ class DailyThing {
       'subdivisionBellSoundPath': subdivisionBellSoundPath,
       'notes': notes,
       'isArchived': isArchived, // Add to toJson
+      'notificationEnabled': notificationEnabled,
     };
   }
 
@@ -269,6 +272,8 @@ class DailyThing {
       notes: json['notes'] as String?,
       isArchived:
           json['isArchived'] as bool? ?? false, // Add to fromJson with default
+      notificationEnabled:
+          json['notificationEnabled'] as bool? ?? false, // Backwards compatible
     );
   }
 
@@ -294,6 +299,7 @@ class DailyThing {
     String? subdivisionBellSoundPath,
     String? notes,
     bool? isArchived, // Add to copyWith
+    bool? notificationEnabled,
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -318,6 +324,7 @@ class DailyThing {
           subdivisionBellSoundPath ?? this.subdivisionBellSoundPath,
       notes: notes ?? this.notes,
       isArchived: isArchived ?? this.isArchived, // Use new field
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
@@ -215,6 +216,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     if (shouldDelete) {
       _log.info('Deleting item.');
+      await NotificationService().cancelNotification(item.id);
       await _dataManager.deleteDailyThing(item);
 
       // Update the state directly to immediately remove the item from the display

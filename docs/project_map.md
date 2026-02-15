@@ -119,6 +119,18 @@ This document provides a map of the project, listing the location of all functio
   - `fromJson(Map<String, dynamic> json)` [`lib/src/models/daily_thing.dart:191`](lib/src/models/daily_thing.dart:191): Builds the item from a JSON map.
   - `copyWith({...})` [`lib/src/models/daily_thing.dart:233`](lib/src/models/daily_thing.dart:233): Creates a copy of the item with specified fields updated.
   - `isArchived` field [`lib/src/models/daily_thing.dart:34`](lib/src/models/daily_thing.dart:34): Indicates whether the item is archived (hidden from main view).
+  - `notificationEnabled` field [`lib/src/models/daily_thing.dart:35`](lib/src/models/daily_thing.dart:35): Enables nag notifications for the task.
+
+## lib/src/services/notification_service.dart
+- `NotificationService` class [`lib/src/services/notification_service.dart:13`](lib/src/services/notification_service.dart:13): Singleton service managing local notifications for daily tasks.
+  - `initialize({GlobalKey<NavigatorState>? navigatorKey})` [`lib/src/services/notification_service.dart:67`](lib/src/services/notification_service.dart:67): Configures timezones and initializes the local notification plugin.
+  - `requestPermissions()` [`lib/src/services/notification_service.dart:99`](lib/src/services/notification_service.dart:99): Requests required notification and alarm permissions from the user.
+  - `scheduleNotification(DailyThing item)` [`lib/src/services/notification_service.dart:170`](lib/src/services/notification_service.dart:170): Schedules a recurring or one-time notification for a specific task.
+  - `cancelNotification(String itemId)` [`lib/src/services/notification_service.dart:344`](lib/src/services/notification_service.dart:344): Cancels any scheduled notifications for the given task.
+  - `cancelAllNotifications()` [`lib/src/services/notification_service.dart:353`](lib/src/services/notification_service.dart:353): Cancels all scheduled notifications for the app.
+  - `rescheduleAllNotifications(List<DailyThing> items)` [`lib/src/services/notification_service.dart:362`](lib/src/services/notification_service.dart:362): Re-schedules notifications for all active and enabled tasks.
+  - `onItemCompleted(DailyThing item)` [`lib/src/services/notification_service.dart:379`](lib/src/services/notification_service.dart:379): Re-schedules the notification when a task is completed for the day.
+  - `testNotification(DailyThing item)` [`lib/src/services/notification_service.dart:394`](lib/src/services/notification_service.dart:394): Immediately schedules a test notification for verification.
 
 ## lib/src/models/history_entry.dart
 - `HistoryEntry` class [`lib/src/models/history_entry.dart:6`](lib/src/models/history_entry.dart:6): A single day's record of target/actual progress, with optional comment and snoozed status.

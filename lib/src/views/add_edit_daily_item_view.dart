@@ -8,12 +8,14 @@ import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/widgets/interval_selection_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
-import 'package:daily_inc/src/views/widgets/custom_bell_selector.dart'; // Import the new dialog
+import 'package:daily_inc/src/views/widgets/custom_bell_selector.dart';
 import 'package:daily_inc/src/core/time_converter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
@@ -64,6 +66,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   String? _selectedSubdivisionBellSoundPath;
   bool _isUpdatingFromIncrement = false;
   double _todayValue = 0.0;
+  bool _notificationEnabled = false;
 
   // Template parameter tracking for automatic template saving
   DailyThing? _originalTemplate;
@@ -137,6 +140,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         _selectedNagTime = TimeOfDay.fromDateTime(existingItem.nagTime!);
       }
       _nagMessageController.text = existingItem.nagMessage ?? '';
+      _notificationEnabled = existingItem.notificationEnabled;
       _selectedBellSoundPath = existingItem.bellSoundPath ??
           'assets/bells/bell1.mp3'; // Initialize bell sound path with default
       _subdivisionsController = TextEditingController(
@@ -602,6 +606,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           notes: _notesController.text.isNotEmpty
               ? _notesController.text
               : widget.dailyThing?.notes, // Preserve notes
+          notificationEnabled: _notificationEnabled,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -611,6 +616,13 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         } else {
           _log.info('Updating existing item');
           await widget.dataManager.updateDailyThing(newItem);
+        }
+
+        // Schedule or cancel notification
+        if (_notificationEnabled) {
+          await NotificationService().scheduleNotification(newItem);
+        } else {
+          await NotificationService().cancelNotification(newItem.id);
         }
 
         if (!mounted) return;
@@ -1266,44 +1278,164 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     textAlign: TextAlign.left,
                   ),
                 ],
-                const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _nagTimeController,
-                //   decoration: const InputDecoration(
-                //     labelText: 'Nag Time',
-                //     hintText: 'HH:mm',
-                //     prefixIcon: Icon(Icons.alarm),
-                //   ),
-                //   readOnly: true,
-                //   onTap: () async {
-                //     final TimeOfDay? picked = await showTimePicker(
-                //       context: context,
-                //       initialTime: _selectedNagTime ?? TimeOfDay.now(),
-                //     );
-                //     if (picked != null && picked != _selectedNagTime) {
-                //       setState(() {
-                //         _selectedNagTime = picked;
-                //         _nagTimeController.text = picked.format(context);
-                //       });
-                //     }
-                //   },
-                //   validator: (value) {
-                //     if (_nagMessageController.text.isNotEmpty &&
-                //         (value == null || value.isEmpty)) {
-                //       return 'Please select a nag time when a nag message is provided.';
-                //     }
-                //     return null;
-                //   },
-                // ),
-                // const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _nagMessageController,
-                //   textCapitalization: TextCapitalization.sentences,
-                //   decoration: const InputDecoration(
-                //     labelText: 'Nag Message',
-                //     hintText: 'e.g. Time to do your daily reading!',
-                //   ),
-                // ),
+                const SizedBox(height: 24),
+                Text(
+                  'Nag Notification',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Enable Daily Nag'),
+                  subtitle: Text(
+                    _notificationEnabled
+                        ? 'Nag at ${_selectedNagTime?.format(context) ?? 'not set'}'
+                        : 'Get reminded to complete this task',
+                  ),
+                  value: _notificationEnabled,
+                  onChanged: (value) async {
+                    if (value) {
+                      final hasNotificationPerm =
+                          await Permission.notification.status;
+                      if (!hasNotificationPerm.isGranted && mounted) {
+                        final shouldOpenSettings = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Notification Permission'),
+                            content: const Text(
+                              'To receive nag notifications, please grant notification permission in Settings.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Open Settings'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (shouldOpenSettings == true) {
+                          await NotificationService().openExactAlarmSettings();
+                        }
+                        return;
+                      }
+
+                      final hasExactAlarmPerm = await NotificationService()
+                          .checkExactAlarmPermission();
+                      if (!hasExactAlarmPerm && mounted) {
+                        final shouldRequest = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Exact Alarm Permission'),
+                            content: const Text(
+                              'For precise nag timing, please enable "Alarms & reminders" in Settings.\n\n'
+                              'This ensures your nags fire at exactly the scheduled time.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Open Settings'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (shouldRequest == true) {
+                          await NotificationService()
+                              .requestExactAlarmPermission();
+                        }
+                        return;
+                      }
+                    }
+                    setState(() {
+                      _notificationEnabled = value;
+                    });
+                  },
+                ),
+                if (_notificationEnabled) ...[
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _nagTimeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nag Time',
+                      hintText: 'HH:mm',
+                      prefixIcon: Icon(Icons.alarm),
+                    ),
+                    readOnly: true,
+                    onTap: () async {
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: _selectedNagTime ??
+                            const TimeOfDay(hour: 9, minute: 0),
+                      );
+                      if (picked != null && picked != _selectedNagTime) {
+                        setState(() {
+                          _selectedNagTime = picked;
+                          _nagTimeController.text = picked.format(context);
+                        });
+                      }
+                    },
+                    validator: (value) {
+                      if (_notificationEnabled &&
+                          (value == null || value.isEmpty)) {
+                        return 'Please select a nag time';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nagMessageController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Nag Message',
+                      hintText: 'e.g. Time to do your daily reading!',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final tempItem = DailyThing(
+                        name: _nameController.text.isNotEmpty
+                            ? _nameController.text
+                            : 'Test Item',
+                        nagTime: _selectedNagTime != null
+                            ? DateTime.now().copyWith(
+                                hour: _selectedNagTime!.hour,
+                                minute: _selectedNagTime!.minute,
+                              )
+                            : null,
+                        nagMessage: _nagMessageController.text.isNotEmpty
+                            ? _nagMessageController.text
+                            : null,
+                        itemType: _selectedItemType,
+                        startDate: DateTime.now(),
+                        startValue: 0,
+                        duration: 1,
+                        endValue: 1,
+                        notificationEnabled: true,
+                      );
+                      await NotificationService().testNotification(tempItem);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Test notification scheduled in 3 seconds'),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.notifications_active),
+                    label: const Text('Test Notification'),
+                  ),
+                ],
                 if (_selectedItemType == ItemType.minutes)
                   Column(
                     children: [

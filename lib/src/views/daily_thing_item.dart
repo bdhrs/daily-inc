@@ -5,6 +5,7 @@ import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
 import 'package:daily_inc/src/views/history_view.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
@@ -273,6 +274,14 @@ class _DailyThingItemState extends State<DailyThingItem> {
 
                             await widget.dataManager.updateDailyThing(
                                 widget.item.copyWith(history: history));
+
+                            // Handle notification for completed check item
+                            if (newDone && widget.item.notificationEnabled) {
+                              await NotificationService().onItemCompleted(
+                                widget.item.copyWith(history: history),
+                              );
+                            }
+
                             widget.onItemChanged?.call();
                             widget.checkAndShowCompletionSnackbar();
                           } else if (widget.item.itemType == ItemType.reps) {

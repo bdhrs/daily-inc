@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/helpers/audio_helper.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
@@ -681,6 +682,12 @@ class _TimerViewState extends State<TimerView> {
 
     final updatedItem = _createUpdatedItem(updatedHistory);
     await widget.dataManager.updateDailyThing(updatedItem);
+
+    // Handle notification for completed timer item
+    if (isDone && updatedItem.notificationEnabled) {
+      await NotificationService().onItemCompleted(updatedItem);
+    }
+
     _log.info('Progress saved successfully.');
   }
 
