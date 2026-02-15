@@ -14,6 +14,7 @@ void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
 
     // Verify that the AppBar with the correct title is present.
     expect(find.text('Daily Inc'), findsOneWidget);

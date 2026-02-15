@@ -177,67 +177,14 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
   }
 
   Future<File?> _downloadWithProgress({String? savePath}) async {
-    double progress = 0;
-    bool cancelled = false;
-
     return showDialog<File>(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Start download once dialog is built
-            _updateService
-                .downloadUpdate(
-              savePath: savePath,
-              onProgress: (count, total) {
-                if (total > 0 && !cancelled) {
-                  setDialogState(() {
-                    progress = count / total;
-                  });
-                }
-              },
-            )
-                .then((file) {
-              if (!cancelled) {
-                Navigator.of(context).pop(file);
-              }
-            }).catchError((e) {
-              if (!cancelled) {
-                widget.log.severe('Download error', e);
-                Navigator.of(context).pop(null);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Download failed: $e')),
-                  );
-                }
-              }
-            });
-
-            return AlertDialog(
-              title: const Text('Downloading Update'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(
-                      value: progress > 0 ? progress : null),
-                  const SizedBox(height: 16),
-                  Text('${(progress * 100).toStringAsFixed(1)}%'),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    cancelled = true;
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => _DownloadProgressDialog(
+        updateService: _updateService,
+        savePath: savePath,
+        log: widget.log,
+      ),
     );
   }
 
@@ -451,6 +398,84 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DownloadProgressDialog extends StatefulWidget {
+  final UpdateService updateService;
+  final String? savePath;
+  final Logger log;
+
+  const _DownloadProgressDialog({
+    required this.updateService,
+    this.savePath,
+    required this.log,
+  });
+
+  @override
+  State<_DownloadProgressDialog> createState() =>
+      _DownloadProgressDialogState();
+}
+
+class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
+  double _progress = 0;
+  bool _cancelled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDownload();
+  }
+
+  void _startDownload() {
+    widget.updateService
+        .downloadUpdate(
+      savePath: widget.savePath,
+      onProgress: (count, total) {
+        if (total > 0 && !_cancelled && mounted) {
+          setState(() {
+            _progress = count / total;
+          });
+        }
+      },
+    )
+        .then((file) {
+      if (!_cancelled && mounted) {
+        Navigator.of(context).pop(file);
+      }
+    }).catchError((e) {
+      if (!_cancelled && mounted) {
+        widget.log.severe('Download error', e);
+        Navigator.of(context).pop(null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Downloading Update'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(value: _progress > 0 ? _progress : null),
+          const SizedBox(height: 16),
+          Text('${(_progress * 100).toStringAsFixed(1)}%'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            _cancelled = true;
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
         ),
       ],
     );

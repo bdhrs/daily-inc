@@ -9,7 +9,7 @@ import 'package:open_filex/open_filex.dart';
 
 class UpdateService {
   final _log = Logger('UpdateService');
-  final _dio = Dio();
+  static final _dio = Dio();
 
   Future<bool> hasInstallPermission() async {
     if (!Platform.isAndroid) return true;
