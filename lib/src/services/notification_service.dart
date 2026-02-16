@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:flutter/material.dart';
@@ -201,6 +202,8 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
         ongoing: true,
+        autoCancel: false,
+        additionalFlags: Int32List.fromList([16]), // FLAG_NO_CLEAR
       );
       final notificationDetails = NotificationDetails(android: androidDetails);
 
