@@ -3,22 +3,15 @@ name: Release Build
 on:
   workflow_dispatch:
     inputs:
-      release_type:
-        description: 'The type of release to create.'
+      merge_dev:
+        description: 'Merge dev into main before release?'
         required: true
-        default: 'minor-from-main'
-        type: 'choice'
-        options:
-          - minor-from-main # Minor release from main branch
-          - patch-from-main # Patch release from main branch
-          - major-from-dev # Major release from dev branch
-          - minor-from-dev # Minor release from dev branch
-
-          
+        default: false
+        type: boolean
 
 jobs:
   merge_dev:
-    if: github.event.inputs.release_type == 'major' || github.event.inputs.release_type == 'minor'
+    if: github.event.inputs.merge_dev == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -37,7 +30,7 @@ jobs:
 
   bump_version:
     needs: [merge_dev]
-    if: always() # Run even if merge_dev is skipped
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,36 +42,35 @@ jobs:
           ref: main
           fetch-depth: 0
 
-
-
-      - name: Get version from pubspec.yaml
-        id: get_version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "Current version: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Bump version
+      - name: Calculate New Version
         id: versioning
         run: |
-          CURRENT_VERSION="${{ steps.get_version.outputs.VERSION }}"
-          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          # 1. Get latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          TAG_VERSION=${LATEST_TAG#v}
+          TAG_MAJOR=$(echo $TAG_VERSION | cut -d. -f1)
+          TAG_MINOR=$(echo $TAG_VERSION | cut -d. -f2)
+          TAG_PATCH=$(echo $TAG_VERSION | cut -d. -f3)
 
-          if [ "${{ github.event.inputs.release_type }}" == "major-from-dev" ]; then
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif [ "${{ github.event.inputs.release_type }}" == "minor-from-dev" ] || [ "${{ github.event.inputs.release_type }}" == "minor-from-main" ]; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
+          # 2. Get version from pubspec.yaml
+          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          PUB_MAJOR=$(echo $PUBSPEC_VERSION | cut -d. -f1)
+          PUB_MINOR=$(echo $PUBSPEC_VERSION | cut -d. -f2)
+          PUB_PATCH=$(echo $PUBSPEC_VERSION | cut -d. -f3)
+
+          echo "Latest tag: $LATEST_TAG ($TAG_MAJOR.$TAG_MINOR.$TAG_PATCH)"
+          echo "Pubspec version: $PUBSPEC_VERSION ($PUB_MAJOR.$PUB_MINOR.$PUB_PATCH)"
+
+          # 3. Versioning Logic
+          if [ "$PUB_MAJOR" -eq "$TAG_MAJOR" ] && [ "$PUB_MINOR" -eq "$TAG_MINOR" ]; then
+            NEW_PATCH=$((TAG_PATCH + 1))
+            NEW_VERSION="$TAG_MAJOR.$TAG_MINOR.$NEW_PATCH"
+            echo "Major/Minor match. Bumping patch to $NEW_VERSION"
           else
-            PATCH=$((PATCH + 1))
+            NEW_VERSION="$PUB_MAJOR.$PUB_MINOR.$PUB_PATCH"
+            echo "Major/Minor differ. Using pubspec version: $NEW_VERSION"
           fi
           
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          echo "New version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Update pubspec.yaml and commit
@@ -166,7 +158,7 @@ jobs:
             
   sync_back_to_dev:
     needs: build_and_release
-    if: github.event.inputs.release_type == 'major' || github.event.inputs.release_type == 'minor'
+    if: github.event.inputs.merge_dev == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
