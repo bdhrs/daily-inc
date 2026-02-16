@@ -1,0 +1,8 @@
+{
+  "track_id": "smart_nav_refinement_20260216",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-02-16T12:00:00Z",
+  "updated_at": "2026-02-16T12:00:00Z",
+  "description": "When an item's timer is finished, and I click the arrow pointing to the right which goes to the next item, Sometimes the next item is actually a hidden item or an archived item. In clicking the right arrow, I never want it to go to an item which isn't actually in the list. i.e. the item must be incomplete and active, otherwise it must not go to that item."
+}
