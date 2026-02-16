@@ -68,6 +68,12 @@ class ValueConverter {
       intervalType: original.intervalType,
       intervalValue: original.intervalValue,
       intervalWeekdays: original.intervalWeekdays,
+      bellSoundPath: original.bellSoundPath,
+      subdivisions: original.subdivisions,
+      subdivisionBellSoundPath: original.subdivisionBellSoundPath,
+      notes: original.notes,
+      isArchived: original.isArchived,
+      notificationEnabled: original.notificationEnabled,
     );
   }
 }

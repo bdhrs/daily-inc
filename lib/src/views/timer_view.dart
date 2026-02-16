@@ -815,10 +815,12 @@ class _TimerViewState extends State<TimerView> {
       intervalType: _currentItem.intervalType,
       intervalValue: _currentItem.intervalValue,
       intervalWeekdays: _currentItem.intervalWeekdays,
-      bellSoundPath: _currentItem.bellSoundPath, // Pass the bell sound path
+      bellSoundPath: _currentItem.bellSoundPath,
       subdivisions: _currentItem.subdivisions,
       subdivisionBellSoundPath: _currentItem.subdivisionBellSoundPath,
       notes: _currentItem.notes,
+      isArchived: _currentItem.isArchived,
+      notificationEnabled: _currentItem.notificationEnabled,
     );
   }
 

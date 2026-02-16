@@ -83,6 +83,9 @@ class DataManager {
               bellSoundPath: thing.bellSoundPath,
               subdivisions: thing.subdivisions,
               subdivisionBellSoundPath: thing.subdivisionBellSoundPath,
+              notes: thing.notes,
+              isArchived: thing.isArchived,
+              notificationEnabled: thing.notificationEnabled,
             ));
           } else {
             fixedThings.add(thing);
