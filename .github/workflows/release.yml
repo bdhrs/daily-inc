@@ -223,38 +223,3 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git merge origin/main --no-ff -m "Sync main back to dev after release"
           git push origin dev
-
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Update pubspec.yaml and commit
-        run: |
-          sed -i "s/^version: .*/version: ${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}/" pubspec.yaml
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add pubspec.yaml
-          git commit -m "chore: bump version to v${{ needs.bump_version.outputs.VERSION }} [skip ci]"
-          git push
-            
-  sync_back_to_dev:
-    needs: commit_version
-    if: github.event.inputs.merge_dev == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout dev and merge main
-        uses: actions/checkout@v4
-        with:
-          ref: dev
-          fetch-depth: 0
-      - name: Merge main into dev
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git merge origin/main --no-ff -m "Sync main back to dev after release"
-          git push origin dev
