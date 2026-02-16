@@ -72,26 +72,30 @@ jobs:
           fi
           
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-  
-  build_and_release:
+
+  test:
     needs: bump_version
-    if: always()
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
-
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
 
+  build-android:
+    needs: [bump_version, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
       - name: Setup Android Signing
         id: setup_signing
         env:
@@ -105,21 +109,57 @@ jobs:
           echo "storePassword=$KEY_PASSWORD" >> android/key.properties
           echo "keyPassword=$ALIAS_PASSWORD" >> android/key.properties
           echo "keyAlias=$KEY_ALIAS" >> android/key.properties
-
       - name: Build Android APK
         if: steps.setup_signing.outcome == 'success'
         run: |
           flutter build apk --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
 
+  build-linux:
+    needs: [bump_version, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux dependencies
+        run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
       - name: Build Linux Bundle
         run: |
-          sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
           flutter build linux --release --build-name=${{ needs.bump_version.outputs.VERSION }} --build-number=${{ github.run_number }}
           cd build/linux/x64/release/bundle
           zip -r daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip .
-          cd ../../../../../
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip
 
+  create-release:
+    needs: [bump_version, build-android, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: artifacts/android
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: artifacts/linux
 
       - name: Generate Changelog
         id: changelog
@@ -144,11 +184,46 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
-            build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip
+            artifacts/android/*.apk
+            artifacts/linux/*.zip
 
   commit_version:
-    needs: [bump_version, build_and_release]
+    needs: [bump_version, create-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Update pubspec.yaml and commit
+        run: |
+          sed -i "s/^version: .*/version: ${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}/" pubspec.yaml
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "chore: bump version to v${{ needs.bump_version.outputs.VERSION }} [skip ci]"
+          git push
+            
+  sync_back_to_dev:
+    needs: commit_version
+    if: github.event.inputs.merge_dev == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout dev and merge main
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Merge main into dev
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git merge origin/main --no-ff -m "Sync main back to dev after release"
+          git push origin dev
+
     runs-on: ubuntu-latest
     permissions:
       contents: write

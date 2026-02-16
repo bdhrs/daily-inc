@@ -10,39 +10,42 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-android:
+  setup:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
+      VERSION: ${{ steps.version.outputs.VERSION }}
+      BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            /home/runner/.gradle/caches
-            /home/runner/.gradle/wrapper
-          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock') }}
-
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
-
-      - name: Get version and build number
-        id: version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          echo "VERSION=$VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
-
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+
+  build-android:
+    needs: [setup, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
 
       - name: Setup Android Signing
         id: setup_signing
@@ -60,7 +63,7 @@ jobs:
 
       - name: Build per-ABI APKs
         if: steps.setup_signing.outcome == 'success'
-        run: flutter build apk --release --split-per-abi --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
+        run: flutter build apk --release --split-per-abi --build-name=${{ needs.setup.outputs.VERSION }} --build-number=${{ needs.setup.outputs.BUILD_NUMBER }}
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
@@ -68,8 +71,8 @@ jobs:
         id: rename_apks
         run: |
           set -euo pipefail
-          VERSION_NAME="${{ steps.version.outputs.VERSION }}"
-          BUILD_NUMBER="${{ github.run_number }}"
+          VERSION_NAME="${{ needs.setup.outputs.VERSION }}"
+          BUILD_NUMBER="${{ needs.setup.outputs.BUILD_NUMBER }}"
           OUT_DIR="build/app/outputs/flutter-apk"
           declare -A MAP=( \
             ["app-arm64-v8a-release.apk"]="daily-inc-arm64-v8a-v${VERSION_NAME}+${BUILD_NUMBER}.apk" \
@@ -95,35 +98,37 @@ jobs:
             ${{ steps.rename_apks.outputs.X86_64_APK }}
 
   build-linux:
-    needs: [build-android]
+    needs: [setup, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Linux dependencies
-        run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+        run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
       - run: flutter pub get
-      - run: flutter build linux --release
+      - run: flutter build linux --release --build-name=${{ needs.setup.outputs.VERSION }} --build-number=${{ needs.setup.outputs.BUILD_NUMBER }}
       - name: Package Linux Bundle
         run: |
           cd build/linux/x64/release/bundle
-          zip -r daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.zip .
+          zip -r daily-inc-v${{ needs.setup.outputs.VERSION }}+${{ needs.setup.outputs.BUILD_NUMBER }}-linux.zip .
           cd ../../../../../
       
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.build-android.outputs.version }}+${{ github.run_number }}-linux.zip
+          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.setup.outputs.VERSION }}+${{ needs.setup.outputs.BUILD_NUMBER }}-linux.zip
 
   create-draft-release:
-    needs: [build-android, build-linux]
+    needs: [setup, build-android, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: android-release
@@ -142,8 +147,8 @@ jobs:
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          name: Development Build v${{ needs.build-android.outputs.version }}+${{ github.run_number }}
-          tag_name: v${{ needs.build-android.outputs.version }}+${{ github.run_number }}
+          name: Development Build v${{ needs.setup.outputs.VERSION }}+${{ needs.setup.outputs.BUILD_NUMBER }}
+          tag_name: v${{ needs.setup.outputs.VERSION }}+${{ needs.setup.outputs.BUILD_NUMBER }}
           draft: true
           prerelease: true
           body: |
