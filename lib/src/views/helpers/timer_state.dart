@@ -1,6 +1,5 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:flutter/material.dart';
 
 /// Helper class for managing complex state transitions in the timer
@@ -223,61 +222,9 @@ class TimerStateHelper {
     for (int i = currentItemIndex + 1; i < allItems.length; i++) {
       final item = allItems[i];
 
-      // Check if the item is undone based on its type
-      switch (item.itemType) {
-        case ItemType.check:
-          if (!item.completedForToday) {
-            return item;
-          }
-          break;
-        case ItemType.reps:
-          // For reps, check if no actual value has been entered today
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final hasActualValueToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            return entryDate == todayDate && entry.actualValue != null;
-          });
-          if (!hasActualValueToday) {
-            return item;
-          }
-          break;
-        case ItemType.minutes:
-          // For minutes, check if not completed
-          if (!item.completedForToday) {
-            return item;
-          }
-          break;
-        case ItemType.percentage:
-          // For percentage, check if no entry for today or entry has 0 value
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final todayEntry = item.history.cast<HistoryEntry?>().firstWhere(
-                (entry) =>
-                    entry != null &&
-                    DateTime(entry.date.year, entry.date.month,
-                            entry.date.day) ==
-                        todayDate,
-                orElse: () => null,
-              );
-          if (todayEntry == null || (todayEntry.actualValue ?? 0) == 0) {
-            return item;
-          }
-          break;
-        case ItemType.trend:
-          // For trend, check if no entry for today
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          final hasEntryToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            return entryDate == todayDate;
-          });
-          if (!hasEntryToday) {
-            return item;
-          }
-          break;
+      // Item must be active (not archived) and undone for today
+      if (!item.isArchived && item.isUndoneToday) {
+        return item;
       }
     }
 

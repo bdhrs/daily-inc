@@ -189,6 +189,52 @@ class DailyThing {
     return IncrementCalculator.isDue(this, todayDate);
   }
 
+  /// Determines if the item is "undone" today.
+  /// An item is undone if it is due (or carry-over) and hasn't been logged/completed yet.
+  bool get isUndoneToday {
+    if (!shouldShowInList) {
+      return false; // Not due, so it's not "undone"
+    }
+
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    switch (itemType) {
+      case ItemType.check:
+        return !completedForToday;
+      case ItemType.minutes:
+        // For minutes, "undone" means no progress today (matching hideWhenDone)
+        return !history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          if (entryDate != todayDate) return false;
+          final actual = entry.actualValue ?? 0.0;
+          return actual > 0.0 || entry.doneToday;
+        });
+      case ItemType.reps:
+        // For reps, "undone" means no actual value entered today
+        return !history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate && entry.actualValue != null;
+        });
+      case ItemType.percentage:
+        // For percentage, "undone" means no entry for today or entry has 0 value
+        return !history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate && (entry.actualValue ?? 0) > 0;
+        });
+      case ItemType.trend:
+        // For trend, "undone" means no entry for today
+        return !history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate;
+        });
+    }
+  }
+
   Map<String, dynamic> toJson({bool includeHistory = true}) {
     return {
       'id': id,

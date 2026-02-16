@@ -1,7 +1,6 @@
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
@@ -366,9 +365,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
     // Enable immersive mode when entering timer view
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    // Find the index of the current item in the list
+    // Filter items to match what is currently displayed
+    final displayedItems = filterDisplayedItems(
+      allItems: _dailyThings,
+      showItemsDueToday: _showOnlyDueItems,
+      hideWhenDone: _hideWhenDone,
+      showArchivedItems: _showArchivedItems,
+    );
+
+    // Find the index of the current item in the displayed list
     final currentIndex =
-        _dailyThings.indexWhere((thing) => thing.id == item.id);
+        displayedItems.indexWhere((thing) => thing.id == item.id);
 
     await Navigator.push(
       context,
@@ -382,7 +389,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
             _refreshDisplay();
           },
           startInOvertime: startInOvertime,
-          allItems: _dailyThings,
+          allItems: displayedItems,
           currentItemIndex: currentIndex,
           initialMinimalistMode: minimalistMode,
         ),
@@ -942,63 +949,25 @@ class _DailyThingsViewState extends State<DailyThingsView>
       _maybeShowBackupPrompt();
     }
     _log.info('build called');
-    // First, determine all items that are due today. This list is used to calculate the "all done" status.
-    final List<DailyThing> dueItems = calculateDueItems(
+    
+    // Create the list of items to actually display
+    final List<DailyThing> displayedItems = filterDisplayedItems(
       allItems: _dailyThings,
       showItemsDueToday: _showOnlyDueItems,
+      hideWhenDone: _hideWhenDone,
+      showArchivedItems: _showArchivedItems,
     );
 
-    // Filter items based on archived status
-    final List<DailyThing> filteredDueItems = _showArchivedItems
-        ? dueItems
-            .where((item) => item.isArchived)
-            .toList() // Show only archived items
-        : dueItems
-            .where((item) => !item.isArchived)
-            .toList(); // Show only non-archived items
+    // For completion status, we look at all due items in the current view (archived or active)
+    final List<DailyThing> relevantForCompletion = filterDisplayedItems(
+      allItems: _dailyThings,
+      showItemsDueToday: _showOnlyDueItems,
+      hideWhenDone: false, // Don't hide done items for completion check
+      showArchivedItems: _showArchivedItems,
+    );
 
-    // The "all completed" status should be based on all due items, excluding archived items
-    final allTasksCompleted = filteredDueItems.isNotEmpty &&
-        filteredDueItems.every((item) => item.completedForToday);
-
-    // Now, create the list of items to actually display, applying the "hide when done" filter.
-    List<DailyThing> displayedItems = filteredDueItems;
-    if (_hideWhenDone) {
-      displayedItems = filteredDueItems.where((item) {
-        if (item.isSnoozedForToday) {
-          return false; // Always hide snoozed items when this filter is on
-        }
-
-        final today = DateTime.now();
-        final todayDate = DateTime(today.year, today.month, today.day);
-
-        // For REPS items, hide when any actual value has been entered today
-        if (item.itemType == ItemType.reps) {
-          final hasActualValueToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            return entryDate == todayDate && entry.actualValue != null;
-          });
-
-          return !hasActualValueToday;
-        }
-
-        // For MINUTES items, hide when there is any progress today (partial or completed)
-        if (item.itemType == ItemType.minutes) {
-          final hasProgressToday = item.history.any((entry) {
-            final entryDate =
-                DateTime(entry.date.year, entry.date.month, entry.date.day);
-            if (entryDate != todayDate) return false;
-            final actual = entry.actualValue ?? 0.0;
-            return actual > 0.0 || entry.doneToday;
-          });
-          if (hasProgressToday) return false; // hide minutes if partial or done
-        }
-
-        // For CHECK items and fallback for others, use the original logic
-        return !item.completedForToday;
-      }).toList();
-    }
+    final allTasksCompleted = relevantForCompletion.isNotEmpty &&
+        relevantForCompletion.every((item) => item.completedForToday);
 
     // Compute next undone index for the displayed list (after filters)
     final nextUndoneIndex = _getNextUndoneIndex(displayedItems);

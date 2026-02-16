@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,24 +8,8 @@ import 'package:flutter/material.dart';
 /// Pure helper to compute the next undone index in a displayed list.
 int getNextUndoneIndex(List<DailyThing> items) {
   for (int i = 0; i < items.length; i++) {
-    final item = items[i];
-    if (item.itemType == ItemType.check && !item.completedForToday) {
+    if (items[i].isUndoneToday) {
       return i;
-    } else if (item.itemType == ItemType.reps) {
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
-      final hasActualValueToday = item.history.any((entry) {
-        final entryDate =
-            DateTime(entry.date.year, entry.date.month, entry.date.day);
-        return entryDate == todayDate && entry.actualValue != null;
-      });
-      if (!hasActualValueToday) {
-        return i;
-      }
-    } else if (item.itemType == ItemType.minutes) {
-      if (!item.completedForToday) {
-        return i;
-      }
     }
   }
   return -1;
