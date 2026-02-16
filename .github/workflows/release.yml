@@ -72,15 +72,6 @@ jobs:
           fi
           
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update pubspec.yaml and commit
-        run: |
-          sed -i "s/^version: .*/version: ${{ steps.versioning.outputs.NEW_VERSION }}+${{ github.run_number }}/" pubspec.yaml
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add pubspec.yaml
-          git commit -m "chore: bump version to v${{ steps.versioning.outputs.NEW_VERSION }}"
-          git push
   
   build_and_release:
     needs: bump_version
@@ -155,9 +146,27 @@ jobs:
           files: |
             build/app/outputs/flutter-apk/daily-inc-v${{ needs.bump_version.outputs.VERSION }}.apk
             build/linux/x64/release/bundle/daily-inc-v${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}-linux.zip
+
+  commit_version:
+    needs: [bump_version, build_and_release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Update pubspec.yaml and commit
+        run: |
+          sed -i "s/^version: .*/version: ${{ needs.bump_version.outputs.VERSION }}+${{ github.run_number }}/" pubspec.yaml
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "chore: bump version to v${{ needs.bump_version.outputs.VERSION }} [skip ci]"
+          git push
             
   sync_back_to_dev:
-    needs: build_and_release
+    needs: commit_version
     if: github.event.inputs.merge_dev == 'true'
     runs-on: ubuntu-latest
     permissions:
