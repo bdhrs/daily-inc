@@ -61,7 +61,7 @@ dependencies:
   url_launcher: ^6.1.10
   screen_brightness: ^2.1.6
   flutter_markdown: ^0.7.3
-  open_filex: ^4.7.0
+  apk_install: ^1.0.1
 
 dev_dependencies:
   flutter_test:

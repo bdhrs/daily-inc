@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'dart:async';
 
 class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool updateAvailable;
@@ -26,11 +26,10 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool hideWhenDone;
   final bool allExpanded;
   final bool showOnlyDueItems;
-  final bool showArchivedItems; // New parameter for showing archived items
+  final bool showArchivedItems;
   final VoidCallback onShowAboutDialog;
   final VoidCallback onToggleShowOnlyDueItems;
-  final VoidCallback
-      onToggleShowArchivedItems; // New parameter for toggle callback
+  final VoidCallback onToggleShowArchivedItems;
   final Logger log;
 
   const DailyThingsAppBar({
@@ -49,10 +48,10 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.hideWhenDone,
     required this.allExpanded,
     required this.showOnlyDueItems,
-    required this.showArchivedItems, // New parameter
+    required this.showArchivedItems,
     required this.onShowAboutDialog,
     required this.onToggleShowOnlyDueItems,
-    required this.onToggleShowArchivedItems, // New parameter
+    required this.onToggleShowArchivedItems,
     required this.log,
   });
 
@@ -76,11 +75,11 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
             builder: (context) => AlertDialog(
               title: const Text('Update Permission Required'),
               content: const Text(
-                  'To install updates automatically, Daily Inc needs permission to install unknown apps. \n\nWould you like to grant this permission now, or manually save the update file?'),
+                  'To install updates automatically, Daily Inc needs permission to install unknown apps. \n\nWould you like to grant this permission now, or manually download from the Release Page?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Save Manually'),
+                  child: const Text('Release Page'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
@@ -95,23 +94,17 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
             if (granted) {
               _startAutomatedUpdate();
             } else {
-              _startManualUpdate();
+              _openReleasePage();
             }
           } else if (proceed == false) {
-            _startManualUpdate();
+            _openReleasePage();
           }
         }
       } else {
         _startAutomatedUpdate();
       }
     } else {
-      // Non-Android platforms, just open URL for now as per current behavior
-      final url = await _updateService.getDownloadUrl();
-      if (url != null) {
-        if (await launchUrl(Uri.parse(url))) {
-          widget.log.info('Opened download URL in browser: $url');
-        }
-      }
+      _openReleasePage();
     }
   }
 
@@ -122,6 +115,7 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
 
       apkFile = await _downloadWithProgress();
       if (apkFile != null) {
+        if (mounted) Navigator.of(context).pop(); // Close progress dialog
         await _updateService.installUpdate(apkFile);
       }
     } catch (e) {
@@ -130,59 +124,45 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Installation failed: $e')),
         );
-        _startManualUpdate(); // Fallback to manual save if automated fails
+        _openReleasePage(); // Fallback to manual if automated fails
       }
     } finally {
       if (apkFile != null) {
-        await _updateService.deleteDownloadedUpdate(apkFile);
+        // Give the system installer time to read the file before deleting it
+        Future.delayed(const Duration(seconds: 30)).then((_) async {
+          await _updateService.deleteDownloadedUpdate(apkFile!);
+        });
       }
     }
   }
 
-  void _startManualUpdate() async {
+  void _openReleasePage() async {
     try {
-      final String? selectedDirectory =
-          await FilePicker.platform.getDirectoryPath();
-      if (selectedDirectory == null) return;
-
-      if (!mounted) return;
-
-      final savePath = '$selectedDirectory/DailyInc_update.apk';
-      final apkFile = await _downloadWithProgress(savePath: savePath);
-
-      if (apkFile != null && mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Download Complete'),
-            content: Text(
-                'Update file saved to:\n$savePath\n\nPlease open this file to install the update.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
+      final url = await _updateService.getReleasePageUrl();
+      if (url != null) {
+        if (await launchUrl(Uri.parse(url),
+            mode: LaunchMode.externalApplication)) {
+          widget.log.info('Opened Release Page: $url');
+        } else {
+          throw Exception('Could not launch browser');
+        }
       }
     } catch (e) {
-      widget.log.severe('Manual update failed', e);
+      widget.log.severe('Failed to open Release Page', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
+          SnackBar(content: Text('Failed to open browser: $e')),
         );
       }
     }
   }
 
-  Future<File?> _downloadWithProgress({String? savePath}) async {
+  Future<File?> _downloadWithProgress() async {
     return showDialog<File>(
       context: context,
       barrierDismissible: false,
       builder: (context) => _DownloadProgressDialog(
         updateService: _updateService,
-        savePath: savePath,
         log: widget.log,
       ),
     );
@@ -202,7 +182,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
             ),
             onPressed: _handleUpdate,
           ),
-        // Essential actions that should always be visible
         IconButton(
           tooltip: widget.hideWhenDone
               ? 'Show Completed Items'
@@ -231,7 +210,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
           icon: const Icon(Icons.add),
           onPressed: widget.onOpenAddDailyItemPopup,
         ),
-        // Category Graphs button moved from overflow menu
         IconButton(
           tooltip: 'Category Graphs',
           icon: const Icon(Icons.bar_chart),
@@ -245,7 +223,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
             );
           },
         ),
-        // All other actions in a single overflow menu to prevent title cropping
         PopupMenuButton<String>(
           tooltip: 'More options',
           icon: const Icon(Icons.more_vert),
@@ -265,8 +242,7 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                   MaterialPageRoute(
                     builder: (context) => SettingsView(
                       onResetAllData: widget.onResetAllData,
-                      onDataRestored:
-                          widget.onRefreshDisplay, // Pass the callback
+                      onDataRestored: widget.onRefreshDisplay,
                     ),
                   ),
                 ).then((_) => widget.onRefreshHideWhenDoneSetting());
@@ -365,7 +341,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 ],
               ),
             ),
-            const PopupMenuDivider(),
             const PopupMenuItem<String>(
               value: 'load_template',
               child: Row(
@@ -386,7 +361,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
                 ],
               ),
             ),
-            const PopupMenuDivider(),
             const PopupMenuItem<String>(
               value: 'about',
               child: Row(
@@ -406,12 +380,10 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
 
 class _DownloadProgressDialog extends StatefulWidget {
   final UpdateService updateService;
-  final String? savePath;
   final Logger log;
 
   const _DownloadProgressDialog({
     required this.updateService,
-    this.savePath,
     required this.log,
   });
 
@@ -433,7 +405,6 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
   void _startDownload() {
     widget.updateService
         .downloadUpdate(
-      savePath: widget.savePath,
       onProgress: (count, total) {
         if (total > 0 && !_cancelled && mounted) {
           setState(() {

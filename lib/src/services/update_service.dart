@@ -5,7 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:apk_install/apk_install.dart';
 
 class UpdateService {
   final _log = Logger('UpdateService');
@@ -90,22 +90,27 @@ class UpdateService {
     return null;
   }
 
+  Future<String?> getReleasePageUrl() async {
+    final release = await getLatestRelease();
+    if (release == null) return null;
+    return release['html_url'] as String?;
+  }
+
   Future<File> downloadUpdate({
     void Function(int count, int total)? onProgress,
-    String? savePath,
   }) async {
     final url = await getDownloadUrl();
     if (url == null) {
       throw Exception('No APK URL found');
     }
 
-    String finalPath;
-    if (savePath != null) {
-      finalPath = savePath;
-    } else {
-      final dir = await getTemporaryDirectory();
-      finalPath = '${dir.path}/DailyInc_update.apk';
+    Directory? dir;
+    if (Platform.isAndroid) {
+      // Using external cache is standard for FileProvider sharing
+      dir = await getExternalCacheDirectories().then((dirs) => dirs?.first);
     }
+    dir ??= await getTemporaryDirectory();
+    final finalPath = '${dir.path}/DailyInc_update.apk';
 
     _log.info('Downloading APK to $finalPath');
 
@@ -132,10 +137,13 @@ class UpdateService {
 
   Future<void> installUpdate(File apkFile) async {
     if (Platform.isAndroid) {
-      final result = await OpenFilex.open(apkFile.path);
-      if (result.type != ResultType.done) {
-        _log.warning('Could not open APK file: ${result.message}');
-        throw Exception('Failed to open APK: ${result.message}');
+      _log.info('Installing APK from: ${apkFile.path}');
+      // Small delay ensures file is fully closed/flushed on some Android versions
+      await Future.delayed(const Duration(milliseconds: 500));
+      final success = await ApkInstall().onInstallApk(apkFile.path);
+      if (!success) {
+        _log.warning('APK installation failed or was cancelled');
+        throw Exception('Installation failed or was cancelled');
       }
     } else {
       _log.warning('InstallUpdate not implemented for this platform');
