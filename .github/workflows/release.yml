@@ -2,72 +2,35 @@ name: Release Build
 
 on:
   workflow_dispatch:
-    inputs:
-      merge_dev:
-        description: 'Merge dev into main before release?'
-        required: true
-        default: false
-        type: boolean
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
-      VERSION: ${{ steps.versioning.outputs.NEW_VERSION }}
+      VERSION: ${{ steps.versioning.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
-
-      - name: Merge dev into main (Dry Run/Local Only)
-        if: github.event.inputs.merge_dev == 'true'
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          if git fetch origin dev; then
-            git merge origin/dev --no-ff -m "Merge dev into main for release"
-          else
-            echo "Dev branch not found, skipping merge."
-          fi
-
-      - name: Calculate New Version
+      - name: Calculate Version
         id: versioning
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           TAG_VERSION=${LATEST_TAG#v}
-          TAG_MAJOR=$(echo $TAG_VERSION | cut -d. -f1)
-          TAG_MINOR=$(echo $TAG_VERSION | cut -d. -f2)
-          TAG_PATCH=$(echo $TAG_VERSION | cut -d. -f3)
-
-          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed -n 's/version: \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
-          PUB_MAJOR=$(echo $PUBSPEC_VERSION | cut -d. -f1)
-          PUB_MINOR=$(echo $PUBSPEC_VERSION | cut -d. -f2)
-          PUB_PATCH=$(echo $PUBSPEC_VERSION | cut -d. -f3)
-
-          if [ "$PUB_MAJOR" -eq "$TAG_MAJOR" ] && [ "$PUB_MINOR" -eq "$TAG_MINOR" ]; then
-            NEW_PATCH=$((TAG_PATCH + 1))
-            NEW_VERSION="$TAG_MAJOR.$TAG_MINOR.$NEW_PATCH"
-          else
-            NEW_VERSION="$PUB_MAJOR.$PUB_MINOR.$PUB_PATCH"
-          fi
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          MAJOR=$(echo $TAG_VERSION | cut -d. -f1)
+          MINOR=$(echo $TAG_VERSION | cut -d. -f2)
+          PATCH=$(echo $TAG_VERSION | cut -d. -f3)
+          NEW_PATCH=$((PATCH + 1))
+          VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          echo "Latest release tag: $LATEST_TAG"
+          echo "New version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
   test:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Merge dev (if requested)
-        if: github.event.inputs.merge_dev == 'true'
-        run: |
-          if git fetch origin dev; then
-            git merge origin/dev --no-ff -m "Merge dev"
-          fi
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -81,21 +44,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Merge dev (if requested)
-        if: github.event.inputs.merge_dev == 'true'
-        run: |
-          if git fetch origin dev; then
-            git merge origin/dev --no-ff -m "Merge dev"
-          fi
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
       - run: flutter pub get
       - name: Setup Android Signing
-        id: setup_signing
         env:
           KEY_JKS: ${{ secrets.KEY_JKS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -107,13 +61,11 @@ jobs:
           echo "storePassword=$KEY_PASSWORD" >> android/key.properties
           echo "keyPassword=$ALIAS_PASSWORD" >> android/key.properties
           echo "keyAlias=$KEY_ALIAS" >> android/key.properties
-      - name: Build Android APK
-        if: steps.setup_signing.outcome == 'success'
+      - name: Build APK
         run: |
           flutter build apk --release --build-name=${{ needs.prepare.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.prepare.outputs.VERSION }}.apk
-      - name: Upload Android Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: android-release
           path: build/app/outputs/flutter-apk/daily-inc-v${{ needs.prepare.outputs.VERSION }}.apk
@@ -123,14 +75,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Merge dev (if requested)
-        if: github.event.inputs.merge_dev == 'true'
-        run: |
-          if git fetch origin dev; then
-            git merge origin/dev --no-ff -m "Merge dev"
-          fi
       - name: Install Linux dependencies
         run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
       - uses: subosito/flutter-action@v2
@@ -142,14 +86,13 @@ jobs:
         run: |
           flutter build linux --release --build-name=${{ needs.prepare.outputs.VERSION }} --build-number=${{ github.run_number }}
           cd build/linux/x64/release/bundle
-          zip -r daily-inc-v${{ needs.prepare.outputs.VERSION }}+${{ github.run_number }}-linux.zip .
-      - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v4
+          zip -r daily-inc-v${{ needs.prepare.outputs.VERSION }}-linux.zip .
+      - uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.prepare.outputs.VERSION }}+${{ github.run_number }}-linux.zip
+          path: build/linux/x64/release/bundle/daily-inc-v${{ needs.prepare.outputs.VERSION }}-linux.zip
 
-  create-release:
+  publish-release:
     needs: [prepare, build-android, build-linux]
     runs-on: ubuntu-latest
     permissions:
@@ -157,29 +100,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
-      
-      - name: Prepare Final Release Commit
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # 1. Merge dev if requested
-          if [ "${{ github.event.inputs.merge_dev }}" == "true" ]; then
-            if git fetch origin dev; then
-              git merge origin/dev --no-ff -m "Merge dev into main for release"
-            fi
-          fi
-          
-          # 2. Update version in pubspec.yaml
-          sed -i "s/^version: .*/version: ${{ needs.prepare.outputs.VERSION }}+${{ github.run_number }}/" pubspec.yaml
-          git add pubspec.yaml
-          git commit -m "chore: bump version to v${{ needs.prepare.outputs.VERSION }}"
-          
-          # 3. Create tag locally
-          git tag v${{ needs.prepare.outputs.VERSION }}
-
       - uses: actions/download-artifact@v4
         with:
           name: android-release
@@ -188,19 +109,20 @@ jobs:
         with:
           name: linux-release
           path: artifacts/linux
-
       - name: Generate Changelog
         id: changelog
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 HEAD^ || echo "v0.0.0")
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD^ | grep -v "^- chore:" | tac)
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $LATEST_TAG..HEAD | grep -v "^- chore:" | tac)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" | tac)
+          fi
           CHANGELOG="${CHANGELOG//'%'/'%25'}"
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           name: Daily Inc v${{ needs.prepare.outputs.VERSION }}
@@ -209,18 +131,3 @@ jobs:
           files: |
             artifacts/android/*.apk
             artifacts/linux/*.zip
-
-      - name: Finalize Git State
-        if: steps.create_release.outcome == 'success'
-        run: |
-          git push origin main
-          git push origin v${{ needs.prepare.outputs.VERSION }}
-
-      - name: Sync back to dev
-        if: steps.create_release.outcome == 'success' && github.event.inputs.merge_dev == 'true'
-        run: |
-          if git fetch origin dev; then
-            git checkout dev
-            git merge origin/main --no-ff -m "Sync main back to dev after release"
-            git push origin dev
-          fi
