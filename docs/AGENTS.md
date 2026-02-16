@@ -4,6 +4,19 @@
 
 - you MUST always read this file docs/AGENTS.md and follow all instructions precisely.
 
+## Conductor Directory
+
+All project information is contained in the `conductor/` directory:
+
+| File | When Useful |
+|------|-------------|
+| `conductor/product.md` | Product vision, goals, and key features |
+| `conductor/product-guidelines.md` | Tone, visual identity, notification behavior, UX principles |
+| `conductor/tech-stack.md` | Frameworks, packages, and dependencies used |
+
+- you MUST update `conductor/tech-stack.md` if dependencies or technical architecture changes.
+- you MUST update `conductor/product.md` if features or product vision changes.
+
 ## project_map.md
 - you MUST always read docs/project_map.md to understand the context of the project.
 - you MUST always update docs/project_map.md if there are any code changes.
