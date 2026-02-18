@@ -232,6 +232,13 @@ class DailyThing {
               DateTime(entry.date.year, entry.date.month, entry.date.day);
           return entryDate == todayDate;
         });
+      case ItemType.stopwatch:
+        // For stopwatch, "undone" means no time logged today
+        return !history.any((entry) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          return entryDate == todayDate && (entry.actualValue ?? 0) > 0;
+        });
     }
   }
 

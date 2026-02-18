@@ -509,7 +509,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
         if (_selectedItemType == ItemType.check ||
             _selectedItemType == ItemType.percentage ||
-            _selectedItemType == ItemType.trend) {
+            _selectedItemType == ItemType.trend ||
+            _selectedItemType == ItemType.stopwatch) {
           startValue = 0.0; // Always start at 0%
           duration = 1; // Duration is irrelevant for check/percentage items
           endValue = 1.0; // End value is 100%
@@ -859,6 +860,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         icon = Icons.trending_up;
                         name = 'Trend';
                         break;
+                      case ItemType.stopwatch:
+                        icon = Icons.timer_outlined;
+                        name = 'Stopwatch';
+                        break;
                     }
 
                     return DropdownMenuItem(
@@ -1025,7 +1030,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 // Hide start/end values and duration for CHECK and PERCENTAGE items
                 if (_selectedItemType != ItemType.check &&
                     _selectedItemType != ItemType.percentage &&
-                    _selectedItemType != ItemType.trend) ...[
+                    _selectedItemType != ItemType.trend &&
+                    _selectedItemType != ItemType.stopwatch) ...[
                   const SizedBox(height: 16),
                   Row(
                     children: [

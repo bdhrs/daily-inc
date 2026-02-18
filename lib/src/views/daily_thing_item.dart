@@ -20,6 +20,7 @@ class DailyThingItem extends StatefulWidget {
   final Function(DailyThing) onDuplicate;
   final Future<bool> Function(DailyThing) onConfirmSnooze;
   final Function(DailyThing, {bool startInOvertime}) showFullscreenTimer;
+  final Function(DailyThing) showFullscreenStopwatch;
   final Function(DailyThing) showRepsInputDialog;
   final Function(DailyThing) showPercentageInputDialog;
   final Function(DailyThing) showTrendInputDialog;
@@ -38,6 +39,7 @@ class DailyThingItem extends StatefulWidget {
     required this.onDuplicate,
     required this.onConfirmSnooze,
     required this.showFullscreenTimer,
+    required this.showFullscreenStopwatch,
     required this.showRepsInputDialog,
     required this.showPercentageInputDialog,
     required this.showTrendInputDialog,
@@ -105,6 +107,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
       if (value == 0.0) return '→';
       if (value == 1.0) return '↗️';
       return '❓'; // Handles -999.0 and any other unknown state
+    } else if (itemType == ItemType.stopwatch) {
+      return TimeConverter.toSmartString(value);
     } else {
       return value >= 1 ? '✅' : '❌';
     }
@@ -291,6 +295,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             widget.showPercentageInputDialog(widget.item);
                           } else if (widget.item.itemType == ItemType.trend) {
                             widget.showTrendInputDialog(widget.item);
+                          } else if (widget.item.itemType ==
+                              ItemType.stopwatch) {
+                            widget.showFullscreenStopwatch(widget.item);
                           }
                         },
                         child: SizedBox(

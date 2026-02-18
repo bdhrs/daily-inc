@@ -5,6 +5,7 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/views/add_edit_daily_item_view.dart';
 import 'package:daily_inc/src/views/timer_view.dart';
+import 'package:daily_inc/src/views/stopwatch_view.dart';
 import 'package:daily_inc/src/views/daily_thing_item.dart';
 import 'package:daily_inc/src/views/reps_input_dialog.dart';
 import 'package:daily_inc/src/views/percentage_input_dialog.dart';
@@ -398,6 +399,43 @@ class _DailyThingsViewState extends State<DailyThingsView>
     _checkAndShowCompletionSnackbar();
   }
 
+  Future<void> _showFullscreenStopwatch(DailyThing item) async {
+    _log.info('Showing fullscreen stopwatch for: ${item.name}');
+
+    final prefs = await SharedPreferences.getInstance();
+    final minimalistMode = prefs.getBool('minimalistMode') ?? false;
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    final displayedItems = filterDisplayedItems(
+      allItems: _dailyThings,
+      showItemsDueToday: _showOnlyDueItems,
+      hideWhenDone: _hideWhenDone,
+      showArchivedItems: _showArchivedItems,
+    );
+
+    final currentIndex =
+        displayedItems.indexWhere((thing) => thing.id == item.id);
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StopwatchView(
+          item: item,
+          dataManager: _dataManager,
+          onExitCallback: () {
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            _refreshDisplay();
+          },
+          allItems: displayedItems,
+          currentItemIndex: currentIndex,
+          initialMinimalistMode: minimalistMode,
+        ),
+      ),
+    );
+    _checkAndShowCompletionSnackbar();
+  }
+
   void _showAboutDialog() async {
     _log.info('Showing about dialog.');
     final packageInfo = await PackageInfo.fromPlatform();
@@ -598,6 +636,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       onDuplicate: _duplicateItem,
       onConfirmSnooze: _handleSnooze,
       showFullscreenTimer: _showFullscreenTimer,
+      showFullscreenStopwatch: _showFullscreenStopwatch,
       showRepsInputDialog: _showRepsInputDialog,
       showPercentageInputDialog: _showPercentageInputDialog,
       showTrendInputDialog: _showTrendInputDialog,
@@ -949,7 +988,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       _maybeShowBackupPrompt();
     }
     _log.info('build called');
-    
+
     // Create the list of items to actually display
     final List<DailyThing> displayedItems = filterDisplayedItems(
       allItems: _dailyThings,

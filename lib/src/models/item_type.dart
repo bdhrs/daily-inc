@@ -1,1 +1,1 @@
-enum ItemType { minutes, reps, check, percentage, trend }
+enum ItemType { minutes, reps, check, percentage, trend, stopwatch }

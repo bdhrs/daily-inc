@@ -404,6 +404,7 @@ class HelpView extends StatelessWidget {
             onDuplicate: (_) {},
             onConfirmSnooze: (_) => Future.value(false),
             showFullscreenTimer: (item, {startInOvertime = false}) {},
+            showFullscreenStopwatch: (_) {},
             showRepsInputDialog: (_) {},
             showPercentageInputDialog: (_) {},
             showTrendInputDialog: (_) {},

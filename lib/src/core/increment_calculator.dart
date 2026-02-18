@@ -300,6 +300,20 @@ class IncrementCalculator {
       return -999.0; // Sentinel for "not entered"
     }
 
+    // STOPWATCH: show total time logged today (in minutes)
+    if (item.itemType == ItemType.stopwatch) {
+      final todaysEntry = item.history.where((entry) {
+        final entryDate =
+            DateTime(entry.date.year, entry.date.month, entry.date.day);
+        return entryDate == todayDate && entry.actualValue != null;
+      }).toList();
+
+      if (todaysEntry.isNotEmpty) {
+        return todaysEntry.first.actualValue!;
+      }
+      return 0.0;
+    }
+
     // Default: show today's target value
     return calculateTodayValue(item);
   }
@@ -332,6 +346,11 @@ class IncrementCalculator {
       return currentValue != -999.0;
     }
 
+    // For STOPWATCH items, done if any time is logged (> 0)
+    if (item.itemType == ItemType.stopwatch) {
+      return currentValue > 0.0;
+    }
+
     return determineStatus(item, currentValue) == Status.green;
   }
 
@@ -353,6 +372,11 @@ class IncrementCalculator {
     if (item.itemType == ItemType.trend) {
       // TREND is considered "done" if any value is entered
       return currentValue != -999.0 ? Status.green : Status.red;
+    }
+
+    // For STOPWATCH items, green if any time is logged (> 0), red if not
+    if (item.itemType == ItemType.stopwatch) {
+      return currentValue > 0.0 ? Status.green : Status.red;
     }
 
     if (increment > 0) {
