@@ -551,9 +551,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 }
 
                                 String numStr = absVal.toStringAsFixed(2);
-                                numStr =
-                                    numStr.replaceFirst(RegExp(r'\.0'), '');
-                                numStr = numStr.replaceFirst(RegExp(r'0'), '');
+                                numStr = numStr.replaceFirst('.0', '');
+                                numStr = numStr.replaceFirst('0', '');
                                 return '$sign$numStr';
                               })(),
                               style: TextStyle(
