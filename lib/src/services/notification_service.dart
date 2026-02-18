@@ -205,7 +205,7 @@ class NotificationService {
 
       final body = item.nagMessage?.isNotEmpty == true
           ? item.nagMessage!
-          : 'Time to complete your task!';
+          : "It's time to do it!";
 
       if (item.intervalType == IntervalType.byWeekdays &&
           item.intervalWeekdays.isNotEmpty) {
