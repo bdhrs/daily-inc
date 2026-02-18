@@ -37,10 +37,10 @@
 - [x] Task: Conductor - User Manual Verification 'Configure Release Build Resource Preservation' (Protocol in workflow.md)
 
 ## Phase 4: Verification & Testing
-- [ ] Task: Build and test on Android device
-    - [ ] Build Android debug APK
-    - [ ] Trigger test notification from app
-    - [ ] Verify white checkmark-in-circle icon appears in status bar
-    - [ ] Verify icon displays correctly in notification shade
-    - [ ] Build release APK and verify icon still shows
-- [ ] Task: Conductor - User Manual Verification 'Verification & Testing' (Protocol in workflow.md)
+- [x] Task: Build and test on Android device
+    - [x] Build Android debug APK
+    - [x] Trigger test notification from app
+    - [x] Verify white checkmark-in-circle icon appears in status bar
+    - [x] Verify icon displays correctly in notification shade
+    - [x] Build release APK and verify icon still shows
+- [x] Task: Conductor - User Manual Verification 'Verification & Testing' (Protocol in workflow.md)
