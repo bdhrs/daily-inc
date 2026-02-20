@@ -1,18 +1,24 @@
-import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class AssetUtils {
   static Future<List<String>> getBellSoundPaths() async {
-    final assetManifestString =
-        await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> assetManifest = json.decode(assetManifestString);
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final bellSoundPaths = <String>[];
 
-    final bellSoundPaths = <String>[];
-    for (final assetPath in assetManifest.keys) {
-      if (assetPath.startsWith('assets/bells/') && assetPath.endsWith('.mp3')) {
-        bellSoundPaths.add(assetPath);
+      final assetPaths = manifest.listAssets();
+      for (final path in assetPaths) {
+        if (path.startsWith('assets/bells/') && path.endsWith('.mp3')) {
+          bellSoundPaths.add(path);
+        }
       }
+
+      return bellSoundPaths..sort();
+    } catch (e, stackTrace) {
+      debugPrint('AssetUtils: Error loading asset manifest: $e');
+      debugPrint('AssetUtils: StackTrace: $stackTrace');
+      return [];
     }
-    return bellSoundPaths;
   }
 }
