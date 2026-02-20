@@ -987,7 +987,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Progress Tracking',
+                  'Incremental Progress',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
@@ -1076,181 +1076,32 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _durationController,
-                          enabled: () {
-                            final startValue =
-                                double.tryParse(_startValueController.text) ??
-                                    0.0;
-                            final endValue =
-                                double.tryParse(_endValueController.text) ??
-                                    0.0;
-                            return startValue != endValue;
-                          }(),
-                          decoration: InputDecoration(
-                            labelText: 'Duration (days)',
-                            hintText: '30',
-                            prefixIcon: const Icon(Icons.schedule),
-                            enabled: () {
-                              final startValue =
-                                  double.tryParse(_startValueController.text) ??
-                                      0.0;
-                              final endValue =
-                                  double.tryParse(_endValueController.text) ??
-                                      0.0;
-                              return startValue != endValue;
-                            }(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            if (value.isNotEmpty) {
-                              if (_selectedItemType == ItemType.minutes) {
-                                _updateIncrementField();
-                              } else {
-                                _updateIncrementField();
-                              }
-                            }
-                          },
-                          validator: (value) {
-                            final startValue =
-                                double.tryParse(_startValueController.text) ??
-                                    0.0;
-                            final endValue =
-                                double.tryParse(_endValueController.text) ??
-                                    0.0;
-
-                            // Skip validation if start and end values are the same
-                            if (startValue == endValue) return null;
-
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a duration';
-                            }
-                            final duration = int.tryParse(value);
-                            if (duration == null) {
-                              return 'Please enter a valid number';
-                            }
-                            if (duration <= 0) {
-                              return 'Duration must be positive';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      if (_selectedItemType == ItemType.minutes) ...[
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _incrementMinutesController,
-                                  enabled: () {
-                                    final startValue = double.tryParse(
-                                            _startValueController.text) ??
-                                        0.0;
-                                    final endValue = double.tryParse(
-                                            _endValueController.text) ??
-                                        0.0;
-                                    return startValue != endValue;
-                                  }(),
-                                  decoration: InputDecoration(
-                                    labelText: 'Incr. Min',
-                                    hintText: '0',
-                                    enabled: () {
-                                      final startValue = double.tryParse(
-                                              _startValueController.text) ??
-                                          0.0;
-                                      final endValue = double.tryParse(
-                                              _endValueController.text) ??
-                                          0.0;
-                                      return startValue != endValue;
-                                    }(),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (value) {
-                                    if (_selectedItemType == ItemType.minutes) {
-                                      _updateDurationFromIncrement();
-                                    } else {
-                                      _updateDurationFromIncrementReps();
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _incrementSecondsController,
-                                  enabled: () {
-                                    final startValue = double.tryParse(
-                                            _startValueController.text) ??
-                                        0.0;
-                                    final endValue = double.tryParse(
-                                            _endValueController.text) ??
-                                        0.0;
-                                    return startValue != endValue;
-                                  }(),
-                                  decoration: InputDecoration(
-                                    labelText: 'Sec',
-                                    hintText: '0',
-                                    enabled: () {
-                                      final startValue = double.tryParse(
-                                              _startValueController.text) ??
-                                          0.0;
-                                      final endValue = double.tryParse(
-                                              _endValueController.text) ??
-                                          0.0;
-                                      return startValue != endValue;
-                                    }(),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (value) {
-                                    if (_selectedItemType == ItemType.minutes) {
-                                      _updateDurationFromIncrement();
-                                    } else {
-                                      _updateDurationFromIncrementReps();
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else ...[
+                  if (() {
+                    final startValue =
+                        double.tryParse(_startValueController.text) ?? 0.0;
+                    final endValue =
+                        double.tryParse(_endValueController.text) ?? 0.0;
+                    return startValue != endValue;
+                  }()) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
                         Expanded(
                           child: TextFormField(
-                            controller: _incrementController,
-                            enabled: () {
-                              final startValue =
-                                  double.tryParse(_startValueController.text) ??
-                                      0.0;
-                              final endValue =
-                                  double.tryParse(_endValueController.text) ??
-                                      0.0;
-                              return startValue != endValue;
-                            }(),
+                            controller: _durationController,
                             decoration: InputDecoration(
-                              labelText: 'Increment',
-                              hintText: '0.0',
-                              enabled: () {
-                                final startValue = double.tryParse(
-                                        _startValueController.text) ??
-                                    0.0;
-                                final endValue =
-                                    double.tryParse(_endValueController.text) ??
-                                        0.0;
-                                return startValue != endValue;
-                              }(),
+                              labelText: 'Duration (days)',
+                              hintText: '30',
+                              prefixIcon: const Icon(Icons.schedule),
                             ),
                             keyboardType: TextInputType.number,
                             onChanged: (value) {
-                              if (_selectedItemType == ItemType.minutes) {
-                                _updateDurationFromIncrement();
-                              } else {
-                                _updateDurationFromIncrementReps();
+                              if (value.isNotEmpty) {
+                                if (_selectedItemType == ItemType.minutes) {
+                                  _updateIncrementField();
+                                } else {
+                                  _updateIncrementField();
+                                }
                               }
                             },
                             validator: (value) {
@@ -1265,18 +1116,105 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                               if (startValue == endValue) return null;
 
                               if (value == null || value.isEmpty) {
-                                return 'Please enter an increment';
+                                return 'Please enter a duration';
                               }
-                              if (double.tryParse(value) == null) {
+                              final duration = int.tryParse(value);
+                              if (duration == null) {
                                 return 'Please enter a valid number';
+                              }
+                              if (duration <= 0) {
+                                return 'Duration must be positive';
                               }
                               return null;
                             },
                           ),
                         ),
+                        const SizedBox(width: 16),
+                        if (_selectedItemType == ItemType.minutes) ...[
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _incrementMinutesController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Incr. Min',
+                                      hintText: '0',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) {
+                                      if (_selectedItemType ==
+                                          ItemType.minutes) {
+                                        _updateDurationFromIncrement();
+                                      } else {
+                                        _updateDurationFromIncrementReps();
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _incrementSecondsController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Sec',
+                                      hintText: '0',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) {
+                                      if (_selectedItemType ==
+                                          ItemType.minutes) {
+                                        _updateDurationFromIncrement();
+                                      } else {
+                                        _updateDurationFromIncrementReps();
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          Expanded(
+                            child: TextFormField(
+                              controller: _incrementController,
+                              decoration: InputDecoration(
+                                labelText: 'Increment',
+                                hintText: '0.0',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                if (_selectedItemType == ItemType.minutes) {
+                                  _updateDurationFromIncrement();
+                                } else {
+                                  _updateDurationFromIncrementReps();
+                                }
+                              },
+                              validator: (value) {
+                                final startValue = double.tryParse(
+                                        _startValueController.text) ??
+                                    0.0;
+                                final endValue =
+                                    double.tryParse(_endValueController.text) ??
+                                        0.0;
+
+                                // Skip validation if start and end values are the same
+                                if (startValue == endValue) return null;
+
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter an increment';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Please enter a valid number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     _buildDescriptionText(),
@@ -1286,19 +1224,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ],
                 const SizedBox(height: 24),
                 Text(
-                  'Nag Notification',
+                  'Notification',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  title: const Text('Enable Daily Nag'),
-                  subtitle: Text(
-                    _notificationEnabled
-                        ? 'Nag at ${_selectedNagTime?.format(context) ?? 'not set'}'
-                        : 'Get reminded to complete this task',
-                  ),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Enable Daily Notification'),
                   value: _notificationEnabled,
                   onChanged: (value) async {
                     if (value) {
@@ -1310,7 +1244,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           builder: (context) => AlertDialog(
                             title: const Text('Notification Permission'),
                             content: const Text(
-                              'To receive nag notifications, please grant notification permission in Settings.',
+                              'To receive notifications, please grant notification permission in Settings.',
                             ),
                             actions: [
                               TextButton(
@@ -1338,8 +1272,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                           builder: (context) => AlertDialog(
                             title: const Text('Exact Alarm Permission'),
                             content: const Text(
-                              'For precise nag timing, please enable "Alarms & reminders" in Settings.\n\n'
-                              'This ensures your nags fire at exactly the scheduled time.',
+                              'For precise notification timing, please enable "Alarms & reminders" in Settings.\n\n'
+                              'This ensures your notifications fire at exactly the scheduled time.',
                             ),
                             actions: [
                               TextButton(
@@ -1370,7 +1304,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                   TextFormField(
                     controller: _nagTimeController,
                     decoration: const InputDecoration(
-                      labelText: 'Nag Time',
+                      labelText: 'Time',
                       hintText: 'HH:mm',
                       prefixIcon: Icon(Icons.alarm),
                     ),
@@ -1391,7 +1325,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     validator: (value) {
                       if (_notificationEnabled &&
                           (value == null || value.isEmpty)) {
-                        return 'Please select a nag time';
+                        return 'Please select a time';
                       }
                       return null;
                     },
@@ -1401,7 +1335,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     controller: _nagMessageController,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
-                      labelText: 'Nag Message',
+                      labelText: 'Message',
                       hintText: 'e.g. Time to do your daily reading!',
                     ),
                   ),
@@ -1444,6 +1378,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 ],
                 if (_selectedItemType == ItemType.minutes)
                   Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 24),
                       TextFormField(
