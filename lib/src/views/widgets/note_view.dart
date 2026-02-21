@@ -123,7 +123,9 @@ class NoteViewWidget extends StatelessWidget {
             child: Text(
               isOvertime
                   ? '${_formatMinutesToMmSs(todaysTargetMinutes)} + ${_formatMinutesToMmSs(overtimeSeconds / 60.0)}'
-                  : '${_formatMinutesToMmSs(currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(todaysTargetMinutes)}',
+                  : (todaysTargetMinutes == 0
+                      ? _formatMinutesToMmSs(currentElapsedTimeInMinutes)
+                      : '${_formatMinutesToMmSs(currentElapsedTimeInMinutes)} / ${_formatMinutesToMmSs(todaysTargetMinutes)}'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14, // Reduced from 16 to save space
@@ -134,11 +136,14 @@ class NoteViewWidget extends StatelessWidget {
           ),
           const SizedBox(width: 12), // Reduced spacing
           // Right Side: Subdivision Display (only if subdivisions are enabled)
-          if (subdivisions != null && subdivisions! > 1)
+          if (subdivisions != null &&
+              subdivisions! >= (todaysTargetMinutes == 0 ? 1 : 2))
             SizedBox(
               width: 70, // Reduced width
               child: Text(
-                '$completedSubdivisions / $subdivisions',
+                todaysTargetMinutes == 0
+                    ? '${completedSubdivisions + 1}'
+                    : '${completedSubdivisions + 1} / $subdivisions',
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontSize: 14, // Reduced from 16 to save space

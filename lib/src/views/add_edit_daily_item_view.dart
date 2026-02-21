@@ -1425,18 +1425,32 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       ),
                     ],
                   ),
-                if (_selectedItemType == ItemType.minutes) ...[
+                if (_selectedItemType == ItemType.minutes ||
+                    _selectedItemType == ItemType.stopwatch) ...[
                   const SizedBox(height: 24),
+                  Text(
+                    _selectedItemType == ItemType.minutes
+                        ? 'Subdivisions'
+                        : 'Subdivision Bells',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       SizedBox(
-                        width: 120,
+                        width: 160,
                         child: TextFormField(
                           controller: _subdivisionsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Subdivisions',
-                            hintText: 'e.g. 2',
+                          decoration: InputDecoration(
+                            labelText: _selectedItemType == ItemType.minutes
+                                ? 'Subdivisions'
+                                : 'Bell every (min)',
+                            hintText: _selectedItemType == ItemType.minutes
+                                ? 'e.g. 2'
+                                : 'e.g. 5',
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -1453,7 +1467,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             if (value.isNotEmpty) {
                               final subdivisions = int.tryParse(value);
                               if (subdivisions != null &&
-                                  subdivisions > 1 &&
+                                  subdivisions >=
+                                      (_selectedItemType == ItemType.minutes
+                                          ? 2
+                                          : 1) &&
                                   _selectedSubdivisionBellSoundPath == null) {
                                 _selectedSubdivisionBellSoundPath =
                                     'assets/bells/bell3.mp3';
@@ -1466,19 +1483,21 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: Text(
-                            '${_subdivisionsController.text} x ${(_subdivisionsController.text.isNotEmpty && int.tryParse(_subdivisionsController.text) != null && int.parse(_subdivisionsController.text) > 0) ? TimeConverter.toMmSsString(_todayValue / int.parse(_subdivisionsController.text)) : '0:00'} = ${TimeConverter.toMmSsString(_todayValue)}',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                      if (_selectedItemType == ItemType.minutes)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Text(
+                              '${_subdivisionsController.text} x ${(_subdivisionsController.text.isNotEmpty && int.tryParse(_subdivisionsController.text) != null && int.parse(_subdivisionsController.text) > 0) ? TimeConverter.toMmSsString(_todayValue / int.parse(_subdivisionsController.text)) : '0:00'} = ${TimeConverter.toMmSsString(_todayValue)}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   if (int.tryParse(_subdivisionsController.text) != null &&
-                      (int.tryParse(_subdivisionsController.text) ?? 0) > 1)
+                      (int.tryParse(_subdivisionsController.text) ?? 0) >=
+                          (_selectedItemType == ItemType.minutes ? 2 : 1))
                     Column(
                       children: [
                         const SizedBox(height: 24),

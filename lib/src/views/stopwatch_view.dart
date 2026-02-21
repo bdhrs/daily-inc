@@ -333,8 +333,8 @@ class _StopwatchViewState extends State<StopwatchView> {
   void _runStopwatch() {
     final subdivisions = _currentItem.subdivisions;
 
-    if (subdivisions != null && subdivisions > 1) {
-      _preciseSubdivisionInterval = (subdivisions * 60.0) / subdivisions;
+    if (subdivisions != null && subdivisions > 0) {
+      _preciseSubdivisionInterval = subdivisions * 60.0;
 
       _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (_isPaused) {
