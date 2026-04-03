@@ -1208,10 +1208,27 @@ class _TimerViewState extends State<TimerView> {
     if (updatedItem != null) {
       _log.info('Item updated: ${updatedItem.name}');
 
-      // Update the current item reference
+      // Reinitialize timer state from updated item so all changes are reflected immediately
+      final newState = TimerStateHelper.initializeTimerState(
+        item: updatedItem,
+        startInOvertime: false,
+        commentController: _commentController,
+        currentItem: updatedItem,
+      );
+
       if (mounted) {
         setState(() {
           _currentItem = updatedItem;
+          _todaysTargetMinutes = newState['todaysTargetMinutes'] as double;
+          _remainingSeconds = newState['remainingSeconds'] as double;
+          _overtimeSeconds = newState['overtimeSeconds'] as double;
+          _isOvertime = newState['isOvertime'] as bool;
+          _hasStarted = newState['hasStarted'] as bool;
+          _completedSubdivisions = newState['completedSubdivisions'] as int;
+          _isPaused = true;
+          _preciseElapsedSeconds = 0.0;
+          _preciseSubdivisionInterval = 0.0;
+          _lastTriggeredSubdivision = -1;
         });
       }
     } else {
