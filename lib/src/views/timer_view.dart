@@ -528,7 +528,7 @@ class _TimerViewState extends State<TimerView> {
       _isPaused = true;
       _shouldFadeUI = false;
       if (_currentItem.subdivisions != null && _currentItem.subdivisions! > 1) {
-        _completedSubdivisions = _currentItem.subdivisions!;
+        _completedSubdivisions = _currentItem.subdivisions! - 1;
       }
       _log.info('Timer paused in onTimerComplete');
 
