@@ -1,4 +1,4 @@
-android:
+android-run:
     flutter run
 
 linux:
@@ -7,7 +7,7 @@ linux:
 debug:
     adb logcat | grep -i flutter
 
-build-install:
+android-install:
     flutter build apk --release
     adb install build/app/outputs/flutter-apk/app-release.apk
 
