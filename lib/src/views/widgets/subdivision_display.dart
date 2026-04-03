@@ -187,7 +187,7 @@ class SubdivisionDisplayWidget extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight,
           child: Text(
-            '${formatMinutesToMmSs(elapsedMinutesInCurrentSubdivision)} / ${formatMinutesToMmSs(totalMinutesInCurrentSubdivision)}',
+            formatMinutesToMmSs((totalMinutesInCurrentSubdivision - elapsedMinutesInCurrentSubdivision).clamp(0.0, double.infinity)),
             style: TextStyle(
               fontSize: 14, // Reduced from 16 to save vertical space
               color: ColorPalette.lightText.withAlpha((255 * 0.7).round()),
