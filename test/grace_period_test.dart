@@ -1,75 +1,118 @@
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
+import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/models/item_type.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // Create a test task: going from 10 to 20, +1 per day
-  final testTask = DailyThing(
-    name: 'Test Task',
-    itemType: ItemType.reps,
-    startDate: DateTime(2025, 8, 10), // Start date
-    startValue: 10.0,
-    duration: 10, // 10 days to go from 10 to 20
-    endValue: 20.0,
-  );
+  group('IncrementCalculator grace period behavior', () {
+    tearDown(() {
+      IncrementCalculator.setGracePeriod(1);
+    });
 
-  // Simulate history: done days 10, 11, 12, 13, then 2 missed days
-  final history = <HistoryEntry>[
-    HistoryEntry(
-      date: DateTime(2025, 8, 10),
-      targetValue: 10.0,
-      doneToday: true,
-    ),
-    HistoryEntry(
-      date: DateTime(2025, 8, 11),
-      targetValue: 11.0,
-      doneToday: true,
-    ),
-    HistoryEntry(
-      date: DateTime(2025, 8, 12),
-      targetValue: 12.0,
-      doneToday: true,
-    ),
-    HistoryEntry(
-      date: DateTime(2025, 8, 13),
-      targetValue: 13.0,
-      doneToday: true,
-    ),
-    // Two missed days (14 and 15)
-  ];
+    DailyThing buildItem({
+      required int daysSinceLastCompletion,
+      required double previousTargetValue,
+    }) {
+      final now = DateTime.now();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      final completionDate =
+          todayDate.subtract(Duration(days: daysSinceLastCompletion));
 
-  // Create a task with this history
-  final taskWithHistory = testTask.copyWith(history: history);
+      return DailyThing(
+        name: 'Grace Period Task',
+        itemType: ItemType.reps,
+        startDate: todayDate.subtract(const Duration(days: 10)),
+        startValue: 10.0,
+        duration: 10,
+        endValue: 20.0,
+        history: [
+          HistoryEntry(
+            date: completionDate,
+            targetValue: previousTargetValue,
+            doneToday: true,
+          ),
+        ],
+      );
+    }
 
-  print('Test scenario:');
-  print('Task: Going from 10 to 20, +1 per day');
-  print('Done days: Aug 10 (10), Aug 11 (11), Aug 12 (12), Aug 13 (13)');
-  print('Missed days: Aug 14, Aug 15');
-  print('Today: Aug 16 (3 days since last done)\n');
+    test('default grace period keeps value unchanged after one missed day', () {
+      final item = buildItem(
+        daysSinceLastCompletion: 2,
+        previousTargetValue: 13.0,
+      );
 
-  // Test with grace period 0
-  IncrementCalculator.setGracePeriod(0);
-  final valueWithGrace0 =
-      IncrementCalculator.calculateTodayValue(taskWithHistory);
-  print('With grace period 0: $valueWithGrace0 (penalty applied immediately)');
+      final todayValue = IncrementCalculator.calculateTodayValue(item);
 
-  // Test with grace period 1
-  IncrementCalculator.setGracePeriod(1);
-  final valueWithGrace1 =
-      IncrementCalculator.calculateTodayValue(taskWithHistory);
-  print(
-      'With grace period 1: $valueWithGrace1 (no penalty on first missed day)');
+      expect(todayValue, 13.0);
+    });
 
-  // Test with grace period 2
-  IncrementCalculator.setGracePeriod(2);
-  final valueWithGrace2 =
-      IncrementCalculator.calculateTodayValue(taskWithHistory);
-  print(
-      'With grace period 2: $valueWithGrace2 (no penalty for two missed days)');
+    test('grace period zero applies penalty on the first missed day', () {
+      IncrementCalculator.setGracePeriod(0);
+      final item = buildItem(
+        daysSinceLastCompletion: 2,
+        previousTargetValue: 13.0,
+      );
 
-  print('\nExplanation:');
-  print('- Grace period 0: Penalty applied immediately (13 - 1*2 = 11)');
-  print('- Grace period 1: No penalty for first missed day (13 + 1 = 14)');
-  print('- Grace period 2: No penalty for first two missed days (13 + 1 = 14)');
+      final todayValue = IncrementCalculator.calculateTodayValue(item);
+
+      expect(todayValue, 12.0);
+    });
+
+    test('grace period two keeps value unchanged after two missed days', () {
+      IncrementCalculator.setGracePeriod(2);
+      final item = buildItem(
+        daysSinceLastCompletion: 3,
+        previousTargetValue: 13.0,
+      );
+
+      final todayValue = IncrementCalculator.calculateTodayValue(item);
+
+      expect(todayValue, 13.0);
+    });
+
+    test(
+        'by-days items still increment on the exact interval boundary during grace period',
+        () {
+      IncrementCalculator.setGracePeriod(2);
+      final now = DateTime.now();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      final item = DailyThing(
+        name: 'Every 2 Days Task',
+        itemType: ItemType.reps,
+        startDate: todayDate.subtract(const Duration(days: 10)),
+        startValue: 10.0,
+        duration: 10,
+        endValue: 20.0,
+        intervalType: IntervalType.byDays,
+        intervalValue: 2,
+        history: [
+          HistoryEntry(
+            date: todayDate.subtract(const Duration(days: 2)),
+            targetValue: 13.0,
+            doneToday: true,
+          ),
+        ],
+      );
+
+      final todayValue = IncrementCalculator.calculateTodayValue(item);
+
+      expect(todayValue, 15.0);
+    });
+
+    test(
+        'once grace period is exceeded, penalty still uses total days since completion',
+        () {
+      IncrementCalculator.setGracePeriod(2);
+      final item = buildItem(
+        daysSinceLastCompletion: 4,
+        previousTargetValue: 13.0,
+      );
+
+      final todayValue = IncrementCalculator.calculateTodayValue(item);
+
+      expect(todayValue, 10.0);
+    });
+  });
 }
