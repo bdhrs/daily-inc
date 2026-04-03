@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
+import 'package:daily_inc/src/services/weekly_review_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,10 +21,13 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   GlobalKey<NavigatorState>? _navigatorKey;
+  Future<void> Function()? _onWeeklyReviewRequested;
 
   static const String _channelId = 'daily_nag_channel';
   static const String _channelName = 'Daily Nags';
   static const String _channelDescription = 'Reminders for your daily tasks';
+  static const int _weeklyReviewNotificationId = 991177;
+  static const String weeklyReviewPayload = 'weekly_review';
 
   Future<void> _zonedScheduleWithFallback({
     required int id,
@@ -96,6 +100,10 @@ class NotificationService {
     } catch (e, s) {
       _log.severe('Error initializing NotificationService', e, s);
     }
+  }
+
+  void setOnWeeklyReviewRequested(Future<void> Function()? callback) {
+    _onWeeklyReviewRequested = callback;
   }
 
   Future<bool> requestPermissions() async {
@@ -262,6 +270,49 @@ class NotificationService {
     }
   }
 
+  Future<void> scheduleWeeklyReviewNotification(
+    WeeklyReviewSettings settings,
+  ) async {
+    await _plugin.cancel(_weeklyReviewNotificationId);
+    if (!settings.enabled) {
+      return;
+    }
+
+    try {
+      final androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+      );
+      final notificationDetails = NotificationDetails(android: androidDetails);
+      final scheduledDate = _nextWeekdayWithTime(
+        [settings.weekday],
+        settings.time.hour,
+        settings.time.minute,
+      );
+
+      await _zonedScheduleWithFallback(
+        id: _weeklyReviewNotificationId,
+        title: 'Weekly Review',
+        body: 'Tap to review your category graphs for the week.',
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: weeklyReviewPayload,
+      );
+      _log.info('Scheduled weekly review notification for $scheduledDate');
+    } catch (e, s) {
+      _log.severe('Error scheduling weekly review notification', e, s);
+    }
+  }
+
+  Future<void> rescheduleWeeklyReviewNotification() async {
+    final settings = await WeeklyReviewSettings.load();
+    await scheduleWeeklyReviewNotification(settings);
+  }
+
   tz.TZDateTime _nextWeekdayWithTime(
     List<int> weekdays,
     int hour,
@@ -426,5 +477,11 @@ class NotificationService {
   void _onNotificationTap(NotificationResponse response) {
     _log.info('Notification tapped: ${response.payload}');
     _navigatorKey?.currentState?.popUntil((route) => route.isFirst);
+    if (response.payload == weeklyReviewPayload) {
+      final callback = _onWeeklyReviewRequested;
+      if (callback != null) {
+        callback();
+      }
+    }
   }
 }

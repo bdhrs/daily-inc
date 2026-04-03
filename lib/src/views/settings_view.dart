@@ -4,6 +4,8 @@ import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/services/backup_service.dart';
+import 'package:daily_inc/src/services/notification_service.dart';
+import 'package:daily_inc/src/services/weekly_review_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,6 +53,12 @@ class _SettingsViewState extends State<SettingsView> {
   String _templatePath = '';
   DateTime? _lastBackupTime;
 
+  // Weekly review settings
+  bool _weeklyReviewEnabled = true;
+  int _weeklyReviewWeekday = DateTime.sunday;
+  TimeOfDay _weeklyReviewTime = const TimeOfDay(hour: 19, minute: 0);
+  bool _weeklyReviewShowOnStartup = true;
+
   late TextEditingController _startOfDayMessageController;
   late TextEditingController _completionMessageController;
   late TextEditingController _backupLocationController;
@@ -75,6 +83,7 @@ class _SettingsViewState extends State<SettingsView> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final weeklyReviewSettings = await WeeklyReviewSettings.load();
 
     setState(() {
       _showStartOfDayMessage = prefs.getBool('showStartOfDayMessage') ?? false;
@@ -97,6 +106,11 @@ class _SettingsViewState extends State<SettingsView> {
       _lastBackupTime = lastBackupTimestamp != null
           ? DateTime.fromMillisecondsSinceEpoch(lastBackupTimestamp)
           : null;
+
+      _weeklyReviewEnabled = weeklyReviewSettings.enabled;
+      _weeklyReviewWeekday = weeklyReviewSettings.weekday;
+      _weeklyReviewTime = weeklyReviewSettings.time;
+      _weeklyReviewShowOnStartup = weeklyReviewSettings.showOnStartup;
     });
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
@@ -133,9 +147,53 @@ class _SettingsViewState extends State<SettingsView> {
     await prefs.setBool('backupEnabled', _backupEnabled);
     // No need to save backupLocation as it's always the default
 
+    await WeeklyReviewSettings(
+      enabled: _weeklyReviewEnabled,
+      weekday: _weeklyReviewWeekday,
+      time: _weeklyReviewTime,
+      showOnStartup: _weeklyReviewShowOnStartup,
+    ).save();
+
+    await NotificationService().rescheduleWeeklyReviewNotification();
+
     // Update the static variable in IncrementCalculator
     IncrementCalculator.setGracePeriod(_gracePeriodDays);
     _log.info('Settings saved');
+  }
+
+  String _weekdayLabel(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return 'Monday';
+      case DateTime.tuesday:
+        return 'Tuesday';
+      case DateTime.wednesday:
+        return 'Wednesday';
+      case DateTime.thursday:
+        return 'Thursday';
+      case DateTime.friday:
+        return 'Friday';
+      case DateTime.saturday:
+        return 'Saturday';
+      case DateTime.sunday:
+      default:
+        return 'Sunday';
+    }
+  }
+
+  Future<void> _pickWeeklyReviewTime() async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: _weeklyReviewTime,
+    );
+    if (selected == null) {
+      return;
+    }
+
+    setState(() {
+      _weeklyReviewTime = selected;
+    });
+    await _saveSettings();
   }
 
   Future<void> _createManualBackup() async {
@@ -441,6 +499,75 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
           const SizedBox(height: 16),
+
+          const Divider(),
+          const SizedBox(height: 16),
+
+          const Text(
+            'Weekly Review',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Enable weekly review reminder'),
+            subtitle: const Text(
+              'Open a weekly category graph review on your chosen schedule',
+            ),
+            value: _weeklyReviewEnabled,
+            onChanged: (value) {
+              setState(() {
+                _weeklyReviewEnabled = value;
+              });
+              _saveSettings();
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Review day'),
+            subtitle: Text(_weekdayLabel(_weeklyReviewWeekday)),
+            trailing: DropdownButton<int>(
+              value: _weeklyReviewWeekday,
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _weeklyReviewWeekday = value;
+                });
+                _saveSettings();
+              },
+              items: List.generate(7, (index) {
+                final weekday = DateTime.monday + index;
+                return DropdownMenuItem<int>(
+                  value: weekday,
+                  child: Text(_weekdayLabel(weekday)),
+                );
+              }),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Review time'),
+            subtitle: Text(_weeklyReviewTime.format(context)),
+            trailing: TextButton(
+              onPressed: _pickWeeklyReviewTime,
+              child: const Text('Change'),
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Show review on startup'),
+            subtitle: const Text(
+              'Open the weekly review page when the app launches',
+            ),
+            value: _weeklyReviewShowOnStartup,
+            onChanged: (value) {
+              setState(() {
+                _weeklyReviewShowOnStartup = value;
+              });
+              _saveSettings();
+            },
+          ),
 
           const Divider(),
           const SizedBox(height: 16),

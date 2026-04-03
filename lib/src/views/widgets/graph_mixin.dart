@@ -67,6 +67,11 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
   /// Gets the currently selected time range.
   TimeRange get selectedTimeRange => _selectedTimeRange;
 
+  /// Sets a non-persistent time range for screens that lock the range.
+  void setFixedTimeRange(TimeRange range) {
+    _selectedTimeRange = range;
+  }
+
   /// Builds the dropdown menu for selecting the time range.
   Widget buildTimeRangeDropdown(VoidCallback onTimeRangeChanged) {
     return DropdownButtonHideUnderline(

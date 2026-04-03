@@ -11,7 +11,15 @@ import 'package:intl/intl.dart';
 
 class CategoryGraphView extends StatefulWidget {
   final List<DailyThing> dailyThings;
-  const CategoryGraphView({super.key, required this.dailyThings});
+  final String title;
+  final TimeRange? initialTimeRange;
+
+  const CategoryGraphView({
+    super.key,
+    required this.dailyThings,
+    this.title = 'Progress by Category',
+    this.initialTimeRange,
+  });
 
   @override
   State<CategoryGraphView> createState() => _CategoryGraphViewState();
@@ -40,6 +48,11 @@ class _CategoryGraphViewState extends State<CategoryGraphView>
   void initState() {
     super.initState();
     _log.info('initState called for category graph view');
+    if (widget.initialTimeRange != null) {
+      setFixedTimeRange(widget.initialTimeRange!);
+      _processCategoryData();
+      return;
+    }
     _loadTimeRangePreference();
   }
 
@@ -203,7 +216,7 @@ class _CategoryGraphViewState extends State<CategoryGraphView>
     _log.info('build called');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Progress by Category'),
+        title: Text(widget.title),
         actions: [
           buildTimeRangeDropdown(_onTimeRangeChanged),
           const SizedBox(width: 16),
