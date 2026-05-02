@@ -491,99 +491,130 @@ class _DailyThingItemState extends State<DailyThingItem> {
                     // Second row: Category followed by start/end values and increment (for non-CHECK items)
                     const SizedBox(height: 8),
                     if ((widget.item.category).isNotEmpty) ...[
-                      // Center the category and start/end values and increment on the same line
                       if (widget.item.itemType != ItemType.check)
                         Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Category
-                            Text(
-                              widget.item.category,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface,
+                            // Left: category
+                            Expanded(
+                              child: Text(
+                                widget.item.category,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true,
                             ),
-                            const SizedBox(width: 4),
-                            // Start value
-                            Text(
-                              _formatValue(
-                                  widget.item.startValue, widget.item.itemType),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              softWrap: false,
+                            // Centre: start → end + increment
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _formatValue(widget.item.startValue,
+                                      widget.item.itemType),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.trending_flat, size: 18),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatValue(widget.item.endValue,
+                                      widget.item.itemType),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  (() {
+                                    final inc = widget.item.increment;
+                                    final sign = inc < 0 ? '-' : '+';
+                                    final absVal = inc.abs();
+                                    if (widget.item.itemType ==
+                                        ItemType.minutes) {
+                                      return '$sign${TimeConverter.toMmSsString(absVal)}';
+                                    }
+                                    String numStr = absVal.toStringAsFixed(2);
+                                    numStr = numStr.replaceFirst('.0', '');
+                                    numStr = numStr.replaceFirst('0', '');
+                                    return '$sign$numStr';
+                                  })(),
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.trending_flat, size: 18),
-                            const SizedBox(width: 4),
-                            // End value
-                            Text(
-                              _formatValue(
-                                  widget.item.endValue, widget.item.itemType),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              softWrap: false,
-                            ),
-                            const SizedBox(width: 8),
-                            // Increment
-                            Text(
-                              (() {
-                                final inc = widget.item.increment;
-                                final sign = inc < 0 ? '-' : '+';
-                                final absVal = inc.abs();
-
-                                if (widget.item.itemType == ItemType.minutes) {
-                                  final formatted =
-                                      TimeConverter.toMmSsString(absVal);
-                                  return '$sign$formatted';
-                                }
-
-                                String numStr = absVal.toStringAsFixed(2);
-                                numStr = numStr.replaceFirst('.0', '');
-                                numStr = numStr.replaceFirst('0', '');
-                                return '$sign$numStr';
-                              })(),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 13,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              softWrap: false,
+                            // Right: alarm icon + nag time
+                            Expanded(
+                              child: widget.item.nagTime != null
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const Icon(Icons.alarm,
+                                            size: 13, color: Colors.amber),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${widget.item.nagTime!.hour.toString().padLeft(2, '0')}:${widget.item.nagTime!.minute.toString().padLeft(2, '0')}',
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.amber),
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         )
                       else
-                        // Just category for CHECK items (centered)
+                        // CHECK items: left=category, centre=empty, right=alarm
                         Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              widget.item.category,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface,
+                            Expanded(
+                              child: Text(
+                                widget.item.category,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true,
+                            ),
+                            const Spacer(),
+                            Expanded(
+                              child: widget.item.nagTime != null
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const Icon(Icons.alarm,
+                                            size: 13, color: Colors.amber),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${widget.item.nagTime!.hour.toString().padLeft(2, '0')}:${widget.item.nagTime!.minute.toString().padLeft(2, '0')}',
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.amber),
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         ),
                     ],
+
                   ],
                 ),
               ),
