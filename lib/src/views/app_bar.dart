@@ -1,18 +1,12 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
-import 'package:daily_inc/src/services/update_service.dart';
-import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:daily_inc/src/views/category_graph_view.dart';
 import 'package:daily_inc/src/views/help_view.dart';
 import 'package:daily_inc/src/views/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
-import 'dart:io';
-import 'dart:async';
 
 class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final bool updateAvailable;
   final VoidCallback onOpenAddDailyItemPopup;
   final VoidCallback onRefreshHideWhenDoneSetting;
   final VoidCallback onRefreshDisplay;
@@ -34,7 +28,6 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   const DailyThingsAppBar({
     super.key,
-    required this.updateAvailable,
     required this.onOpenAddDailyItemPopup,
     required this.onRefreshHideWhenDoneSetting,
     required this.onRefreshDisplay,
@@ -63,125 +56,11 @@ class DailyThingsAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
-  final UpdateService _updateService = UpdateService();
-
-  Future<void> _handleUpdate() async {
-    if (Platform.isAndroid) {
-      final hasPermission = await _updateService.hasInstallPermission();
-      if (!hasPermission) {
-        if (mounted) {
-          final bool? proceed = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Update Permission Required'),
-              content: const Text(
-                  'To install updates automatically, Daily Inc needs permission to install unknown apps. \n\nWould you like to grant this permission now, or manually download from the Release Page?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Release Page'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Grant Permission'),
-                ),
-              ],
-            ),
-          );
-
-          if (proceed == true) {
-            final granted = await _updateService.requestInstallPermission();
-            if (granted) {
-              _startAutomatedUpdate();
-            } else {
-              _openReleasePage();
-            }
-          } else if (proceed == false) {
-            _openReleasePage();
-          }
-        }
-      } else {
-        _startAutomatedUpdate();
-      }
-    } else {
-      _openReleasePage();
-    }
-  }
-
-  void _startAutomatedUpdate() async {
-    File? apkFile;
-    try {
-      if (!mounted) return;
-
-      apkFile = await _downloadWithProgress();
-      if (apkFile != null) {
-        if (mounted) Navigator.of(context).pop(); // Close progress dialog
-        await _updateService.installUpdate(apkFile);
-      }
-    } catch (e) {
-      widget.log.severe('Automated update failed', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Installation failed: $e')),
-        );
-        _openReleasePage(); // Fallback to manual if automated fails
-      }
-    } finally {
-      if (apkFile != null) {
-        // Give the system installer time to read the file before deleting it
-        Future.delayed(const Duration(seconds: 30)).then((_) async {
-          await _updateService.deleteDownloadedUpdate(apkFile!);
-        });
-      }
-    }
-  }
-
-  void _openReleasePage() async {
-    try {
-      final url = await _updateService.getReleasePageUrl();
-      if (url != null) {
-        if (await launchUrl(Uri.parse(url),
-            mode: LaunchMode.externalApplication)) {
-          widget.log.info('Opened Release Page: $url');
-        } else {
-          throw Exception('Could not launch browser');
-        }
-      }
-    } catch (e) {
-      widget.log.severe('Failed to open Release Page', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open browser: $e')),
-        );
-      }
-    }
-  }
-
-  Future<File?> _downloadWithProgress() async {
-    return showDialog<File>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _DownloadProgressDialog(
-        updateService: _updateService,
-        log: widget.log,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
       title: const Text('Daily Inc'),
       actions: [
-        if (widget.updateAvailable)
-          IconButton(
-            tooltip: 'Download the latest release',
-            icon: const Icon(
-              Icons.download,
-              color: ColorPalette.primaryBlue,
-            ),
-            onPressed: _handleUpdate,
-          ),
         IconButton(
           tooltip: widget.hideWhenDone
               ? 'Show Completed Items'
@@ -372,81 +251,6 @@ class _DailyThingsAppBarState extends State<DailyThingsAppBar> {
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DownloadProgressDialog extends StatefulWidget {
-  final UpdateService updateService;
-  final Logger log;
-
-  const _DownloadProgressDialog({
-    required this.updateService,
-    required this.log,
-  });
-
-  @override
-  State<_DownloadProgressDialog> createState() =>
-      _DownloadProgressDialogState();
-}
-
-class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
-  double _progress = 0;
-  bool _cancelled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startDownload();
-  }
-
-  void _startDownload() {
-    widget.updateService
-        .downloadUpdate(
-      onProgress: (count, total) {
-        if (total > 0 && !_cancelled && mounted) {
-          setState(() {
-            _progress = count / total;
-          });
-        }
-      },
-    )
-        .then((file) {
-      if (!_cancelled && mounted) {
-        Navigator.of(context).pop(file);
-      }
-    }).catchError((e) {
-      if (!_cancelled && mounted) {
-        widget.log.severe('Download error', e);
-        Navigator.of(context).pop(null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Downloading Update'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          LinearProgressIndicator(value: _progress > 0 ? _progress : null),
-          const SizedBox(height: 16),
-          Text('${(_progress * 100).toStringAsFixed(1)}%'),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            _cancelled = true;
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
         ),
       ],
     );

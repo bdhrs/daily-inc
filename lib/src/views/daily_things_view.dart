@@ -14,9 +14,11 @@ import 'package:daily_inc/src/views/app_bar.dart';
 import 'package:daily_inc/src/views/widgets/pulse.dart';
 import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
 import 'package:daily_inc/src/views/widgets/filtering_helpers.dart';
+import 'package:daily_inc/src/services/app_update_controller.dart';
 import 'package:daily_inc/src/services/update_service.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:logging/logging.dart';
@@ -33,7 +35,7 @@ class DailyThingsView extends StatefulWidget {
 
 class _DailyThingsViewState extends State<DailyThingsView>
     with WidgetsBindingObserver {
-  final UpdateService _updateService = UpdateService();
+  final _updateController = AppUpdateController();
   final DataManager _dataManager = DataManager();
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
@@ -44,7 +46,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
   bool _hideWhenDone = false;
   bool _motivationCheckedThisBuild = false;
   bool _allExpanded = false;
-  bool _updateAvailable = false;
   bool _backupPromptCheckedThisBuild = false;
   bool _showArchivedItems =
       false; // New state variable for showing archived items
@@ -79,16 +80,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
         _loadData();
       });
     });
-    _updateService.isUpdateAvailable().then((isAvailable) {
-      _log.info('Update check completed. Result: $isAvailable');
-      if (isAvailable && mounted) {
-        _log.info('Update is available. Setting state to show indicator.');
-        setState(() {
-          _updateAvailable = true;
-        });
-      } else {
-        _log.info('No update available or view is not mounted.');
-      }
+    _updateController.addListener(_onUpdateStateChange);
+    SharedPreferences.getInstance().then((prefs) {
+      if (!mounted) return;
+      _updateController.checkAndMaybeDownload(
+        wifiOnly: prefs.getBool('wifiOnlyUpdates') ?? false,
+      );
     });
   }
 
@@ -121,8 +118,29 @@ class _DailyThingsViewState extends State<DailyThingsView>
     });
   }
 
+  void _onUpdateStateChange() {
+    final state = _updateController.state;
+    if (state.status == AppUpdateStatus.readyToInstall && state.apkPath != null) {
+      final tag = state.latestTag ?? '';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Installing update $tag…'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      final updateService = UpdateService();
+      updateService.installUpdate(File(state.apkPath!)).catchError((e) {
+        _log.warning('Auto-install failed: $e');
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _updateController.removeListener(_onUpdateStateChange);
+    _updateController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _log.info('dispose called');
     _isExpanded.clear();
@@ -1013,7 +1031,6 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     return Scaffold(
       appBar: DailyThingsAppBar(
-        updateAvailable: _updateAvailable,
         onOpenAddDailyItemPopup: _openAddDailyItemPopup,
         onRefreshHideWhenDoneSetting: _refreshHideWhenDoneSetting,
         onRefreshDisplay: _refreshDisplay,

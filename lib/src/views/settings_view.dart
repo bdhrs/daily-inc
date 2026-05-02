@@ -53,6 +53,8 @@ class _SettingsViewState extends State<SettingsView> {
   String _templatePath = '';
   DateTime? _lastBackupTime;
 
+  bool _wifiOnlyUpdates = false;
+
   // Weekly review settings
   bool _weeklyReviewEnabled = true;
   int _weeklyReviewWeekday = DateTime.sunday;
@@ -107,6 +109,7 @@ class _SettingsViewState extends State<SettingsView> {
           ? DateTime.fromMillisecondsSinceEpoch(lastBackupTimestamp)
           : null;
 
+      _wifiOnlyUpdates = prefs.getBool('wifiOnlyUpdates') ?? false;
       _weeklyReviewEnabled = weeklyReviewSettings.enabled;
       _weeklyReviewWeekday = weeklyReviewSettings.weekday;
       _weeklyReviewTime = weeklyReviewSettings.time;
@@ -142,6 +145,8 @@ class _SettingsViewState extends State<SettingsView> {
         'dimScreenMode', _dimScreenMode); // Save dim screen mode
     await prefs.setBool(
         'minimalistMode', _minimalistMode); // Save minimalist mode
+
+    await prefs.setBool('wifiOnlyUpdates', _wifiOnlyUpdates);
 
     // Save backup settings
     await prefs.setBool('backupEnabled', _backupEnabled);
@@ -564,6 +569,27 @@ class _SettingsViewState extends State<SettingsView> {
             onChanged: (value) {
               setState(() {
                 _weeklyReviewShowOnStartup = value;
+              });
+              _saveSettings();
+            },
+          ),
+
+          const Divider(),
+          const SizedBox(height: 16),
+
+          // App Updates Section
+          const Text(
+            'App Updates',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Wi-Fi only updates'),
+            subtitle: const Text('Only auto-download updates on Wi-Fi'),
+            value: _wifiOnlyUpdates,
+            onChanged: (value) {
+              setState(() {
+                _wifiOnlyUpdates = value;
               });
               _saveSettings();
             },

@@ -6,6 +6,7 @@ import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/views/daily_things_view.dart';
 import 'package:daily_inc/src/views/category_graph_view.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/services/foreground_download_service.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/services/weekly_review_service.dart';
 import 'package:daily_inc/src/theme/app_theme.dart';
@@ -21,6 +22,7 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     try {
       WidgetsFlutterBinding.ensureInitialized();
+      ForegroundDownloadService.initialize();
 
       // Setup logging
       Logger.root.level = Level.ALL;
