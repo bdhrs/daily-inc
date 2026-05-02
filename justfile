@@ -11,6 +11,10 @@ android-install:
     flutter build apk --release
     adb install build/app/outputs/flutter-apk/app-release.apk
 
+android-install-debug:
+    flutter build apk --debug
+    adb install build/app/outputs/flutter-apk/app-debug.apk
+
 version:
     @CURRENT_FULL=$(grep "^version: " pubspec.yaml | cut -d " " -f 2) && \
     CURRENT_VER=$(echo $CURRENT_FULL | cut -d "+" -f 1) && \
