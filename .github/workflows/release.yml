@@ -9,7 +9,7 @@ jobs:
     outputs:
       VERSION: ${{ steps.versioning.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - name: Calculate Version
@@ -30,7 +30,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -43,7 +43,7 @@ jobs:
     needs: [prepare, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -74,7 +74,7 @@ jobs:
     needs: [prepare, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
       - name: Install Linux dependencies
         run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
       - uses: subosito/flutter-action@v2
@@ -98,7 +98,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
