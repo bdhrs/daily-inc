@@ -34,6 +34,9 @@ class TimerView extends StatefulWidget {
   final String?
       nextTaskName; // Name of the next task (for display when navigating)
   final bool initialMinimalistMode;
+  final bool autoAdvance;
+  final bool autoStart;
+  final bool chainAutoStart;
 
   const TimerView({
     super.key,
@@ -45,6 +48,9 @@ class TimerView extends StatefulWidget {
     this.currentItemIndex,
     this.nextTaskName,
     this.initialMinimalistMode = false,
+    this.autoAdvance = false,
+    this.autoStart = false,
+    this.chainAutoStart = false,
   });
 
   @override
@@ -72,6 +78,7 @@ class _TimerViewState extends State<TimerView> {
 
   // Next task navigation variables
   bool _showNextTaskArrow = false;
+  bool _isNavigatingNext = false;
   bool _showNextTaskName = false;
   String _nextTaskName = '';
   Timer? _nextTaskNameTimer;
@@ -327,6 +334,12 @@ class _TimerViewState extends State<TimerView> {
     _commentFocusNode.addListener(() {
       setState(() {});
     });
+
+    if (widget.autoStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isPaused) _toggleTimer();
+      });
+    }
   }
 
   @override
@@ -547,6 +560,11 @@ class _TimerViewState extends State<TimerView> {
     // Perform heavy operations (file I/O) after the bell has started playing
     await _saveProgress();
     _log.info('Progress saved in onTimerComplete');
+
+    if (widget.autoAdvance) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) _navigateToNextTask();
+    }
   }
 
   Future<void> _exitTimerDisplay() async {
@@ -743,6 +761,8 @@ class _TimerViewState extends State<TimerView> {
 
   /// Navigates to the next task or exits to main UI
   void _navigateToNextTask() async {
+    if (_isNavigatingNext) return;
+    _isNavigatingNext = true;
     final nextTask = TimerStateHelper.findNextUndoneTask(
       allItems: widget.allItems,
       currentItemIndex: widget.currentItemIndex,
@@ -784,8 +804,11 @@ class _TimerViewState extends State<TimerView> {
               onExitCallback: widget.onExitCallback,
               allItems: widget.allItems,
               currentItemIndex: widget.allItems?.indexOf(nextTask),
-              nextTaskName: nextTaskName, // Pass the next task name
+              nextTaskName: nextTaskName,
               initialMinimalistMode: _minimalistMode,
+              autoAdvance: widget.autoAdvance,
+              autoStart: widget.chainAutoStart,
+              chainAutoStart: widget.chainAutoStart,
             ),
           ),
         );

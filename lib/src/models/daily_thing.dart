@@ -32,6 +32,9 @@ class DailyThing {
   final String? notes;
   final bool isArchived; // New field for archive status
   final bool notificationEnabled; // Enable nag notifications
+  final List<String> childIds; // Ordered child item IDs for sequence type
+  final bool autoPlay; // Sequence: auto-advance to next item when timer ends
+  final bool autoStart; // Sequence: auto-start next timer when chain-navigated (requires autoPlay)
 
   DailyThing({
     String? id,
@@ -56,6 +59,9 @@ class DailyThing {
     this.notes,
     this.isArchived = false, // Default to false
     this.notificationEnabled = false, // Default to false
+    this.childIds = const [],
+    this.autoPlay = false,
+    this.autoStart = false,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -239,6 +245,8 @@ class DailyThing {
               DateTime(entry.date.year, entry.date.month, entry.date.day);
           return entryDate == todayDate && (entry.actualValue ?? 0) > 0;
         });
+      case ItemType.sequence:
+        return false;
     }
   }
 
@@ -267,6 +275,9 @@ class DailyThing {
       'notes': notes,
       'isArchived': isArchived, // Add to toJson
       'notificationEnabled': notificationEnabled,
+      'childIds': childIds,
+      'autoPlay': autoPlay,
+      'autoStart': autoStart,
     };
   }
 
@@ -327,6 +338,9 @@ class DailyThing {
           json['isArchived'] as bool? ?? false, // Add to fromJson with default
       notificationEnabled:
           json['notificationEnabled'] as bool? ?? false, // Backwards compatible
+      childIds: List<String>.from(json['childIds'] as List? ?? []),
+      autoPlay: json['autoPlay'] as bool? ?? false,
+      autoStart: json['autoStart'] as bool? ?? false,
     );
   }
 
@@ -353,6 +367,9 @@ class DailyThing {
     String? notes,
     bool? isArchived, // Add to copyWith
     bool? notificationEnabled,
+    List<String>? childIds,
+    bool? autoPlay,
+    bool? autoStart,
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -378,6 +395,9 @@ class DailyThing {
       notes: notes ?? this.notes,
       isArchived: isArchived ?? this.isArchived, // Use new field
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      childIds: childIds ?? this.childIds,
+      autoPlay: autoPlay ?? this.autoPlay,
+      autoStart: autoStart ?? this.autoStart,
     );
   }
 }

@@ -21,12 +21,14 @@ class AddEditDailyItemView extends StatefulWidget {
   final DataManager dataManager;
   final DailyThing? dailyThing;
   final VoidCallback onSubmitCallback;
+  final String? initialParentSequenceId;
 
   const AddEditDailyItemView({
     super.key,
     required this.dataManager,
     this.dailyThing,
     required this.onSubmitCallback,
+    this.initialParentSequenceId,
   });
 
   @override
@@ -67,6 +69,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   bool _isUpdatingFromIncrement = false;
   double _todayValue = 0.0;
   bool _notificationEnabled = false;
+  List<String> _childIds = [];
+  List<DailyThing> _allDailyThings = [];
+  bool _autoPlay = false;
+  bool _autoStart = false;
+  String? _parentSequenceId;
 
   // Template parameter tracking for automatic template saving
   DailyThing? _originalTemplate;
@@ -146,6 +153,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _subdivisionsController = TextEditingController(
           text: existingItem.subdivisions?.toString() ?? '1');
       _selectedSubdivisionBellSoundPath = existingItem.subdivisionBellSoundPath;
+      if (existingItem.itemType == ItemType.sequence) {
+        _childIds = List<String>.from(existingItem.childIds);
+        _autoPlay = existingItem.autoPlay;
+        _autoStart = existingItem.autoStart;
+      }
     } else {
       _log.info('Creating new item');
       _selectedBellSoundPath =
@@ -168,6 +180,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
 
     // Load unique categories for autofill (type-specific)
     _loadUniqueCategoriesForSelectedType();
+    // Load all items for sequence management
+    _loadAllDailyThings();
 
     // Store original template parameters for change detection
     _storeOriginalTemplate();
@@ -473,6 +487,118 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _isUpdatingFromIncrement = false;
   }
 
+  Future<void> _loadAllDailyThings() async {
+    try {
+      final items = await widget.dataManager.loadData();
+      if (!mounted) return;
+      String? parentSeqId;
+      if (widget.dailyThing != null &&
+          widget.dailyThing!.itemType != ItemType.sequence) {
+        for (final item in items) {
+          if (item.itemType == ItemType.sequence &&
+              item.childIds.contains(widget.dailyThing!.id)) {
+            parentSeqId = item.id;
+            break;
+          }
+        }
+      }
+      setState(() {
+        _allDailyThings = items;
+        _parentSequenceId = parentSeqId ?? widget.initialParentSequenceId;
+      });
+    } catch (e) {
+      _log.warning('Could not load all items: $e');
+    }
+  }
+
+  Future<void> _showAddChildrenDialog() async {
+    final available = _allDailyThings
+        .where((item) =>
+            item.itemType != ItemType.sequence &&
+            !_childIds.contains(item.id) &&
+            !item.isArchived)
+        .toList();
+
+    if (available.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No items available to add')),
+        );
+      }
+      return;
+    }
+
+    final selected = <String>{};
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Add Items'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: available
+                  .map((item) => CheckboxListTile(
+                        title: Text(
+                            '${item.icon != null ? '${item.icon} ' : ''}${item.name}'),
+                        value: selected.contains(item.id),
+                        onChanged: (v) => setDialogState(() {
+                          if (v == true) {
+                            selected.add(item.id);
+                          } else {
+                            selected.remove(item.id);
+                          }
+                        }),
+                      ))
+                  .toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() => _childIds.addAll(selected));
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildSequenceChildrenWidgets() {
+    if (_childIds.isEmpty) {
+      return [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text('No items yet.',
+              style: TextStyle(color: Colors.grey)),
+        ),
+      ];
+    }
+    return _childIds.map((id) {
+      final item = _allDailyThings.cast<DailyThing?>().firstWhere(
+            (i) => i?.id == id,
+            orElse: () => null,
+          );
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+            '${item?.icon != null ? '${item!.icon} ' : ''}${item?.name ?? id}'),
+        trailing: IconButton(
+          icon: const Icon(Icons.remove_circle_outline),
+          onPressed: () => setState(() => _childIds.remove(id)),
+        ),
+      );
+    }).toList();
+  }
+
   /// Load unique categories for autofill for the currently selected type
   Future<void> _loadUniqueCategoriesForSelectedType() async {
     _log.info('Loading unique categories for type $_selectedItemType');
@@ -510,10 +636,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         if (_selectedItemType == ItemType.check ||
             _selectedItemType == ItemType.percentage ||
             _selectedItemType == ItemType.trend ||
-            _selectedItemType == ItemType.stopwatch) {
-          startValue = 0.0; // Always start at 0%
-          duration = 1; // Duration is irrelevant for check/percentage items
-          endValue = 1.0; // End value is 100%
+            _selectedItemType == ItemType.stopwatch ||
+            _selectedItemType == ItemType.sequence) {
+          startValue = 0.0;
+          duration = 1;
+          endValue = 0.0;
         } else {
           startValue = double.parse(_startValueController.text.trim());
           duration = int.parse(_durationController.text.trim());
@@ -608,6 +735,11 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               ? _notesController.text
               : widget.dailyThing?.notes, // Preserve notes
           notificationEnabled: _notificationEnabled,
+          childIds: _selectedItemType == ItemType.sequence
+              ? _childIds
+              : (widget.dailyThing?.childIds ?? const []),
+          autoPlay: _selectedItemType == ItemType.sequence ? _autoPlay : false,
+          autoStart: _selectedItemType == ItemType.sequence ? _autoStart : false,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -617,6 +749,51 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         } else {
           _log.info('Updating existing item');
           await widget.dataManager.updateDailyThing(newItem);
+        }
+
+        // Sweep newly claimed children from any other sequence
+        if (_selectedItemType == ItemType.sequence && _childIds.isNotEmpty) {
+          for (final other in _allDailyThings) {
+            if (other.itemType == ItemType.sequence &&
+                other.id != newItem.id) {
+              final stolen =
+                  other.childIds.where(_childIds.contains).toList();
+              if (stolen.isNotEmpty) {
+                await widget.dataManager.updateDailyThing(other.copyWith(
+                  childIds: other.childIds
+                      .where((id) => !_childIds.contains(id))
+                      .toList(),
+                ));
+              }
+            }
+          }
+        }
+
+        // Update sequence membership for non-sequence items
+        if (_selectedItemType != ItemType.sequence) {
+          final prevSeq = _allDailyThings.cast<DailyThing?>().firstWhere(
+                (s) =>
+                    s?.itemType == ItemType.sequence &&
+                    s!.childIds.contains(newItem.id),
+                orElse: () => null,
+              );
+          if (prevSeq != null && prevSeq.id != _parentSequenceId) {
+            await widget.dataManager.updateDailyThing(prevSeq.copyWith(
+              childIds:
+                  prevSeq.childIds.where((id) => id != newItem.id).toList(),
+            ));
+          }
+          if (_parentSequenceId != null) {
+            final newSeq = _allDailyThings.cast<DailyThing?>().firstWhere(
+                  (s) => s?.id == _parentSequenceId,
+                  orElse: () => null,
+                );
+            if (newSeq != null && !newSeq.childIds.contains(newItem.id)) {
+              await widget.dataManager.updateDailyThing(newSeq.copyWith(
+                childIds: [...newSeq.childIds, newItem.id],
+              ));
+            }
+          }
         }
 
         // Schedule or cancel notification
@@ -835,11 +1012,23 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ItemType>(
                   initialValue: _selectedItemType,
-                  items: ItemType.values.map((type) {
+                  items: const [
+                    ItemType.sequence,
+                    ItemType.minutes,
+                    ItemType.stopwatch,
+                    ItemType.reps,
+                    ItemType.check,
+                    ItemType.percentage,
+                    ItemType.trend,
+                  ].map((type) {
                     IconData icon;
                     String name;
 
                     switch (type) {
+                      case ItemType.sequence:
+                        icon = Icons.playlist_play;
+                        name = 'Sequence';
+                        break;
                       case ItemType.minutes:
                         icon = Icons.timer;
                         name = 'Countdown Timer';
@@ -985,6 +1174,88 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     _updateIncrementField();
                   },
                 ),
+                if (_selectedItemType == ItemType.sequence) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Sequence Options',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Auto-advance'),
+                    subtitle: const Text(
+                        'Automatically play next item when the timer ends'),
+                    value: _autoPlay,
+                    onChanged: (v) => setState(() {
+                      _autoPlay = v;
+                      if (!v) _autoStart = false;
+                    }),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'Auto-start',
+                      style: TextStyle(
+                        color: _autoPlay ? null : Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Start the next timer automatically without a tap',
+                      style: TextStyle(
+                        color: _autoPlay ? null : Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
+                      ),
+                    ),
+                    value: _autoStart,
+                    onChanged: _autoPlay ? (v) => setState(() => _autoStart = v) : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Items', style: theme.textTheme.titleSmall),
+                  ..._buildSequenceChildrenWidgets(),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _showAddChildrenDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Items'),
+                  ),
+                ],
+                if (_selectedItemType != ItemType.sequence &&
+                    _allDailyThings.any(
+                        (i) => i.itemType == ItemType.sequence)) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Sequence',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String?>(
+                    key: ValueKey(_parentSequenceId),
+                    initialValue: _parentSequenceId,
+                    decoration: const InputDecoration(
+                      labelText: 'Belongs to sequence',
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('None'),
+                      ),
+                      ..._allDailyThings
+                          .where((i) => i.itemType == ItemType.sequence)
+                          .map((seq) => DropdownMenuItem<String?>(
+                                value: seq.id,
+                                child: Text(
+                                    '${seq.icon != null ? '${seq.icon} ' : ''}${seq.name}'),
+                              )),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _parentSequenceId = value),
+                  ),
+                ],
+                if (_selectedItemType != ItemType.sequence) ...[
                 const SizedBox(height: 24),
                 Text(
                   'Incremental Progress',
@@ -1221,6 +1492,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     style: descriptionTextStyle,
                     textAlign: TextAlign.left,
                   ),
+                ],
                 ],
                 const SizedBox(height: 24),
                 Text(

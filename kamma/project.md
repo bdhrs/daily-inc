@@ -1,7 +1,7 @@
 # Project Guide — Daily Inc
 
 ## What It Is and Why
-A habit tracker that helps users keep their habits and develop them incrementally over time. The app supports four activity types — MINUTES, REPS, CHECK, and PERCENTAGE — with targets that auto-adjust based on consistency.
+A habit tracker that helps users keep their habits and develop them incrementally over time. The app supports seven activity types — SEQUENCE, MINUTES, STOPWATCH, REPS, CHECK, PERCENTAGE, and TREND — with targets that auto-adjust based on consistency. Sequences chain ordered child items into a single play session with optional auto-advance and auto-start.
 
 ## One-Off or Ongoing
 Ongoing. The project continuously evolves with new features and improvements.
@@ -12,7 +12,7 @@ Ongoing. The project continuously evolves with new features and improvements.
 - iOS (planned, later)
 
 ## How You'll Know It Worked
-- All four activity types work correctly
+- All activity types work correctly
 - Smart notifications fire only on due days
 - Data persists reliably across sessions
 - Progression logic increments targets correctly

@@ -1,4 +1,6 @@
+import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
@@ -40,6 +42,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   List<DailyThing> _dailyThings = [];
   final Map<String, bool> _isExpanded = {};
   final Map<String, GlobalKey> _expansionTileKeys = {};
+  final Map<String, bool> _sequenceExpanded = {};
   final _log = Logger('DailyThingsView');
   bool _hasShownCompletionSnackbar = false;
   bool _showOnlyDueItems = true;
@@ -67,6 +70,94 @@ class _DailyThingsViewState extends State<DailyThingsView>
     setState(() {
       _showArchivedItems = !_showArchivedItems;
     });
+  }
+
+  void _toggleSequenceCollapse(String id) async {
+    final newValue = !(_sequenceExpanded[id] ?? true);
+    setState(() {
+      _sequenceExpanded[id] = newValue;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seq_expanded_$id', newValue);
+  }
+
+  List<({DailyThing item, DailyThing? parent})> _buildDisplayRows(
+      List<DailyThing> displayedItems) {
+    final rows = <({DailyThing item, DailyThing? parent})>[];
+    for (final item in displayedItems) {
+      rows.add((item: item, parent: null));
+      if (item.itemType == ItemType.sequence &&
+          _sequenceExpanded[item.id] != false) {
+        final children = SequenceHelper.resolveChildren(item, _dailyThings);
+        if (children.isEmpty) {
+          // Invisible placeholder — gives the drag engine a drop target so
+          // items can be dragged into an empty sequence.
+          rows.add((
+            item: DailyThing(
+              id: '__seq_placeholder_${item.id}',
+              name: '',
+              itemType: ItemType.check,
+              startDate: DateTime(2000),
+              startValue: 0,
+              duration: 1,
+              endValue: 0,
+            ),
+            parent: item,
+          ));
+        } else {
+          for (final child in children) {
+            rows.add((item: child, parent: item));
+          }
+        }
+      }
+    }
+    return rows;
+  }
+
+  Future<void> _showSequenceTimer(DailyThing seq) async {
+    final children = SequenceHelper.resolveChildren(seq, _dailyThings);
+    final firstUndoneIndex =
+        children.indexWhere((child) => child.isUndoneToday);
+
+    if (firstUndoneIndex == -1) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All items complete')),
+        );
+      }
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final minimalistMode = prefs.getBool('minimalistMode') ?? false;
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    if (!mounted) return;
+
+    final firstUndone = children[firstUndoneIndex];
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TimerView(
+          item: firstUndone,
+          dataManager: _dataManager,
+          onExitCallback: () {
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            _refreshDisplay();
+          },
+          allItems: seq.autoPlay ? children : [firstUndone],
+          currentItemIndex: seq.autoPlay ? firstUndoneIndex : 0,
+          initialMinimalistMode: minimalistMode,
+          autoAdvance: seq.autoPlay,
+          autoStart: seq.autoPlay && seq.autoStart,
+          chainAutoStart: seq.autoPlay && seq.autoStart,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _checkAndShowCompletionSnackbar();
   }
 
   @override
@@ -153,8 +244,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
     final items = await _dataManager.loadData();
     if (items.isNotEmpty) {
       _log.info('Loaded ${items.length} items.');
+      final prefs = await SharedPreferences.getInstance();
+      final Map<String, bool> seqExpanded = {};
+      for (final item in items) {
+        if (item.itemType == ItemType.sequence) {
+          seqExpanded[item.id] =
+              prefs.getBool('seq_expanded_${item.id}') ?? true;
+        }
+      }
       setState(() {
         _dailyThings = items;
+        _sequenceExpanded.addAll(seqExpanded);
       });
       // Check if all tasks are already completed when app loads
       _checkAndShowCompletionSnackbar();
@@ -237,9 +337,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
       await NotificationService().cancelNotification(item.id);
       await _dataManager.deleteDailyThing(item);
 
+      final swept = SequenceHelper.sweepDeletedItem(item.id, _dailyThings);
+      for (final updated in swept) {
+        if (updated.id != item.id) {
+          await _dataManager.updateDailyThing(updated);
+        }
+      }
+
       // Update the state directly to immediately remove the item from the display
       setState(() {
-        _dailyThings.removeWhere((thing) => thing.id == item.id);
+        _dailyThings =
+            swept.where((thing) => thing.id != item.id).toList();
       });
 
       // Also refresh from storage to ensure consistency
@@ -288,6 +396,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
         bellSoundPath: item.bellSoundPath,
         subdivisions: item.subdivisions,
         subdivisionBellSoundPath: item.subdivisionBellSoundPath,
+        childIds: const [],
       );
 
       // Instead of just adding to the end, insert right after the original item
@@ -641,7 +750,10 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   Widget _buildItemRow(
-      DailyThing item, int index, int nextUndoneIndex, bool allTasksCompleted) {
+      ({DailyThing item, DailyThing? parent}) row,
+      bool isNextUndone,
+      bool allTasksCompleted) {
+    final item = row.item;
     // Initialize expansion state if not already set - always start closed
     _isExpanded.putIfAbsent(item.id, () => false);
 
@@ -659,17 +771,27 @@ class _DailyThingsViewState extends State<DailyThingsView>
       showPercentageInputDialog: _showPercentageInputDialog,
       showTrendInputDialog: _showTrendInputDialog,
       checkAndShowCompletionSnackbar: _checkAndShowCompletionSnackbar,
-      isExpanded: _isExpanded[item.id] ?? false,
+      isExpanded: item.itemType == ItemType.sequence
+          ? (_sequenceExpanded[item.id] ?? true)
+          : (_isExpanded[item.id] ?? false),
       onExpansionChanged: (expanded) {
         setState(() {
           _isExpanded[item.id] = expanded;
         });
       },
       onItemChanged: _refreshDisplay,
+      isSequenceChild: row.parent != null,
+      allItems: _dailyThings,
+      onPlaySequence: item.itemType == ItemType.sequence
+          ? () => _showSequenceTimer(item)
+          : null,
+      onToggleCollapse: item.itemType == ItemType.sequence
+          ? () => _toggleSequenceCollapse(item.id)
+          : null,
     );
 
     // Wrap with Pulse animation if this is the next undone item
-    if (index == nextUndoneIndex) {
+    if (isNextUndone && row.parent == null) {
       // Derive the exact Card radius from theme when available
       final ShapeBorder? cardShape = Theme.of(context).cardTheme.shape;
       final BorderRadiusGeometry? radius =
@@ -788,10 +910,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   void _checkAndShowCompletionSnackbar() {
-    // Exclude archived items from the completion check
+    // Exclude archived items and sequence children from the completion check
     bool allCompleted = _dailyThings
-        .where((item) => !item.isArchived)
-        .every((item) => item.completedForToday);
+        .where((item) =>
+            !item.isArchived &&
+            SequenceHelper.findParentSequence(item, _dailyThings) == null)
+        .every((item) {
+      if (item.itemType == ItemType.sequence) {
+        return SequenceHelper.sequenceCompletedForToday(item, _dailyThings);
+      }
+      return item.completedForToday;
+    });
 
     if (allCompleted && !_hasShownCompletionSnackbar) {
       _log.info('All tasks completed, showing celebration snackbar.');
@@ -1024,10 +1153,22 @@ class _DailyThingsViewState extends State<DailyThingsView>
     );
 
     final allTasksCompleted = relevantForCompletion.isNotEmpty &&
-        relevantForCompletion.every((item) => item.completedForToday);
+        relevantForCompletion.every((item) {
+          if (item.itemType == ItemType.sequence) {
+            return SequenceHelper.sequenceCompletedForToday(
+                item, _dailyThings);
+          }
+          return item.completedForToday;
+        });
 
-    // Compute next undone index for the displayed list (after filters)
+    // Build the flat sequence-aware row list
+    final rows = _buildDisplayRows(displayedItems);
+
+    // Compute next undone item for pulse highlighting
     final nextUndoneIndex = _getNextUndoneIndex(displayedItems);
+    final nextUndoneItem = nextUndoneIndex < displayedItems.length
+        ? displayedItems[nextUndoneIndex]
+        : null;
 
     return Scaffold(
       appBar: DailyThingsAppBar(
@@ -1054,23 +1195,65 @@ class _DailyThingsViewState extends State<DailyThingsView>
         child: ReorderableListView(
           onReorder: (oldIndex, newIndex) {
             setState(() {
-              _dailyThings = reorderDailyThings(
+              _dailyThings = reorderWithSequences(
+                rows: rows,
                 fullList: _dailyThings,
-                displayedItems: displayedItems,
                 oldIndex: oldIndex,
                 newIndex: newIndex,
               );
             });
             _dataManager.saveData(_dailyThings);
           },
-          children: displayedItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
+          children: rows.asMap().entries.map((entry) {
+            final row = entry.value;
+            final isNextUndone = nextUndoneItem != null &&
+                row.item.id == nextUndoneItem.id &&
+                row.parent == null;
+            if (row.item.id.startsWith('__seq_placeholder_')) {
+              final seqId = row.parent!.id;
+              return GestureDetector(
+                key: ValueKey('${row.item.id}_${row.parent?.id ?? 'top'}'),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddEditDailyItemView(
+                      dataManager: _dataManager,
+                      initialParentSequenceId: seqId,
+                      onSubmitCallback: _refreshDisplay,
+                    ),
+                  ),
+                ),
+                child: Container(
+                  height: 48,
+                  margin: const EdgeInsets.only(left: 16, top: 3, bottom: 3),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withAlpha(80),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Drop items here or tap to add',
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withAlpha(120),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
             return Padding(
-              key: ValueKey(item.id),
+              key: ValueKey('${row.item.id}_${row.parent?.id ?? 'top'}'),
               padding: const EdgeInsets.symmetric(vertical: 3.0),
-              child: _buildItemRow(
-                  item, index, nextUndoneIndex, allTasksCompleted),
+              child: _buildItemRow(row, isNextUndone, allTasksCompleted),
             );
           }).toList(),
           padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),

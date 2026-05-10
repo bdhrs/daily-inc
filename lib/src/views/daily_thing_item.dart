@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
@@ -29,6 +30,10 @@ class DailyThingItem extends StatefulWidget {
   final Function(bool) onExpansionChanged;
   final bool allTasksCompleted;
   final VoidCallback? onItemChanged;
+  final bool isSequenceChild;
+  final List<DailyThing> allItems;
+  final VoidCallback? onPlaySequence;
+  final VoidCallback? onToggleCollapse;
 
   const DailyThingItem({
     super.key,
@@ -48,6 +53,10 @@ class DailyThingItem extends StatefulWidget {
     required this.onExpansionChanged,
     required this.allTasksCompleted,
     this.onItemChanged,
+    this.isSequenceChild = false,
+    this.allItems = const [],
+    this.onPlaySequence,
+    this.onToggleCollapse,
   });
 
   @override
@@ -141,12 +150,15 @@ class _DailyThingItemState extends State<DailyThingItem> {
     widget.onItemChanged?.call();
   }
 
+  // No longer used — sequence title is now rendered inline in the shared title Row.
+
   @override
   Widget build(BuildContext context) {
     final isSnoozedToday = widget.item.isSnoozedForToday;
     final isLiterallyDoneToday = widget.item.hasBeenDoneLiterallyToday;
+    final isSequenceTile = widget.item.itemType == ItemType.sequence;
 
-    return Dismissible(
+    Widget card = Dismissible(
       key: ValueKey(widget.item.id),
       direction: DismissDirection.startToEnd,
       confirmDismiss: (direction) {
@@ -159,15 +171,20 @@ class _DailyThingItemState extends State<DailyThingItem> {
         child: const Icon(Icons.snooze, color: Colors.white),
       ),
       child: Card(
-        color: isSnoozedToday ? Colors.blueGrey[700] : null,
+        color: isSnoozedToday
+            ? Colors.blueGrey[700]
+            : widget.isSequenceChild
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : null,
         margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
           child: ExpansionTile(
             key: ValueKey(
                 '${widget.item.id}_${widget.isExpanded}_${widget.item.completedForToday}_$isSnoozedToday'),
-            initiallyExpanded: widget.isExpanded,
-            onExpansionChanged: widget.onExpansionChanged,
+            initiallyExpanded: isSequenceTile ? false : widget.isExpanded,
+            onExpansionChanged:
+                isSequenceTile ? (_) {} : widget.onExpansionChanged,
             trailing: const SizedBox.shrink(),
             tilePadding: EdgeInsets.zero,
             childrenPadding: EdgeInsets.zero,
@@ -175,7 +192,17 @@ class _DailyThingItemState extends State<DailyThingItem> {
                 const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
             shape:
                 const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            title: Padding(
+            title: Builder(builder: (context) {
+              final seqChildren = isSequenceTile
+                  ? SequenceHelper.resolveChildren(widget.item, widget.allItems)
+                  : const <DailyThing>[];
+              final seqDone = isSequenceTile &&
+                  SequenceHelper.sequenceCompletedForToday(
+                      widget.item, widget.allItems);
+              final effectiveDone =
+                  isSequenceTile ? seqDone : isLiterallyDoneToday;
+
+              return Padding(
               padding: EdgeInsets.zero,
               child: Row(
                 children: [
@@ -183,33 +210,44 @@ class _DailyThingItemState extends State<DailyThingItem> {
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(
-                          isSnoozedToday
-                              ? Icons.snooze
-                              : isLiterallyDoneToday
-                                  ? Icons.check
-                                  : (_hasIncompleteProgress(widget.item)
-                                      ? Icons.brightness_2_outlined
-                                      : Icons.close),
-                          color: isSnoozedToday
-                              ? Colors.white70
-                              : isLiterallyDoneToday
-                                  ? Theme.of(context).colorScheme.primary
-                                  : _hasIncompleteProgress(widget.item)
-                                      ? ColorPalette.partialYellow
-                                      : widget.allTasksCompleted
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          : Theme.of(context).colorScheme.error,
-                        ),
+                        if (isSequenceTile)
+                          GestureDetector(
+                            onTap: widget.onToggleCollapse,
+                            child: Icon(
+                              widget.isExpanded
+                                  ? Icons.expand_more
+                                  : Icons.chevron_right,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                        else
+                          Icon(
+                            isSnoozedToday
+                                ? Icons.snooze
+                                : effectiveDone
+                                    ? Icons.check
+                                    : (_hasIncompleteProgress(widget.item)
+                                        ? Icons.brightness_2_outlined
+                                        : Icons.close),
+                            color: isSnoozedToday
+                                ? Colors.white70
+                                : effectiveDone
+                                    ? Theme.of(context).colorScheme.primary
+                                    : _hasIncompleteProgress(widget.item)
+                                        ? ColorPalette.partialYellow
+                                        : widget.allTasksCompleted
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context).colorScheme.error,
+                          ),
                         const SizedBox(width: 12),
                         if (widget.item.icon != null)
                           Text(
                             widget.item.icon!,
                             style: TextStyle(
                               fontSize: 16,
-                              color: widget.allTasksCompleted
+                              color: effectiveDone
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(context).colorScheme.onSurface,
                             ),
@@ -222,7 +260,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             widget.item.name,
                             style: TextStyle(
                               fontSize: 16,
-                              color: widget.allTasksCompleted
+                              color: effectiveDone
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(context).colorScheme.onSurface,
                             ),
@@ -233,130 +271,176 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       ],
                     ),
                   ),
-                  // Right-aligned timer chip
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () async {
-                          if (widget.item.itemType == ItemType.minutes) {
-                            if (isLiterallyDoneToday) {
-                              widget.showFullscreenTimer(widget.item,
-                                  startInOvertime: true);
-                            } else {
-                              widget.showFullscreenTimer(widget.item);
-                            }
-                          } else if (widget.item.itemType == ItemType.check) {
-                            final today = DateTime.now();
-                            final todayDate =
-                                DateTime(today.year, today.month, today.day);
-                            final existingEntry = widget.item.todayHistoryEntry;
-
-                            final wasDone = existingEntry?.doneToday ?? false;
-                            final newDone = !wasDone;
-                            final newValue = newDone ? 1.0 : 0.0;
-
-                            final newEntry = HistoryEntry(
-                              date: todayDate,
-                              targetValue: newValue,
-                              doneToday: newDone,
-                            );
-
-                            final history =
-                                List<HistoryEntry>.from(widget.item.history);
-                            if (existingEntry != null) {
-                              final index = history.indexOf(existingEntry);
-                              history[index] = newEntry;
-                            } else {
-                              history.add(newEntry);
-                            }
-
-                            if (mounted) {
-                              setState(() {});
-                            }
-
-                            await widget.dataManager.updateDailyThing(
-                                widget.item.copyWith(history: history));
-
-                            // Handle notification for completed check item
-                            if (newDone && widget.item.notificationEnabled) {
-                              await NotificationService().onItemCompleted(
-                                widget.item.copyWith(history: history),
-                              );
-                            }
-
-                            widget.onItemChanged?.call();
-                            widget.checkAndShowCompletionSnackbar();
-                          } else if (widget.item.itemType == ItemType.reps) {
-                            widget.showRepsInputDialog(widget.item);
-                          } else if (widget.item.itemType ==
-                              ItemType.percentage) {
-                            widget.showPercentageInputDialog(widget.item);
-                          } else if (widget.item.itemType == ItemType.trend) {
-                            widget.showTrendInputDialog(widget.item);
-                          } else if (widget.item.itemType ==
-                              ItemType.stopwatch) {
-                            widget.showFullscreenStopwatch(widget.item);
-                          }
-                        },
-                        child: SizedBox(
-                          width: 90.0,
-                          height: 35.0,
-                          child: Container(
-                            margin: EdgeInsets.zero,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: isLiterallyDoneToday
-                                  ? Theme.of(context).colorScheme.primary
-                                  : _hasIncompleteProgress(widget.item)
-                                      ? ColorPalette.partialYellow
-                                      : (widget.item.itemType ==
-                                                  ItemType.percentage ||
-                                              widget.item.itemType ==
-                                                  ItemType.trend)
-                                          ? ColorPalette.warningOrange
-                                          : Theme.of(context).colorScheme.error,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                  color: Colors.transparent, width: 0),
-                            ),
-                            alignment: Alignment.center,
-                            child: widget.item.itemType == ItemType.check
-                                ? Icon(
-                                    isLiterallyDoneToday
-                                        ? Icons.check
-                                        : (widget.item.hasBeenDoneLiterallyToday
-                                            ? Icons.brightness_2_outlined
-                                            : Icons.close),
-                                    color: _hasIncompleteProgress(widget.item)
-                                        ? ColorPalette.onPartialYellow
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                    size: 16.0,
-                                  )
-                                : Text(
-                                    _formatValue(widget.item.displayValue,
-                                        widget.item.itemType),
-                                    style: TextStyle(
-                                        color:
-                                            _hasIncompleteProgress(widget.item)
-                                                ? ColorPalette.onPartialYellow
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                        fontSize: 14),
-                                  ),
+                  // Right chip — sequence or normal item
+                  if (isSequenceTile)
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: widget.onPlaySequence,
+                      child: SizedBox(
+                        width: 90.0,
+                        height: 35.0,
+                        child: Container(
+                          margin: EdgeInsets.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: seqDone
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.error,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.transparent, width: 0),
                           ),
+                          alignment: Alignment.center,
+                          child: seqDone
+                              ? Icon(
+                                  Icons.check,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  size: 16.0,
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${seqChildren.length}',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.play_arrow,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
-                      const SizedBox(width: 0),
-                    ],
-                  )
+                    )
+                  else
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () async {
+                            if (widget.item.itemType == ItemType.minutes) {
+                              if (isLiterallyDoneToday) {
+                                widget.showFullscreenTimer(widget.item,
+                                    startInOvertime: true);
+                              } else {
+                                widget.showFullscreenTimer(widget.item);
+                              }
+                            } else if (widget.item.itemType == ItemType.check) {
+                              final today = DateTime.now();
+                              final todayDate =
+                                  DateTime(today.year, today.month, today.day);
+                              final existingEntry = widget.item.todayHistoryEntry;
+
+                              final wasDone = existingEntry?.doneToday ?? false;
+                              final newDone = !wasDone;
+                              final newValue = newDone ? 1.0 : 0.0;
+
+                              final newEntry = HistoryEntry(
+                                date: todayDate,
+                                targetValue: newValue,
+                                doneToday: newDone,
+                              );
+
+                              final history =
+                                  List<HistoryEntry>.from(widget.item.history);
+                              if (existingEntry != null) {
+                                final index = history.indexOf(existingEntry);
+                                history[index] = newEntry;
+                              } else {
+                                history.add(newEntry);
+                              }
+
+                              if (mounted) {
+                                setState(() {});
+                              }
+
+                              await widget.dataManager.updateDailyThing(
+                                  widget.item.copyWith(history: history));
+
+                              if (newDone && widget.item.notificationEnabled) {
+                                await NotificationService().onItemCompleted(
+                                  widget.item.copyWith(history: history),
+                                );
+                              }
+
+                              widget.onItemChanged?.call();
+                              widget.checkAndShowCompletionSnackbar();
+                            } else if (widget.item.itemType == ItemType.reps) {
+                              widget.showRepsInputDialog(widget.item);
+                            } else if (widget.item.itemType ==
+                                ItemType.percentage) {
+                              widget.showPercentageInputDialog(widget.item);
+                            } else if (widget.item.itemType == ItemType.trend) {
+                              widget.showTrendInputDialog(widget.item);
+                            } else if (widget.item.itemType ==
+                                ItemType.stopwatch) {
+                              widget.showFullscreenStopwatch(widget.item);
+                            }
+                          },
+                          child: SizedBox(
+                            width: 90.0,
+                            height: 35.0,
+                            child: Container(
+                              margin: EdgeInsets.zero,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isLiterallyDoneToday
+                                    ? Theme.of(context).colorScheme.primary
+                                    : _hasIncompleteProgress(widget.item)
+                                        ? ColorPalette.partialYellow
+                                        : (widget.item.itemType ==
+                                                    ItemType.percentage ||
+                                                widget.item.itemType ==
+                                                    ItemType.trend)
+                                            ? ColorPalette.warningOrange
+                                            : Theme.of(context).colorScheme.error,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                    color: Colors.transparent, width: 0),
+                              ),
+                              alignment: Alignment.center,
+                              child: widget.item.itemType == ItemType.check
+                                  ? Icon(
+                                      isLiterallyDoneToday
+                                          ? Icons.check
+                                          : (widget.item.hasBeenDoneLiterallyToday
+                                              ? Icons.brightness_2_outlined
+                                              : Icons.close),
+                                      color: _hasIncompleteProgress(widget.item)
+                                          ? ColorPalette.onPartialYellow
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                      size: 16.0,
+                                    )
+                                  : Text(
+                                      _formatValue(widget.item.displayValue,
+                                          widget.item.itemType),
+                                      style: TextStyle(
+                                          color: _hasIncompleteProgress(widget.item)
+                                              ? ColorPalette.onPartialYellow
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
+                                          fontSize: 14),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 0),
+                      ],
+                    ),
                 ],
               ),
-            ),
+            );
+            }),
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(8.0, 6.0, 8.0, 6.0),
@@ -623,5 +707,24 @@ class _DailyThingItemState extends State<DailyThingItem> {
         ),
       ),
     );
+
+    if (widget.isSequenceChild) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 4,
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: card,
+        ),
+      );
+    }
+
+    return card;
   }
 }

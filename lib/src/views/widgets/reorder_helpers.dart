@@ -1,4 +1,5 @@
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 
 /// Computes the new ordering of the full list of DailyThing based on a reorder
 /// interaction within a filtered (displayed) view.
@@ -70,6 +71,92 @@ List<DailyThing> reorderDailyThings({
   // Clamp to valid range and insert
   toFull = toFull.clamp(0, result.length);
   result.insert(toFull, removed);
+
+  return result;
+}
+
+/// Reorders a flat sequence-aware row list and returns an updated fullList.
+///
+/// The row list carries optional parent metadata so that dragging a top-level
+/// item into a sequence block, or a child out of one, is handled correctly.
+List<DailyThing> reorderWithSequences({
+  required List<({DailyThing item, DailyThing? parent})> rows,
+  required List<DailyThing> fullList,
+  required int oldIndex,
+  required int newIndex,
+}) {
+  final originalNewIndex = newIndex;
+  if (newIndex > oldIndex) newIndex -= 1;
+
+  if (oldIndex < 0 ||
+      oldIndex >= rows.length ||
+      newIndex < 0 ||
+      newIndex >= rows.length) {
+    return List<DailyThing>.from(fullList);
+  }
+
+  final sourceRow = rows[oldIndex];
+  final destRow = rows[newIndex];
+  final movingItem = sourceRow.item;
+  final sourceParent = sourceRow.parent;
+  final destParent = destRow.parent;
+
+  List<DailyThing> result = List<DailyThing>.from(fullList);
+
+  DailyThing updateItem(DailyThing item, DailyThing updated) =>
+      item.id == updated.id ? updated : item;
+
+  if (sourceParent == null && destParent == null) {
+    // Top-level to top-level: standard reorder using displayed row positions
+    final displayedItems = rows.map((r) => r.item).toList();
+    return reorderDailyThings(
+      fullList: fullList,
+      displayedItems: displayedItems,
+      oldIndex: oldIndex,
+      newIndex: originalNewIndex,
+    );
+  } else if (sourceParent == null && destParent != null) {
+    // Top-level item dragged into a sequence: remove from top-level position,
+    // append to dest sequence's childIds
+    if (destParent.itemType == ItemType.sequence &&
+        !destParent.childIds.contains(movingItem.id)) {
+      final updatedSeq = destParent.copyWith(
+        childIds: [...destParent.childIds, movingItem.id],
+      );
+      result = result.map((item) => updateItem(item, updatedSeq)).toList();
+    }
+  } else if (sourceParent != null && destParent?.id == sourceParent.id) {
+    // Child reordered within the same sequence
+    final seq = result.firstWhere((item) => item.id == sourceParent.id);
+    final ids = List<String>.from(seq.childIds);
+    final srcIdx = ids.indexOf(movingItem.id);
+    if (srcIdx != -1) {
+      ids.removeAt(srcIdx);
+      final dstIdx = seq.childIds.indexOf(destRow.item.id);
+      ids.insert(dstIdx.clamp(0, ids.length), movingItem.id);
+      final updatedSeq = seq.copyWith(childIds: ids);
+      result = result.map((item) => updateItem(item, updatedSeq)).toList();
+    }
+  } else {
+    // Child moved out of its sequence (to top-level or different sequence)
+    if (sourceParent != null) {
+      final srcSeq = result.firstWhere((item) => item.id == sourceParent.id);
+      final updatedSrc = srcSeq.copyWith(
+        childIds:
+            srcSeq.childIds.where((id) => id != movingItem.id).toList(),
+      );
+      result = result.map((item) => updateItem(item, updatedSrc)).toList();
+    }
+    if (destParent != null && destParent.itemType == ItemType.sequence) {
+      final dstSeq = result.firstWhere((item) => item.id == destParent.id);
+      if (!dstSeq.childIds.contains(movingItem.id)) {
+        final updatedDst = dstSeq.copyWith(
+          childIds: [...dstSeq.childIds, movingItem.id],
+        );
+        result = result.map((item) => updateItem(item, updatedDst)).toList();
+      }
+    }
+  }
 
   return result;
 }
