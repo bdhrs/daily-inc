@@ -769,9 +769,13 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           }
         }
 
-        // Update sequence membership for non-sequence items
+        // Update sequence membership for non-sequence items.
+        // Re-load from storage to avoid races with the in-memory cache,
+        // which may be empty if submit happens before _loadAllDailyThings
+        // completes.
         if (_selectedItemType != ItemType.sequence) {
-          final prevSeq = _allDailyThings.cast<DailyThing?>().firstWhere(
+          final freshItems = await widget.dataManager.loadData();
+          final prevSeq = freshItems.cast<DailyThing?>().firstWhere(
                 (s) =>
                     s?.itemType == ItemType.sequence &&
                     s!.childIds.contains(newItem.id),
@@ -784,7 +788,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
             ));
           }
           if (_parentSequenceId != null) {
-            final newSeq = _allDailyThings.cast<DailyThing?>().firstWhere(
+            final newSeq = freshItems.cast<DailyThing?>().firstWhere(
                   (s) => s?.id == _parentSequenceId,
                   orElse: () => null,
                 );

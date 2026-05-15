@@ -641,7 +641,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             ),
                             // Right: alarm icon + nag time
                             Expanded(
-                              child: widget.item.nagTime != null
+                              child: (widget.item.notificationEnabled &&
+                                      widget.item.nagTime != null)
                                   ? Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
@@ -678,7 +679,8 @@ class _DailyThingItemState extends State<DailyThingItem> {
                             ),
                             const Spacer(),
                             Expanded(
-                              child: widget.item.nagTime != null
+                              child: (widget.item.notificationEnabled &&
+                                      widget.item.nagTime != null)
                                   ? Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [

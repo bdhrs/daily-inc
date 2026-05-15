@@ -376,39 +376,57 @@ class _DailyThingsViewState extends State<DailyThingsView>
       final today = DateTime.now();
       final startDate = DateTime(today.year, today.month, today.day);
 
-      final duplicatedItem = DailyThing(
-        name: item.name,
-        itemType: item.itemType,
-        startDate:
-            startDate, // Use today's date instead of the original item's start date
-        startValue: item.startValue,
-        duration: item.duration,
-        endValue: item.endValue,
-        icon: item.icon,
-        nagTime: item.nagTime,
-        nagMessage: item.nagMessage,
-        history: [], // Empty history as required
-        category: item.category,
-        isPaused: item.isPaused,
-        intervalType: item.intervalType,
-        intervalValue: item.intervalValue,
-        intervalWeekdays: item.intervalWeekdays,
-        bellSoundPath: item.bellSoundPath,
-        subdivisions: item.subdivisions,
-        subdivisionBellSoundPath: item.subdivisionBellSoundPath,
-        childIds: const [],
-      );
-
-      // Instead of just adding to the end, insert right after the original item
       final items = await _dataManager.loadData();
+
+      DailyThing cloneAsNew(DailyThing src, {List<String> childIds = const []}) {
+        return DailyThing(
+          name: src.name,
+          itemType: src.itemType,
+          startDate: startDate,
+          startValue: src.startValue,
+          duration: src.duration,
+          endValue: src.endValue,
+          icon: src.icon,
+          nagTime: src.nagTime,
+          nagMessage: src.nagMessage,
+          history: const [],
+          category: src.category,
+          isPaused: src.isPaused,
+          intervalType: src.intervalType,
+          intervalValue: src.intervalValue,
+          intervalWeekdays: src.intervalWeekdays,
+          bellSoundPath: src.bellSoundPath,
+          subdivisions: src.subdivisions,
+          subdivisionBellSoundPath: src.subdivisionBellSoundPath,
+          notes: src.notes,
+          notificationEnabled: src.notificationEnabled,
+          childIds: childIds,
+          autoPlay: src.autoPlay,
+          autoStart: src.autoStart,
+        );
+      }
+
       final originalIndex =
           items.indexWhere((element) => element.id == item.id);
-      if (originalIndex != -1) {
-        // Insert right after the original item
-        items.insert(originalIndex + 1, duplicatedItem);
+
+      if (item.itemType == ItemType.sequence) {
+        final children = SequenceHelper.resolveChildren(item, items);
+        final clonedChildren =
+            children.map((c) => cloneAsNew(c)).toList(growable: false);
+        final duplicatedSequence = cloneAsNew(
+          item,
+          childIds: clonedChildren.map((c) => c.id).toList(),
+        );
+        final insertAt =
+            originalIndex == -1 ? items.length : originalIndex + 1;
+        items.insertAll(insertAt, [duplicatedSequence, ...clonedChildren]);
       } else {
-        // If original item not found, add to the end (fallback)
-        items.add(duplicatedItem);
+        final duplicatedItem = cloneAsNew(item);
+        if (originalIndex != -1) {
+          items.insert(originalIndex + 1, duplicatedItem);
+        } else {
+          items.add(duplicatedItem);
+        }
       }
       await _dataManager.saveData(items);
       _refreshDisplay();

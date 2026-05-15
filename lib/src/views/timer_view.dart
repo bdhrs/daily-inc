@@ -79,6 +79,9 @@ class _TimerViewState extends State<TimerView> {
   // Next task navigation variables
   bool _showNextTaskArrow = false;
   bool _isNavigatingNext = false;
+  // True when this view is being replaced by a chained TimerView; used to
+  // skip wakelock disable in dispose so the screen stays on across the chain.
+  bool _isChainingNext = false;
   bool _showNextTaskName = false;
   String _nextTaskName = '';
   Timer? _nextTaskNameTimer;
@@ -336,8 +339,14 @@ class _TimerViewState extends State<TimerView> {
     });
 
     if (widget.autoStart) {
+      // Re-enable wakelock immediately so the screen does not blank
+      // during the pushReplacement transition between chained items.
+      WakelockPlus.enable();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _isPaused) _toggleTimer();
+        if (!mounted) return;
+        // Mark the chained item starting with the same bell as completion.
+        _audioHelper.playTimerCompleteNotification(_currentItem);
+        if (_isPaused) _toggleTimer();
       });
     }
   }
@@ -352,7 +361,9 @@ class _TimerViewState extends State<TimerView> {
     _audioHelper.dispose();
     _nextTaskNameTimer?.cancel();
     _fadeUITimer?.cancel();
-    WakelockPlus.disable();
+    if (!_isChainingNext) {
+      WakelockPlus.disable();
+    }
     super.dispose();
   }
 
@@ -553,16 +564,19 @@ class _TimerViewState extends State<TimerView> {
     _fadeUITimer?.cancel();
     _fadeUITimer = null;
 
-    // Disable wakelock immediately
-    WakelockPlus.disable();
-    _log.info('Wakelock disabled.');
+    // When auto-advancing, keep wakelock on through the dwell and hand off
+    // to the next TimerView (or _exitTimerDisplay if no more tasks).
+    if (!widget.autoAdvance) {
+      WakelockPlus.disable();
+      _log.info('Wakelock disabled.');
+    }
 
     // Perform heavy operations (file I/O) after the bell has started playing
     await _saveProgress();
     _log.info('Progress saved in onTimerComplete');
 
     if (widget.autoAdvance) {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 10));
       if (mounted) _navigateToNextTask();
     }
   }
@@ -785,15 +799,19 @@ class _TimerViewState extends State<TimerView> {
 
     // Navigate to the next task
     if (mounted) {
-      // Cancel current timer
+      // Cancel current timer. Do not disable wakelock here: the next
+      // TimerView re-enables it in initState (which runs before the old
+      // view's dispose under pushReplacement), keeping the screen on
+      // across the chain.
       _timer?.cancel();
       _dimTimer?.cancel();
-      WakelockPlus.disable();
 
       // Save current progress first
       await _saveProgress();
 
       if (nextTask.itemType == ItemType.minutes) {
+        // Hand off wakelock to the next TimerView's initState.
+        _isChainingNext = true;
         // Navigate to the next timer
         Navigator.pushReplacement(
           context,
