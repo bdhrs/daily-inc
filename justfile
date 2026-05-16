@@ -11,6 +11,10 @@ android-install:
     flutter build apk --release
     adb install build/app/outputs/flutter-apk/app-release.apk
 
+android-install-offline:
+    flutter build apk --release --no-pub
+    adb install build/app/outputs/flutter-apk/app-release.apk
+
 android-install-debug:
     flutter build apk --debug
     adb install build/app/outputs/flutter-apk/app-debug.apk
