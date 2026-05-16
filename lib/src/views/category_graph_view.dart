@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
@@ -399,27 +400,10 @@ class _CategoryGraphViewState extends State<CategoryGraphView>
     ];
   }
 
-  /// Calculates the accumulated value for a trend item up to the specified date
+  /// Calculates the accumulated value for a trend item up to the specified date.
+  /// Missed days (before today) count as -1; the running total is floored at 0.
   double _getTrendAccumulatedValue(DailyThing thing, DateTime targetDate) {
-    // Sort history entries by date
-    final sortedHistory = thing.history.toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
-
-    double accumulatedValue = 0.0;
-
-    for (final entry in sortedHistory) {
-      final entryDate =
-          DateTime(entry.date.year, entry.date.month, entry.date.day);
-
-      // Stop if we've reached beyond the target date
-      if (entryDate.isAfter(targetDate)) break;
-
-      if (entry.actualValue != null) {
-        accumulatedValue += entry.actualValue!;
-      }
-    }
-
-    return accumulatedValue;
+    return IncrementCalculator.accumulatedTrendUpTo(thing.history, targetDate);
   }
 
   /// Checks if a category contains any trend items

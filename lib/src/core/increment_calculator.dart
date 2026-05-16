@@ -390,4 +390,104 @@ class IncrementCalculator {
       return currentValue == todayValue ? Status.green : Status.red;
     }
   }
+
+  /// Compute the accumulated trend value as of [asOfDate] (inclusive),
+  /// treating any day strictly before today with no entry as -1, and
+  /// clamping the running total at 0 after every step.
+  static double accumulatedTrendUpTo(
+      List<HistoryEntry> history, DateTime asOfDate) {
+    if (history.isEmpty) return 0.0;
+
+    final sorted = List<HistoryEntry>.from(history)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final byDay = <DateTime, HistoryEntry>{};
+    for (final e in sorted) {
+      byDay[DateTime(e.date.year, e.date.month, e.date.day)] = e;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final firstDate = DateTime(
+        sorted.first.date.year, sorted.first.date.month, sorted.first.date.day);
+    final target =
+        DateTime(asOfDate.year, asOfDate.month, asOfDate.day);
+
+    if (target.isBefore(firstDate)) return 0.0;
+
+    double total = 0.0;
+    for (DateTime d = firstDate;
+        !d.isAfter(target);
+        d = d.add(const Duration(days: 1))) {
+      final entry = byDay[d];
+      if (entry != null && entry.actualValue != null) {
+        total += entry.actualValue!;
+      } else if (d.isBefore(today)) {
+        total -= 1.0;
+      }
+      if (total < 0.0) total = 0.0;
+    }
+    return total;
+  }
+
+  /// Compute the accumulated trend value for each date in [dates].
+  /// Uses the same rules as [accumulatedTrendUpTo].
+  static Map<DateTime, double> accumulatedTrendSeries(
+      List<HistoryEntry> history, List<DateTime> dates) {
+    final result = <DateTime, double>{};
+    if (dates.isEmpty) return result;
+
+    final normDates = dates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    if (history.isEmpty) {
+      for (final d in normDates) {
+        result[d] = 0.0;
+      }
+      return result;
+    }
+
+    final sorted = List<HistoryEntry>.from(history)
+      ..sort((a, b) => a.date.compareTo(b.date));
+    final byDay = <DateTime, HistoryEntry>{};
+    for (final e in sorted) {
+      byDay[DateTime(e.date.year, e.date.month, e.date.day)] = e;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final firstDate = DateTime(
+        sorted.first.date.year, sorted.first.date.month, sorted.first.date.day);
+    final lastDate = normDates.last;
+
+    // Walk continuously from firstDate to lastDate, recording values at
+    // requested dates. For requested dates before firstDate, value is 0.
+    final wanted = normDates.toSet();
+    double total = 0.0;
+
+    for (final d in normDates) {
+      if (d.isBefore(firstDate)) result[d] = 0.0;
+    }
+
+    if (!lastDate.isBefore(firstDate)) {
+      for (DateTime d = firstDate;
+          !d.isAfter(lastDate);
+          d = d.add(const Duration(days: 1))) {
+        final entry = byDay[d];
+        if (entry != null && entry.actualValue != null) {
+          total += entry.actualValue!;
+        } else if (d.isBefore(today)) {
+          total -= 1.0;
+        }
+        if (total < 0.0) total = 0.0;
+        if (wanted.contains(d)) result[d] = total;
+      }
+    }
+
+    return result;
+  }
 }

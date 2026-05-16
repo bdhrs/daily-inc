@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
@@ -93,26 +94,19 @@ class MiniGraphWidget extends StatelessWidget {
     return spots;
   }
 
-  /// Builds spots for trend items with accumulated values
+  /// Builds spots for trend items with accumulated values.
+  /// Missed days (before today) count as -1, with the running total
+  /// floored at 0 after every step.
   List<FlSpot> _buildTrendSpots(
       List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
+    final series = IncrementCalculator.accumulatedTrendSeries(
+        dailyThing.history, dates);
     final spots = <FlSpot>[];
-    double accumulatedValue = 0.0;
-
     for (final date in dates) {
-      final entry = historyMap[date];
-
-      if (entry != null && entry.actualValue != null) {
-        // Add today's trend to the accumulated value
-        accumulatedValue += entry.actualValue!;
-      }
-      // If no entry for this date, keep the previous accumulated value
-
-      // Convert date to epoch days for FlChart
+      final value = series[date] ?? 0.0;
       final epochDays = date.millisecondsSinceEpoch / (24 * 60 * 1000);
-      spots.add(FlSpot(epochDays.toDouble(), accumulatedValue));
+      spots.add(FlSpot(epochDays.toDouble(), value));
     }
-
     return spots;
   }
 
