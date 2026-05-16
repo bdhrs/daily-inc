@@ -49,6 +49,25 @@ class SequenceHelper {
     return children.any((child) => child.shouldShowInList);
   }
 
+  static ({double start, double end, double increment, int count})
+      sumMinutesChildren(DailyThing seq, List<DailyThing> allItems) {
+    final children = resolveChildren(seq, allItems)
+        .where((c) => c.itemType == ItemType.minutes)
+        .toList();
+    double start = 0, end = 0, increment = 0;
+    for (final c in children) {
+      start += c.startValue;
+      end += c.endValue;
+      increment += c.increment;
+    }
+    return (
+      start: start,
+      end: end,
+      increment: increment,
+      count: children.length
+    );
+  }
+
   static List<DailyThing> sweepDeletedItem(
       String deletedId, List<DailyThing> allItems) {
     return allItems.map((item) {

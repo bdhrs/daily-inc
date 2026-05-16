@@ -488,61 +488,63 @@ class _DailyThingItemState extends State<DailyThingItem> {
                               );
                             },
                           ),
-                          const SizedBox(width: 4), // Add space between icons
-                          IconButton(
-                            tooltip: 'edit history',
-                            icon: const Icon(Icons.history),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HistoryView(
-                                    item: widget.item,
-                                    onHistoryUpdated: () {
-                                      if (mounted) setState(() {});
-                                      widget.onItemChanged?.call();
-                                    },
+                          if (!isSequenceTile) ...[
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: 'edit history',
+                              icon: const Icon(Icons.history),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HistoryView(
+                                      item: widget.item,
+                                      onHistoryUpdated: () {
+                                        if (mounted) setState(() {});
+                                        widget.onItemChanged?.call();
+                                      },
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 4), // Add space between icons
-                          IconButton(
-                            tooltip: 'edit note',
-                            icon: const Icon(Icons.note_add_outlined),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () =>
-                                _showEditNoteDialog(context, widget.item),
-                          ),
-                          const SizedBox(width: 4), // Add space between icons
-                          IconButton(
-                            tooltip: widget.item.isPaused
-                                ? 'resume increments'
-                                : 'pause increments',
-                            icon: Icon(widget.item.isPaused
-                                ? Icons.play_arrow
-                                : Icons.pause),
-                            iconSize: 20,
-                            visualDensity: const VisualDensity(
-                                horizontal: -3, vertical: -3),
-                            onPressed: () async {
-                              final updated = widget.item.copyWith(
-                                isPaused: !widget.item.isPaused,
-                              );
-                              await widget.dataManager
-                                  .updateDailyThing(updated);
-                              if (mounted) {
-                                setState(() {});
-                              }
-                              widget.onItemChanged?.call();
-                            },
-                          ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: 'edit note',
+                              icon: const Icon(Icons.note_add_outlined),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () =>
+                                  _showEditNoteDialog(context, widget.item),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: widget.item.isPaused
+                                  ? 'resume increments'
+                                  : 'pause increments',
+                              icon: Icon(widget.item.isPaused
+                                  ? Icons.play_arrow
+                                  : Icons.pause),
+                              iconSize: 20,
+                              visualDensity: const VisualDensity(
+                                  horizontal: -3, vertical: -3),
+                              onPressed: () async {
+                                final updated = widget.item.copyWith(
+                                  isPaused: !widget.item.isPaused,
+                                );
+                                await widget.dataManager
+                                    .updateDailyThing(updated);
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                                widget.onItemChanged?.call();
+                              },
+                            ),
+                          ],
                           const SizedBox(width: 4), // Add space between icons
                           IconButton(
                             tooltip: 'edit the item',
@@ -587,142 +589,137 @@ class _DailyThingItemState extends State<DailyThingItem> {
                       ),
                     ),
                     // Mini graph showing last 10 days of data
-                    if ((widget.item.category).isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      MiniGraphWidget(
-                        dailyThing: widget.item,
-                        allItems: widget.allItems,
-                      ),
-                    ],
-                    // Second row: Category followed by start/end values and increment (for non-CHECK items)
+                    const SizedBox(height: 4),
+                    MiniGraphWidget(
+                      dailyThing: widget.item,
+                      allItems: widget.allItems,
+                    ),
                     const SizedBox(height: 8),
-                    if ((widget.item.category).isNotEmpty) ...[
-                      if (widget.item.itemType != ItemType.check)
-                        Row(
-                          children: [
-                            // Left: category
-                            Expanded(
-                              child: Text(
-                                widget.item.category,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            // Centre: start → end + increment
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _formatValue(widget.item.startValue,
-                                      widget.item.itemType),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.trending_flat, size: 18),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatValue(widget.item.endValue,
-                                      widget.item.itemType),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  (() {
-                                    final inc = widget.item.increment;
-                                    final sign = inc < 0 ? '-' : '+';
-                                    final absVal = inc.abs();
-                                    if (widget.item.itemType ==
-                                        ItemType.minutes) {
-                                      return '$sign${TimeConverter.toMmSsString(absVal)}';
-                                    }
-                                    String numStr = absVal.toStringAsFixed(2);
-                                    numStr = numStr.replaceFirst('.0', '');
-                                    numStr = numStr.replaceFirst('0', '');
-                                    return '$sign$numStr';
-                                  })(),
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Right: alarm icon + nag time
-                            Expanded(
-                              child: (widget.item.notificationEnabled &&
-                                      widget.item.nagTime != null)
-                                  ? Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.alarm,
-                                            size: 13, color: Colors.amber),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${widget.item.nagTime!.hour.toString().padLeft(2, '0')}:${widget.item.nagTime!.minute.toString().padLeft(2, '0')}',
-                                          style: const TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.amber),
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        )
-                      else
-                        // CHECK items: left=category, centre=empty, right=alarm
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.item.category,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const Spacer(),
-                            Expanded(
-                              child: (widget.item.notificationEnabled &&
-                                      widget.item.nagTime != null)
-                                  ? Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.alarm,
-                                            size: 13, color: Colors.amber),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${widget.item.nagTime!.hour.toString().padLeft(2, '0')}:${widget.item.nagTime!.minute.toString().padLeft(2, '0')}',
-                                          style: const TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.amber),
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                    ],
+                    Builder(builder: (context) {
+                      final hasCategory =
+                          widget.item.category.isNotEmpty &&
+                              widget.item.category != 'None';
+                      final hasAlarm = widget.item.notificationEnabled &&
+                          widget.item.nagTime != null;
+                      final showRow =
+                          isSequenceTile || hasCategory || hasAlarm;
+                      if (!showRow) return const SizedBox.shrink();
 
+                      final onSurfaceStyle = TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      );
+
+                      Widget categoryColumn = Expanded(
+                        child: hasCategory
+                            ? Text(
+                                widget.item.category,
+                                style: onSurfaceStyle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : const SizedBox.shrink(),
+                      );
+
+                      Widget alarmColumn = Expanded(
+                        child: hasAlarm
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  const Icon(Icons.alarm,
+                                      size: 13, color: Colors.amber),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.item.nagTime!.hour.toString().padLeft(2, '0')}:${widget.item.nagTime!.minute.toString().padLeft(2, '0')}',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.amber),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
+                      );
+
+                      Widget centreCluster;
+                      if (isSequenceTile) {
+                        final sums = SequenceHelper.sumMinutesChildren(
+                            widget.item, widget.allItems);
+                        if (sums.count == 0) {
+                          centreCluster = const SizedBox.shrink();
+                        } else {
+                          final incSign = sums.increment < 0 ? '-' : '+';
+                          centreCluster = Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(TimeConverter.toMmSsString(sums.start),
+                                  style: onSurfaceStyle),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.trending_flat, size: 18),
+                              const SizedBox(width: 4),
+                              Text(TimeConverter.toMmSsString(sums.end),
+                                  style: onSurfaceStyle),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$incSign${TimeConverter.toMmSsString(sums.increment.abs())}',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.primary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      } else if (widget.item.itemType != ItemType.check) {
+                        centreCluster = Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _formatValue(widget.item.startValue,
+                                  widget.item.itemType),
+                              style: onSurfaceStyle,
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.trending_flat, size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatValue(widget.item.endValue,
+                                  widget.item.itemType),
+                              style: onSurfaceStyle,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              (() {
+                                final inc = widget.item.increment;
+                                final sign = inc < 0 ? '-' : '+';
+                                final absVal = inc.abs();
+                                if (widget.item.itemType ==
+                                    ItemType.minutes) {
+                                  return '$sign${TimeConverter.toMmSsString(absVal)}';
+                                }
+                                String numStr = absVal.toStringAsFixed(2);
+                                numStr = numStr.replaceFirst('.0', '');
+                                numStr = numStr.replaceFirst('0', '');
+                                return '$sign$numStr';
+                              })(),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        );
+                      } else {
+                        centreCluster = const Spacer();
+                      }
+
+                      return Row(
+                        children: [
+                          categoryColumn,
+                          centreCluster,
+                          alarmColumn,
+                        ],
+                      );
+                    }),
                   ],
                 ),
               ),
