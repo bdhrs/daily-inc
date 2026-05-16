@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/views/graph_view.dart';
@@ -7,21 +8,28 @@ import 'package:flutter/material.dart';
 
 class MiniGraphWidget extends StatelessWidget {
   final DailyThing dailyThing;
+  final List<DailyThing> allItems;
 
-  const MiniGraphWidget({super.key, required this.dailyThing});
+  const MiniGraphWidget({
+    super.key,
+    required this.dailyThing,
+    this.allItems = const [],
+  });
 
   /// Extracts data points for the graph, showing the last 14 days for consistency across all graphs
   List<FlSpot> _buildSpots() {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
-    // Show exactly the last 14 days for all graphs
     const int daysToShow = 14;
 
-    // Generate the dates (end is today, start is 14 days ago)
     final dates = <DateTime>[];
     for (int i = daysToShow - 1; i >= 0; i--) {
       dates.add(DateTime(todayDate.year, todayDate.month, todayDate.day - i));
+    }
+
+    if (dailyThing.itemType == ItemType.sequence) {
+      return _buildSequenceSpots(dates);
     }
 
     // Create a map of history entries for quick lookup
@@ -54,11 +62,34 @@ class MiniGraphWidget extends StatelessWidget {
         }
       }
 
-      // Convert date to epoch days for FlChart
       final epochDays = date.millisecondsSinceEpoch / (24 * 60 * 1000);
       spots.add(FlSpot(epochDays.toDouble(), y));
     }
 
+    return spots;
+  }
+
+  List<FlSpot> _buildSequenceSpots(List<DateTime> dates) {
+    final children = SequenceHelper.resolveChildren(dailyThing, allItems);
+    final spots = <FlSpot>[];
+    for (final date in dates) {
+      double total = 0;
+      for (final child in children) {
+        for (final entry in child.history) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          if (entryDate == date) {
+            if (child.itemType == ItemType.check) {
+              if (entry.doneToday) total += 1;
+            } else {
+              if (entry.actualValue != null) total += entry.actualValue!;
+            }
+          }
+        }
+      }
+      final epochDays = date.millisecondsSinceEpoch / (24 * 60 * 1000);
+      spots.add(FlSpot(epochDays.toDouble(), total));
+    }
     return spots;
   }
 
@@ -122,7 +153,8 @@ class MiniGraphWidget extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GraphView(dailyThing: dailyThing),
+            builder: (context) =>
+              GraphView(dailyThing: dailyThing, allItems: allItems),
           ),
         );
       },

@@ -46,6 +46,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   late TextEditingController _nagTimeController;
   late TextEditingController _nagMessageController;
   late TextEditingController _categoryController; // New category controller
+  late TextEditingController _startBellSoundController;
   late TextEditingController _bellSoundController; // New bell sound controller
   late TextEditingController _subdivisionsController;
   late TextEditingController _subdivisionBellSoundController;
@@ -74,6 +75,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
   bool _autoPlay = false;
   bool _autoStart = false;
   String? _parentSequenceId;
+  late TextEditingController _chainDelayMinutesController;
+  late TextEditingController _chainDelaySecondsController;
+  String? _selectedStartBellSoundPath;
 
   // Template parameter tracking for automatic template saving
   DailyThing? _originalTemplate;
@@ -153,10 +157,20 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _subdivisionsController = TextEditingController(
           text: existingItem.subdivisions?.toString() ?? '1');
       _selectedSubdivisionBellSoundPath = existingItem.subdivisionBellSoundPath;
+      _selectedStartBellSoundPath = existingItem.startBellSoundPath;
       if (existingItem.itemType == ItemType.sequence) {
         _childIds = List<String>.from(existingItem.childIds);
         _autoPlay = existingItem.autoPlay;
         _autoStart = existingItem.autoStart;
+        final delayMins = existingItem.chainDelaySeconds ~/ 60;
+        final delaySecs = existingItem.chainDelaySeconds % 60;
+        _chainDelayMinutesController =
+            TextEditingController(text: delayMins.toString());
+        _chainDelaySecondsController =
+            TextEditingController(text: delaySecs.toString().padLeft(2, '0'));
+      } else {
+        _chainDelayMinutesController = TextEditingController(text: '0');
+        _chainDelaySecondsController = TextEditingController(text: '20');
       }
     } else {
       _log.info('Creating new item');
@@ -165,6 +179,9 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
       _subdivisionsController = TextEditingController(text: '1');
       // Initialize subdivision bell sound path for new items
       _selectedSubdivisionBellSoundPath = null;
+      _selectedStartBellSoundPath = null;
+      _chainDelayMinutesController = TextEditingController(text: '0');
+      _chainDelaySecondsController = TextEditingController(text: '20');
 
       // Set default start and goal values to 30 for new MINUTES items
       if (_selectedItemType == ItemType.minutes) {
@@ -172,6 +189,8 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
         _endValueController.text = '30.0';
       }
     }
+    _startBellSoundController = TextEditingController(
+        text: _selectedStartBellSoundPath?.split('/').last);
     _bellSoundController = TextEditingController(
         text: _selectedBellSoundPath?.split('/').last ?? 'bell1.mp3');
     _subdivisionBellSoundController = TextEditingController(
@@ -218,9 +237,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     _nagTimeController.dispose();
     _nagMessageController.dispose();
     _categoryController.dispose(); // Dispose category controller
+    _startBellSoundController.dispose();
     _bellSoundController.dispose(); // Dispose bell sound controller
     _subdivisionsController.dispose();
     _subdivisionBellSoundController.dispose();
+    _chainDelayMinutesController.dispose();
+    _chainDelaySecondsController.dispose();
     _notesController.dispose();
     _incrementController?.dispose();
     _incrementMinutesController.dispose();
@@ -613,6 +635,43 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
   }
 
+  int _parseChainDelay() {
+    final mins = int.tryParse(_chainDelayMinutesController.text) ?? 0;
+    final secs = int.tryParse(_chainDelaySecondsController.text) ?? 20;
+    return (mins * 60 + secs).clamp(0, 3600);
+  }
+
+  Widget _buildBellPicker({
+    required String label,
+    required TextEditingController controller,
+    required String? selectedPath,
+    required void Function(String path) onSelected,
+  }) {
+    Future<void> openPicker() async {
+      final picked = await showDialog<String?>(
+        context: context,
+        builder: (ctx) =>
+            CustomBellSelectorDialog(initialBellSoundPath: selectedPath),
+      );
+      if (picked != null) onSelected(picked);
+    }
+
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'None',
+        prefixIcon: const Icon(Icons.notifications_active),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.arrow_forward_ios),
+          onPressed: openPicker,
+        ),
+      ),
+      onTap: openPicker,
+    );
+  }
+
   void _submitDailyItem() async {
     _log.info('Attempting to submit daily item');
     if (_formKey.currentState!.validate()) {
@@ -740,6 +799,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               : (widget.dailyThing?.childIds ?? const []),
           autoPlay: _selectedItemType == ItemType.sequence ? _autoPlay : false,
           autoStart: _selectedItemType == ItemType.sequence ? _autoStart : false,
+          chainDelaySeconds: _selectedItemType == ItemType.sequence
+              ? _parseChainDelay()
+              : (widget.dailyThing?.chainDelaySeconds ?? 20),
+          startBellSoundPath: _selectedStartBellSoundPath,
         );
         _log.info('Created new DailyThing: ${newItem.name}');
 
@@ -1216,6 +1279,47 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     onChanged: _autoPlay ? (v) => setState(() => _autoStart = v) : null,
                   ),
                   const SizedBox(height: 16),
+                  Text('Delay between items',
+                      style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 90,
+                        child: TextFormField(
+                          controller: _chainDelayMinutesController,
+                          decoration: const InputDecoration(labelText: 'min'),
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v != null && v.isNotEmpty &&
+                                int.tryParse(v) == null) {
+                              return 'Number';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 90,
+                        child: TextFormField(
+                          controller: _chainDelaySecondsController,
+                          decoration: const InputDecoration(labelText: 'sec'),
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v != null && v.isNotEmpty) {
+                              final n = int.tryParse(v);
+                              if (n == null || n < 0 || n > 59) {
+                                return '0–59';
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Text('Items', style: theme.textTheme.titleSmall),
                   ..._buildSequenceChildrenWidgets(),
                   const SizedBox(height: 8),
@@ -1652,65 +1756,47 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     label: const Text('Test Notification'),
                   ),
                 ],
-                if (_selectedItemType == ItemType.minutes)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _bellSoundController,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: 'Bell Sound',
-                          hintText: 'Default (bell1.mp3)',
-                          prefixIcon: const Icon(Icons.notifications_active),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios),
-                            onPressed: () async {
-                              final selectedPath = await showDialog<String?>(
-                                context: context,
-                                builder: (context) => CustomBellSelectorDialog(
-                                  initialBellSoundPath: _selectedBellSoundPath,
-                                ),
-                              );
-                              if (selectedPath != null) {
-                                setState(() {
-                                  _selectedBellSoundPath = selectedPath;
-                                  _bellSoundController.text =
-                                      selectedPath.split('/').last;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        onTap: () async {
-                          final selectedPath = await showDialog<String?>(
-                            context: context,
-                            builder: (context) => CustomBellSelectorDialog(
-                              initialBellSoundPath: _selectedBellSoundPath,
-                            ),
-                          );
-                          if (selectedPath != null) {
-                            setState(() {
-                              _selectedBellSoundPath = selectedPath;
-                              _bellSoundController.text =
-                                  selectedPath.split('/').last;
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  ),
                 if (_selectedItemType == ItemType.minutes ||
                     _selectedItemType == ItemType.stopwatch) ...[
                   const SizedBox(height: 24),
                   Text(
-                    _selectedItemType == ItemType.minutes
-                        ? 'Subdivisions'
-                        : 'Subdivision Bells',
+                    'Bells',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.primary,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBellPicker(
+                    label: 'Start bell',
+                    controller: _startBellSoundController,
+                    selectedPath: _selectedStartBellSoundPath,
+                    onSelected: (path) => setState(() {
+                      _selectedStartBellSoundPath = path;
+                      _startBellSoundController.text = path.split('/').last;
+                    }),
+                  ),
+                  if (_selectedItemType == ItemType.minutes) ...[
+                    const SizedBox(height: 8),
+                    _buildBellPicker(
+                      label: 'End bell',
+                      controller: _bellSoundController,
+                      selectedPath: _selectedBellSoundPath,
+                      onSelected: (path) => setState(() {
+                        _selectedBellSoundPath = path;
+                        _bellSoundController.text = path.split('/').last;
+                      }),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  _buildBellPicker(
+                    label: 'Subdivision bell',
+                    controller: _subdivisionBellSoundController,
+                    selectedPath: _selectedSubdivisionBellSoundPath,
+                    onSelected: (path) => setState(() {
+                      _selectedSubdivisionBellSoundPath = path;
+                      _subdivisionBellSoundController.text =
+                          path.split('/').last;
+                    }),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -1739,7 +1825,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                             return null;
                           },
                           onChanged: (value) {
-                            // Automatically set bell3 as default subdivision bell when subdivisions > 1
                             if (value.isNotEmpty) {
                               final subdivisions = int.tryParse(value);
                               if (subdivisions != null &&
@@ -1771,61 +1856,6 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                         ),
                     ],
                   ),
-                  if (int.tryParse(_subdivisionsController.text) != null &&
-                      (int.tryParse(_subdivisionsController.text) ?? 0) >=
-                          (_selectedItemType == ItemType.minutes ? 2 : 1))
-                    Column(
-                      children: [
-                        const SizedBox(height: 24),
-                        TextFormField(
-                          controller: _subdivisionBellSoundController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: 'Subdivision Bell Sound',
-                            hintText: 'Default (bell1.mp3)',
-                            prefixIcon: const Icon(Icons.notifications_active),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.arrow_forward_ios),
-                              onPressed: () async {
-                                final selectedPath = await showDialog<String?>(
-                                  context: context,
-                                  builder: (context) =>
-                                      CustomBellSelectorDialog(
-                                    initialBellSoundPath:
-                                        _selectedSubdivisionBellSoundPath,
-                                  ),
-                                );
-                                if (selectedPath != null) {
-                                  setState(() {
-                                    _selectedSubdivisionBellSoundPath =
-                                        selectedPath;
-                                    _subdivisionBellSoundController.text =
-                                        selectedPath.split('/').last;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          onTap: () async {
-                            final selectedPath = await showDialog<String?>(
-                              context: context,
-                              builder: (context) => CustomBellSelectorDialog(
-                                initialBellSoundPath:
-                                    _selectedSubdivisionBellSoundPath,
-                              ),
-                            );
-                            if (selectedPath != null) {
-                              setState(() {
-                                _selectedSubdivisionBellSoundPath =
-                                    selectedPath;
-                                _subdivisionBellSoundController.text =
-                                    selectedPath.split('/').last;
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
                 ],
                 const SizedBox(height: 24),
                 TextFormField(

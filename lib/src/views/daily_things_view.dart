@@ -18,7 +18,6 @@ import 'package:daily_inc/src/views/widgets/reorder_helpers.dart';
 import 'package:daily_inc/src/views/widgets/daily_things_helpers.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:daily_inc/src/views/widgets/visibility_and_expand_helpers.dart';
 import 'package:daily_inc/src/views/widgets/filtering_helpers.dart';
 import 'package:daily_inc/src/services/app_update_controller.dart';
 import 'package:daily_inc/src/services/update_service.dart';
@@ -88,7 +87,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
       rows.add((item: item, parent: null));
       if (item.itemType == ItemType.sequence &&
           _sequenceExpanded[item.id] != false) {
-        final children = SequenceHelper.resolveChildren(item, _dailyThings);
+        final children = SequenceHelper.resolveChildren(item, _dailyThings,
+            includeArchived: _showArchivedItems);
         if (children.isEmpty) {
           // Invisible placeholder — gives the drag engine a drop target so
           // items can be dragged into an empty sequence.
@@ -115,9 +115,15 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   Future<void> _showSequenceTimer(DailyThing seq) async {
-    final children = SequenceHelper.resolveChildren(seq, _dailyThings);
+    final allChildren = SequenceHelper.resolveChildren(seq, _dailyThings);
+    // Only timer-compatible types can be run through TimerView.
+    final timerChildren = allChildren
+        .where((c) =>
+            c.itemType == ItemType.minutes ||
+            c.itemType == ItemType.stopwatch)
+        .toList();
     final firstUndoneIndex =
-        children.indexWhere((child) => child.isUndoneToday);
+        timerChildren.indexWhere((child) => child.isUndoneToday);
 
     if (firstUndoneIndex == -1) {
       if (mounted) {
@@ -135,7 +141,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     if (!mounted) return;
 
-    final firstUndone = children[firstUndoneIndex];
+    final firstUndone = timerChildren[firstUndoneIndex];
 
     await Navigator.push(
       context,
@@ -147,12 +153,13 @@ class _DailyThingsViewState extends State<DailyThingsView>
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
             _refreshDisplay();
           },
-          allItems: seq.autoPlay ? children : [firstUndone],
+          allItems: seq.autoPlay ? timerChildren : [firstUndone],
           currentItemIndex: seq.autoPlay ? firstUndoneIndex : 0,
           initialMinimalistMode: minimalistMode,
           autoAdvance: seq.autoPlay,
           autoStart: seq.autoPlay && seq.autoStart,
           chainAutoStart: seq.autoPlay && seq.autoStart,
+          chainDelaySeconds: seq.chainDelaySeconds,
         ),
       ),
     );
@@ -403,6 +410,8 @@ class _DailyThingsViewState extends State<DailyThingsView>
           childIds: childIds,
           autoPlay: src.autoPlay,
           autoStart: src.autoStart,
+          chainDelaySeconds: src.chainDelaySeconds,
+          startBellSoundPath: src.startBellSoundPath,
         );
       }
 
@@ -426,6 +435,21 @@ class _DailyThingsViewState extends State<DailyThingsView>
           items.insert(originalIndex + 1, duplicatedItem);
         } else {
           items.add(duplicatedItem);
+        }
+        // If the original is a sequence child, insert the clone into that sequence too.
+        final parentSeq = SequenceHelper.findParentSequence(item, items);
+        if (parentSeq != null) {
+          final insertAfter = parentSeq.childIds.indexOf(item.id);
+          final newChildIds = List<String>.from(parentSeq.childIds);
+          if (insertAfter != -1) {
+            newChildIds.insert(insertAfter + 1, duplicatedItem.id);
+          } else {
+            newChildIds.add(duplicatedItem.id);
+          }
+          final seqIndex = items.indexWhere((e) => e.id == parentSeq.id);
+          if (seqIndex != -1) {
+            items[seqIndex] = parentSeq.copyWith(childIds: newChildIds);
+          }
         }
       }
       await _dataManager.saveData(items);
@@ -792,6 +816,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
       isExpanded: item.itemType == ItemType.sequence
           ? (_sequenceExpanded[item.id] ?? true)
           : (_isExpanded[item.id] ?? false),
+      isCardExpanded: _isExpanded[item.id] ?? false,
       onExpansionChanged: (expanded) {
         setState(() {
           _isExpanded[item.id] = expanded;
@@ -917,14 +942,43 @@ class _DailyThingsViewState extends State<DailyThingsView>
         hideWhenDone: _hideWhenDone,
       );
 
-      _allExpanded = toggleExpansionForVisibleItems(
-        visibleItems: displayedItems,
-        isExpanded: _isExpanded,
-        currentAllExpanded: _allExpanded,
-      );
+      // Include children of visible sequences so collapse-all reaches them.
+      final withChildren = [
+        ...displayedItems,
+        for (final item in displayedItems)
+          if (item.itemType == ItemType.sequence)
+            ...SequenceHelper.resolveChildren(item, _dailyThings),
+      ];
+
+      // Determine expansion state: sequences are "expanded" when their card is open
+      // (_isExpanded) AND their children are visible (_sequenceExpanded).
+      final allExpandedNow = withChildren.every((item) {
+        if (item.itemType == ItemType.sequence) {
+          return (_isExpanded[item.id] ?? false) &&
+              (_sequenceExpanded[item.id] ?? true);
+        }
+        return _isExpanded[item.id] ?? false;
+      });
+
+      _allExpanded = !allExpandedNow;
+
+      for (final item in withChildren) {
+        _isExpanded[item.id] = _allExpanded;
+        if (item.itemType == ItemType.sequence) {
+          _sequenceExpanded[item.id] = _allExpanded;
+        }
+      }
 
       _log.info('Setting all visible items to expanded: $_allExpanded');
     });
+    _persistSequenceExpandedStates();
+  }
+
+  void _persistSequenceExpandedStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (final entry in _sequenceExpanded.entries) {
+      await prefs.setBool('seq_expanded_${entry.key}', entry.value);
+    }
   }
 
   void _checkAndShowCompletionSnackbar() {
@@ -1184,7 +1238,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
     // Compute next undone item for pulse highlighting
     final nextUndoneIndex = _getNextUndoneIndex(displayedItems);
-    final nextUndoneItem = nextUndoneIndex < displayedItems.length
+    final nextUndoneItem = nextUndoneIndex >= 0
         ? displayedItems[nextUndoneIndex]
         : null;
 

@@ -35,6 +35,8 @@ class DailyThing {
   final List<String> childIds; // Ordered child item IDs for sequence type
   final bool autoPlay; // Sequence: auto-advance to next item when timer ends
   final bool autoStart; // Sequence: auto-start next timer when chain-navigated (requires autoPlay)
+  final int chainDelaySeconds; // Sequence: seconds to wait between chained items
+  final String? startBellSoundPath; // Bell sound played when the timer starts
 
   DailyThing({
     String? id,
@@ -62,6 +64,8 @@ class DailyThing {
     this.childIds = const [],
     this.autoPlay = false,
     this.autoStart = false,
+    this.chainDelaySeconds = 20,
+    this.startBellSoundPath,
   }) : id = id ?? const Uuid().v4();
 
   double get increment {
@@ -278,6 +282,8 @@ class DailyThing {
       'childIds': childIds,
       'autoPlay': autoPlay,
       'autoStart': autoStart,
+      'chainDelaySeconds': chainDelaySeconds,
+      'startBellSoundPath': startBellSoundPath,
     };
   }
 
@@ -341,6 +347,8 @@ class DailyThing {
       childIds: List<String>.from(json['childIds'] as List? ?? []),
       autoPlay: json['autoPlay'] as bool? ?? false,
       autoStart: json['autoStart'] as bool? ?? false,
+      chainDelaySeconds: json['chainDelaySeconds'] as int? ?? 20,
+      startBellSoundPath: json['startBellSoundPath'] as String?,
     );
   }
 
@@ -370,6 +378,8 @@ class DailyThing {
     List<String>? childIds,
     bool? autoPlay,
     bool? autoStart,
+    int? chainDelaySeconds,
+    String? startBellSoundPath,
   }) {
     return DailyThing(
       id: id ?? this.id,
@@ -398,6 +408,8 @@ class DailyThing {
       childIds: childIds ?? this.childIds,
       autoPlay: autoPlay ?? this.autoPlay,
       autoStart: autoStart ?? this.autoStart,
+      chainDelaySeconds: chainDelaySeconds ?? this.chainDelaySeconds,
+      startBellSoundPath: startBellSoundPath ?? this.startBellSoundPath,
     );
   }
 }

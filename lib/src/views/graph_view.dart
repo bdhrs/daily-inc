@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
@@ -10,7 +11,12 @@ import 'package:logging/logging.dart';
 
 class GraphView extends StatefulWidget {
   final DailyThing dailyThing;
-  const GraphView({super.key, required this.dailyThing});
+  final List<DailyThing> allItems;
+  const GraphView({
+    super.key,
+    required this.dailyThing,
+    this.allItems = const [],
+  });
 
   @override
   State<GraphView> createState() => _GraphViewState();
@@ -156,6 +162,10 @@ class _GraphViewState extends State<GraphView>
   }
 
   List<FlSpot> _buildSpots() {
+    if (widget.dailyThing.itemType == ItemType.sequence) {
+      return _buildSequenceSpots();
+    }
+
     final dates = _getFilteredDates();
     final historyMap = <DateTime, dynamic>{};
     for (final entry in widget.dailyThing.history) {
@@ -185,6 +195,31 @@ class _GraphViewState extends State<GraphView>
     return spots;
   }
 
+  List<FlSpot> _buildSequenceSpots() {
+    final children =
+        SequenceHelper.resolveChildren(widget.dailyThing, widget.allItems);
+    final dates = _getFilteredDates();
+    final spots = <FlSpot>[];
+    for (final d in dates) {
+      double total = 0;
+      for (final child in children) {
+        for (final entry in child.history) {
+          final entryDate =
+              DateTime(entry.date.year, entry.date.month, entry.date.day);
+          if (entryDate == d) {
+            if (child.itemType == ItemType.check) {
+              if (entry.doneToday) total += 1;
+            } else {
+              if (entry.actualValue != null) total += entry.actualValue!;
+            }
+          }
+        }
+      }
+      spots.add(FlSpot(GraphStyleHelpers.epochDays(d), total));
+    }
+    return spots;
+  }
+
   /// Builds spots for trend items with accumulated values
   List<FlSpot> _buildTrendSpots(
       List<DateTime> dates, Map<DateTime, dynamic> historyMap) {
@@ -210,10 +245,17 @@ class _GraphViewState extends State<GraphView>
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
+    // For sequences, use merged history of all children.
+    final effectiveHistory = widget.dailyThing.itemType == ItemType.sequence
+        ? SequenceHelper.resolveChildren(widget.dailyThing, widget.allItems)
+            .expand((c) => c.history)
+            .toList()
+        : widget.dailyThing.history;
+
     // For "all" time range, use the first history entry date of this specific item
     if (selectedTimeRange == TimeRange.all &&
-        widget.dailyThing.history.isNotEmpty) {
-      final sortedHistory = widget.dailyThing.history.toList()
+        effectiveHistory.isNotEmpty) {
+      final sortedHistory = effectiveHistory.toList()
         ..sort((a, b) => a.date.compareTo(b.date));
       final firstHistoryDate = DateTime(sortedHistory.first.date.year,
           sortedHistory.first.date.month, sortedHistory.first.date.day);
@@ -228,11 +270,11 @@ class _GraphViewState extends State<GraphView>
     // For other time ranges, use the standard logic
     final startDate = selectedTimeRange.getStartDate(todayDate);
 
-    if (widget.dailyThing.history.isEmpty) {
+    if (effectiveHistory.isEmpty) {
       return _generateDateRange(startDate, todayDate);
     }
 
-    final sortedHistory = widget.dailyThing.history.toList()
+    final sortedHistory = effectiveHistory.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
     final firstHistoryDate = DateTime(sortedHistory.first.date.year,

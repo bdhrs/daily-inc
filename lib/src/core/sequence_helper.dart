@@ -6,7 +6,6 @@ class SequenceHelper {
       DailyThing item, List<DailyThing> allItems) {
     for (final seq in allItems) {
       if (seq.itemType == ItemType.sequence &&
-          !seq.isArchived &&
           seq.childIds.contains(item.id)) {
         return seq;
       }
@@ -14,33 +13,40 @@ class SequenceHelper {
     return null;
   }
 
+  /// Returns children of [seq]. By default filters out archived items so the
+  /// timer flow and due-today logic only see active children. Pass
+  /// [includeArchived: true] when rendering the archived view.
   static List<DailyThing> resolveChildren(
-      DailyThing seq, List<DailyThing> allItems) {
+      DailyThing seq, List<DailyThing> allItems,
+      {bool includeArchived = false}) {
     final itemMap = {for (final item in allItems) item.id: item};
     return seq.childIds
         .map((id) => itemMap[id])
         .whereType<DailyThing>()
-        .where((item) => !item.isArchived)
+        .where((item) => includeArchived || !item.isArchived)
         .toList();
   }
 
   static bool sequenceIsUndoneToday(
       DailyThing seq, List<DailyThing> allItems) {
-    return resolveChildren(seq, allItems).any((child) => child.isUndoneToday);
+    final children = resolveChildren(seq, allItems);
+    if (children.isEmpty) return true;
+    return children.any((child) => child.isUndoneToday);
   }
 
   static bool sequenceCompletedForToday(
       DailyThing seq, List<DailyThing> allItems) {
     if (!seq.isDueToday) return true;
-    return resolveChildren(seq, allItems)
-        .every((child) => child.completedForToday);
+    final children = resolveChildren(seq, allItems);
+    if (children.isEmpty) return false;
+    return children.every((child) => child.completedForToday);
   }
 
   static bool sequenceShouldShowInList(
       DailyThing seq, List<DailyThing> allItems) {
-    if (seq.isDueToday) return true;
-    return resolveChildren(seq, allItems)
-        .any((child) => child.hasBeenDoneLiterallyToday);
+    final children = resolveChildren(seq, allItems);
+    if (children.isEmpty) return true;
+    return children.any((child) => child.shouldShowInList);
   }
 
   static List<DailyThing> sweepDeletedItem(

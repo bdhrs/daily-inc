@@ -505,6 +505,7 @@ class _StopwatchViewState extends State<StopwatchView> {
       notes: _currentItem.notes,
       isArchived: _currentItem.isArchived,
       notificationEnabled: _currentItem.notificationEnabled,
+      startBellSoundPath: _currentItem.startBellSoundPath,
     );
   }
 

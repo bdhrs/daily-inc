@@ -74,6 +74,7 @@ class ValueConverter {
       notes: original.notes,
       isArchived: original.isArchived,
       notificationEnabled: original.notificationEnabled,
+      startBellSoundPath: original.startBellSoundPath,
     );
   }
 }

@@ -37,6 +37,7 @@ class TimerView extends StatefulWidget {
   final bool autoAdvance;
   final bool autoStart;
   final bool chainAutoStart;
+  final int chainDelaySeconds;
 
   const TimerView({
     super.key,
@@ -51,6 +52,7 @@ class TimerView extends StatefulWidget {
     this.autoAdvance = false,
     this.autoStart = false,
     this.chainAutoStart = false,
+    this.chainDelaySeconds = 20,
   });
 
   @override
@@ -344,8 +346,6 @@ class _TimerViewState extends State<TimerView> {
       WakelockPlus.enable();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        // Mark the chained item starting with the same bell as completion.
-        _audioHelper.playTimerCompleteNotification(_currentItem);
         if (_isPaused) _toggleTimer();
       });
     }
@@ -373,6 +373,9 @@ class _TimerViewState extends State<TimerView> {
       _isPaused = !_isPaused;
       if (!_isPaused) {
         _log.info('Timer started, enabling wakelock.');
+        if (!_hasStarted) {
+          _audioHelper.playStartBell(_currentItem);
+        }
         _hasStarted = true;
         WakelockPlus.enable();
 
@@ -576,7 +579,7 @@ class _TimerViewState extends State<TimerView> {
     _log.info('Progress saved in onTimerComplete');
 
     if (widget.autoAdvance) {
-      await Future.delayed(const Duration(seconds: 10));
+      await Future.delayed(Duration(seconds: widget.chainDelaySeconds));
       if (mounted) _navigateToNextTask();
     }
   }
@@ -827,6 +830,7 @@ class _TimerViewState extends State<TimerView> {
               autoAdvance: widget.autoAdvance,
               autoStart: widget.chainAutoStart,
               chainAutoStart: widget.chainAutoStart,
+              chainDelaySeconds: widget.chainDelaySeconds,
             ),
           ),
         );
@@ -862,6 +866,7 @@ class _TimerViewState extends State<TimerView> {
       notes: _currentItem.notes,
       isArchived: _currentItem.isArchived,
       notificationEnabled: _currentItem.notificationEnabled,
+      startBellSoundPath: _currentItem.startBellSoundPath,
     );
   }
 

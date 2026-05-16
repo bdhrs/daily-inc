@@ -118,9 +118,12 @@ mixin BaseGraphStateMixin<T extends StatefulWidget> on State<T> {
                 GraphStyleHelpers.calculateYAxisInterval(minY, maxY);
             final rounded = (value / interval).round() * interval;
             if ((value - rounded).abs() < interval * 0.01) {
+              final label = interval < 1
+                  ? value.toStringAsFixed(1)
+                  : value.toInt().toString();
               return Padding(
                 padding: const EdgeInsets.only(right: 4),
-                child: Text(value.toInt().toString(),
+                child: Text(label,
                     style: Theme.of(context).textTheme.bodySmall),
               );
             }

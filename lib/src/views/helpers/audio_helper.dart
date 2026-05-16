@@ -22,6 +22,19 @@ class AudioHelper {
     }
   }
 
+  /// Plays the start bell sound (if configured on the item)
+  Future<void> playStartBell(DailyThing currentItem) async {
+    if (currentItem.startBellSoundPath == null) return;
+    _log.info('Playing start bell');
+    try {
+      final bellPath =
+          currentItem.startBellSoundPath!.replaceFirst('assets/', '');
+      _audioPlayer.play(AssetSource(bellPath));
+    } catch (e) {
+      _log.warning('Failed to play start bell sound: $e');
+    }
+  }
+
   /// Plays the subdivision bell sound
   Future<void> playSubdivisionBell(DailyThing currentItem) async {
     _log.info('Playing subdivision bell');

@@ -27,6 +27,7 @@ class DailyThingItem extends StatefulWidget {
   final Function(DailyThing) showTrendInputDialog;
   final Function checkAndShowCompletionSnackbar;
   final bool isExpanded;
+  final bool isCardExpanded;
   final Function(bool) onExpansionChanged;
   final bool allTasksCompleted;
   final VoidCallback? onItemChanged;
@@ -52,6 +53,7 @@ class DailyThingItem extends StatefulWidget {
     required this.isExpanded,
     required this.onExpansionChanged,
     required this.allTasksCompleted,
+    this.isCardExpanded = false,
     this.onItemChanged,
     this.isSequenceChild = false,
     this.allItems = const [],
@@ -140,13 +142,28 @@ class _DailyThingItemState extends State<DailyThingItem> {
     return false;
   }
 
-  /// Archives or unarchives an item
+  /// Archives or unarchives an item (and all its children if it's a sequence).
   Future<void> _archiveItem(DailyThing item) async {
-    if (item.isArchived) {
-      await widget.dataManager.unarchiveDailyThing(item);
-    } else {
-      await widget.dataManager.archiveDailyThing(item);
+    if (item.itemType != ItemType.sequence) {
+      if (item.isArchived) {
+        await widget.dataManager.unarchiveDailyThing(item);
+      } else {
+        await widget.dataManager.archiveDailyThing(item);
+      }
+      widget.onItemChanged?.call();
+      return;
     }
+
+    final newArchived = !item.isArchived;
+    final items = await widget.dataManager.loadData();
+    final affectedIds = {item.id, ...item.childIds};
+    final updated = items.map((i) {
+      if (affectedIds.contains(i.id)) {
+        return i.copyWith(isArchived: newArchived);
+      }
+      return i;
+    }).toList();
+    await widget.dataManager.saveData(updated);
     widget.onItemChanged?.call();
   }
 
@@ -181,10 +198,9 @@ class _DailyThingItemState extends State<DailyThingItem> {
           padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
           child: ExpansionTile(
             key: ValueKey(
-                '${widget.item.id}_${widget.isExpanded}_${widget.item.completedForToday}_$isSnoozedToday'),
-            initiallyExpanded: isSequenceTile ? false : widget.isExpanded,
-            onExpansionChanged:
-                isSequenceTile ? (_) {} : widget.onExpansionChanged,
+                '${widget.item.id}_${widget.isExpanded}_${widget.isCardExpanded}_${widget.item.completedForToday}_$isSnoozedToday'),
+            initiallyExpanded: isSequenceTile ? widget.isCardExpanded : widget.isExpanded,
+            onExpansionChanged: widget.onExpansionChanged,
             trailing: const SizedBox.shrink(),
             tilePadding: EdgeInsets.zero,
             childrenPadding: EdgeInsets.zero,
@@ -464,7 +480,10 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      GraphView(dailyThing: widget.item),
+                                      GraphView(
+                                        dailyThing: widget.item,
+                                        allItems: widget.allItems,
+                                      ),
                                 ),
                               );
                             },
@@ -570,7 +589,10 @@ class _DailyThingItemState extends State<DailyThingItem> {
                     // Mini graph showing last 10 days of data
                     if ((widget.item.category).isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      MiniGraphWidget(dailyThing: widget.item),
+                      MiniGraphWidget(
+                        dailyThing: widget.item,
+                        allItems: widget.allItems,
+                      ),
                     ],
                     // Second row: Category followed by start/end values and increment (for non-CHECK items)
                     const SizedBox(height: 8),
