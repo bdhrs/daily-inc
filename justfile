@@ -4,6 +4,9 @@ android-run:
 linux:
     flutter run -d linux
 
+linux-offline:
+    flutter run -d linux --no-pub
+
 debug:
     adb logcat | grep -i flutter
 
