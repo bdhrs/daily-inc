@@ -65,13 +65,13 @@ class _TrendInputDialogState extends State<TrendInputDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _buildCommentField(),
+          const SizedBox(height: 16),
           _buildTrendButton(context, '↗️ Improving', 1.0),
           const SizedBox(height: 8),
           _buildTrendButton(context, '→ Same', 0.0),
           const SizedBox(height: 8),
           _buildTrendButton(context, '↘️ Worse', -1.0),
-          const SizedBox(height: 16),
-          _buildCommentField(),
         ],
       ),
     );
