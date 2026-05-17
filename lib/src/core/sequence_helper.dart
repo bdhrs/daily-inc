@@ -68,6 +68,36 @@ class SequenceHelper {
     );
   }
 
+  /// True if [item] is already completed today, or actively in-progress today.
+  /// Used to suppress nag notifications for items the user has already engaged with.
+  static bool isHandledToday(DailyThing item, List<DailyThing> allItems) {
+    if (item.itemType == ItemType.sequence) {
+      if (sequenceCompletedForToday(item, allItems)) return true;
+      final children = resolveChildren(item, allItems);
+      for (final child in children) {
+        final entry = child.todayHistoryEntry;
+        if (entry == null) continue;
+        if (entry.doneToday) return true;
+        if ((entry.actualValue ?? 0) > 0) return true;
+      }
+      return false;
+    }
+
+    if (item.hasBeenDoneLiterallyToday) return true;
+
+    final entry = item.todayHistoryEntry;
+    if (entry == null) return false;
+
+    switch (item.itemType) {
+      case ItemType.minutes:
+        return (entry.actualValue ?? 0) > 0 && !entry.doneToday;
+      case ItemType.reps:
+        return entry.actualValue != null && !entry.doneToday;
+      default:
+        return false;
+    }
+  }
+
   static List<DailyThing> sweepDeletedItem(
       String deletedId, List<DailyThing> allItems) {
     return allItems.map((item) {

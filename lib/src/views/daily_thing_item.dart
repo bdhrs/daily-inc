@@ -317,7 +317,7 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '${seqChildren.length}',
+                                      '${seqChildren.where((c) => !c.completedForToday).length}',
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimary,
                                         fontSize: 14,

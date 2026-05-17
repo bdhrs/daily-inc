@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/views/widgets/graph_style_helpers.dart';
@@ -29,6 +30,7 @@ class _GraphViewState extends State<GraphView>
   double _maxY = 0;
   final _log = Logger('GraphView');
   List<FlSpot> _spots = [];
+  List<HistoryEntry> _tooltipHistory = [];
 
   @override
   String get prefsKey => 'graph_time_range_preference';
@@ -153,7 +155,7 @@ class _GraphViewState extends State<GraphView>
               handleBuiltInTouches: true,
               touchTooltipData: buildTouchTooltipData(
                   _spots,
-                  widget.dailyThing.history,
+                  _tooltipHistory,
                   GraphStyleHelpers.dateFromEpochDays),
             ),
           ),
@@ -166,6 +168,8 @@ class _GraphViewState extends State<GraphView>
     if (widget.dailyThing.itemType == ItemType.sequence) {
       return _buildSequenceSpots();
     }
+
+    _tooltipHistory = widget.dailyThing.history;
 
     final dates = _getFilteredDates();
     final historyMap = <DateTime, dynamic>{};
@@ -201,8 +205,10 @@ class _GraphViewState extends State<GraphView>
         SequenceHelper.resolveChildren(widget.dailyThing, widget.allItems);
     final dates = _getFilteredDates();
     final spots = <FlSpot>[];
+    final synthHistory = <HistoryEntry>[];
     for (final d in dates) {
       double total = 0;
+      double targetTotal = 0;
       for (final child in children) {
         for (final entry in child.history) {
           final entryDate =
@@ -210,14 +216,23 @@ class _GraphViewState extends State<GraphView>
           if (entryDate == d) {
             if (child.itemType == ItemType.check) {
               if (entry.doneToday) total += 1;
+              targetTotal += 1;
             } else {
               if (entry.actualValue != null) total += entry.actualValue!;
+              targetTotal += entry.targetValue;
             }
           }
         }
       }
       spots.add(FlSpot(GraphStyleHelpers.epochDays(d), total));
+      synthHistory.add(HistoryEntry(
+        date: d,
+        targetValue: targetTotal,
+        doneToday: false,
+        actualValue: total,
+      ));
     }
+    _tooltipHistory = synthHistory;
     return spots;
   }
 

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:daily_inc/src/core/sequence_helper.dart';
+import 'package:daily_inc/src/data/data_manager.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/interval_type.dart';
 import 'package:daily_inc/src/services/weekly_review_service.dart';
@@ -189,7 +191,8 @@ class NotificationService {
     }
   }
 
-  Future<void> scheduleNotification(DailyThing item) async {
+  Future<void> scheduleNotification(DailyThing item,
+      {List<DailyThing>? allItems}) async {
     if (!item.notificationEnabled || item.nagTime == null) {
       await cancelNotification(item.id);
       return;
@@ -201,6 +204,9 @@ class NotificationService {
       final notificationId = item.id.hashCode;
 
       await _plugin.cancel(notificationId);
+
+      final items = allItems ?? await DataManager().loadData();
+      final skipToday = SequenceHelper.isHandledToday(item, items);
 
       final androidDetails = AndroidNotificationDetails(
         _channelId,
@@ -221,6 +227,7 @@ class NotificationService {
           item.intervalWeekdays,
           nagHour,
           nagMinute,
+          skipToday: skipToday,
         );
 
         await _zonedScheduleWithFallback(
@@ -236,7 +243,7 @@ class NotificationService {
           'Scheduled weekday notification for ${item.name} at $scheduledDate',
         );
       } else {
-        final nextDue = await _calculateNextDueDate(item);
+        final nextDue = await _calculateNextDueDate(item, skipToday: skipToday);
         if (nextDue == null) {
           _log.warning('Could not calculate next due date for ${item.name}');
           return;
@@ -316,8 +323,9 @@ class NotificationService {
   tz.TZDateTime _nextWeekdayWithTime(
     List<int> weekdays,
     int hour,
-    int minute,
-  ) {
+    int minute, {
+    bool skipToday = false,
+  }) {
     var scheduledDate = tz.TZDateTime.now(tz.local);
     scheduledDate = tz.TZDateTime(
       tz.local,
@@ -332,6 +340,15 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
+    if (skipToday) {
+      final today = tz.TZDateTime.now(tz.local);
+      if (scheduledDate.year == today.year &&
+          scheduledDate.month == today.month &&
+          scheduledDate.day == today.day) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+    }
+
     while (!weekdays.contains(scheduledDate.weekday)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -339,23 +356,26 @@ class NotificationService {
     return scheduledDate;
   }
 
-  Future<DateTime?> _calculateNextDueDate(DailyThing item) async {
+  Future<DateTime?> _calculateNextDueDate(DailyThing item,
+      {bool skipToday = false}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    if (item.nagTime != null) {
-      final nagToday = DateTime(
-        today.year,
-        today.month,
-        today.day,
-        item.nagTime!.hour,
-        item.nagTime!.minute,
-      );
-      if (_isDueOnDate(item, today) && nagToday.isAfter(now)) {
+    if (!skipToday) {
+      if (item.nagTime != null) {
+        final nagToday = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          item.nagTime!.hour,
+          item.nagTime!.minute,
+        );
+        if (_isDueOnDate(item, today) && nagToday.isAfter(now)) {
+          return today;
+        }
+      } else if (_isDueOnDate(item, today)) {
         return today;
       }
-    } else if (_isDueOnDate(item, today)) {
-      return today;
     }
 
     for (int i = 1; i <= 365; i++) {
@@ -414,7 +434,7 @@ class NotificationService {
 
       for (final item in items) {
         if (item.notificationEnabled && !item.isArchived) {
-          await scheduleNotification(item);
+          await scheduleNotification(item, allItems: items);
         }
       }
 
@@ -426,12 +446,8 @@ class NotificationService {
 
   Future<void> onItemCompleted(DailyThing item) async {
     try {
-      await cancelNotification(item.id);
-
-      if (item.notificationEnabled) {
-        await scheduleNotification(item);
-      }
-
+      final items = await DataManager().loadData();
+      await rescheduleAllNotifications(items);
       _log.info('Handled completion for ${item.name}');
     } catch (e, s) {
       _log.severe('Error handling item completion', e, s);
