@@ -274,7 +274,8 @@ class _SettingsViewState extends State<SettingsView> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text('Select ${type.name} to restore'),
+          title: Text(
+              'Select ${type == BackupType.full ? 'backup' : 'template'} to restore'),
           children: files.map((file) {
             final fileName = file.path.split('/').last;
             final formattedName = _formatBackupFilename(fileName);
