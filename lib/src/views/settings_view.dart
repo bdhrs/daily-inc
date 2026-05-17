@@ -607,8 +607,19 @@ class _SettingsViewState extends State<SettingsView> {
           const SizedBox(height: 16),
           SwitchListTile(
             title: const Text('Dim screen during timer'),
-            subtitle:
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const Text('Fade to black after 10 seconds to save battery'),
+                Row(
+                  children: [
+                    const Text('Can also be toggled from the timer screen via '),
+                    Icon(Icons.more_vert,
+                        size: 16, color: Theme.of(context).hintColor),
+                  ],
+                ),
+              ],
+            ),
             value: _dimScreenMode,
             onChanged: (value) {
               setState(() {
@@ -619,7 +630,19 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           SwitchListTile(
             title: const Text('Minimalist mode'),
-            subtitle: const Text('Show only timer and comment when finished'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Show only timer and comment when finished'),
+                Row(
+                  children: [
+                    const Text('Can also be toggled from the timer screen via '),
+                    Icon(Icons.more_vert,
+                        size: 16, color: Theme.of(context).hintColor),
+                  ],
+                ),
+              ],
+            ),
             value: _minimalistMode,
             onChanged: (value) {
               setState(() {
