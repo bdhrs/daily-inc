@@ -117,6 +117,34 @@ class IncrementCalculator {
     return false;
   }
 
+  /// Projected target value for an arbitrary [date], based purely on the
+  /// item's progression parameters (startValue, endValue, duration,
+  /// startDate). Used when a backdated history entry is added — we want
+  /// the value the formula would have produced on that day, ignoring
+  /// any grace-period or penalty logic.
+  static double valueForDate(DailyThing item, DateTime date) {
+    final startDateOnly =
+        DateTime(item.startDate.year, item.startDate.month, item.startDate.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final daysSinceStart = target.difference(startDateOnly).inDays;
+
+    double value;
+    if (item.duration <= 0 || daysSinceStart <= 0) {
+      value = item.startValue;
+    } else if (daysSinceStart >= item.duration) {
+      value = item.endValue;
+    } else {
+      final increment = (item.endValue - item.startValue) / item.duration;
+      value = item.startValue + increment * daysSinceStart;
+    }
+
+    final double minBound =
+        item.startValue < item.endValue ? item.startValue : item.endValue;
+    final double maxBound =
+        item.startValue > item.endValue ? item.startValue : item.endValue;
+    return value.clamp(minBound, maxBound);
+  }
+
   /// Calculate today's target value with increment/penalty based on days since last doneToday
   static double calculateTodayValue(DailyThing item) {
     final today = DateTime.now();
