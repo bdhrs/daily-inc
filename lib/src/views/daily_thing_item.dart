@@ -312,25 +312,43 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                   color: Theme.of(context).colorScheme.onPrimary,
                                   size: 16.0,
                                 )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '${seqChildren.where((c) => !c.completedForToday).length}',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 14,
+                              : Builder(builder: (context) {
+                                  final allMinutes = seqChildren.isNotEmpty &&
+                                      seqChildren.every((c) =>
+                                          c.itemType == ItemType.minutes);
+                                  final incomplete = seqChildren
+                                      .where((c) => !c.completedForToday);
+                                  final label = allMinutes
+                                      ? TimeConverter.toSmartString(
+                                          incomplete.fold<double>(
+                                              0.0,
+                                              (sum, c) =>
+                                                  sum + c.todayValue))
+                                      : '${incomplete.length}';
+                                  return Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        label,
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.play_arrow,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      size: 14,
-                                    ),
-                                  ],
-                                ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.play_arrow,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        size: 14,
+                                      ),
+                                    ],
+                                  );
+                                }),
                         ),
                       ),
                     )
