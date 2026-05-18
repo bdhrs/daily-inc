@@ -817,10 +817,17 @@ class _DailyThingsViewState extends State<DailyThingsView>
           ? (_sequenceExpanded[item.id] ?? true)
           : (_isExpanded[item.id] ?? false),
       isCardExpanded: _isExpanded[item.id] ?? false,
-      onExpansionChanged: (expanded) {
+      onExpansionChanged: (expanded) async {
         setState(() {
           _isExpanded[item.id] = expanded;
+          if (item.itemType == ItemType.sequence) {
+            _sequenceExpanded[item.id] = expanded;
+          }
         });
+        if (item.itemType == ItemType.sequence) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('seq_expanded_${item.id}', expanded);
+        }
       },
       onItemChanged: _refreshDisplay,
       isSequenceChild: row.parent != null,
