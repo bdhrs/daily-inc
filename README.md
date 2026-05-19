@@ -2,11 +2,12 @@
 
 A Flutter app to **do the important things daily**, and **increase incrementally** over time.
 
-Track four types of activities:
+Track five types of activities:
 - MINUTES: run a countdown timer for time-based activities
 - REPS: gradually increase your repetitions
 - CHECK: mark when done
 - PERCENTAGE: track progress by percentage (0-100%)
+- SEQUENCE: a parent that groups any of the above into a single chained routine, played one after the other
 
 ## Features (at a glance)
 - Daily targets auto-adjust using simple rules
@@ -21,16 +22,20 @@ See the full project map for where things live: [`project_map.md`](project_map.m
 ### Linux
 ```bash
 flutter run -d linux
+# or: just linux
+# offline: just linux-offline
 ```
 
 ### Android
 ```bash
 flutter run
+# or: just android-run
 ```
 
 ### Android logs
 ```bash
 adb logcat | grep -i flutter
+# or: just debug
 ```
 
 ## Build
@@ -52,6 +57,14 @@ flutter test && flutter analyze
 ```bash
 flutter build apk --release 
 adb install build/app/outputs/flutter-apk/app-release.apk
+# or: just android-install
+# offline: just android-install-offline
+# debug build: just android-install-debug
+```
+
+### Bump version
+```bash
+just version
 ```
  
 ### Linux AppImage:
