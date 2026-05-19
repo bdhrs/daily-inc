@@ -1,33 +1,51 @@
 name: Release Build
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['pubspec.yaml']
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
       VERSION: ${{ steps.versioning.outputs.VERSION }}
+      SHOULD_RELEASE: ${{ steps.versioning.outputs.SHOULD_RELEASE }}
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
-      - name: Calculate Version
+          fetch-depth: 2
+      - name: Determine Version
         id: versioning
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          TAG_VERSION=${LATEST_TAG#v}
-          MAJOR=$(echo $TAG_VERSION | cut -d. -f1)
-          MINOR=$(echo $TAG_VERSION | cut -d. -f2)
-          PATCH=$(echo $TAG_VERSION | cut -d. -f3)
-          NEW_PATCH=$((PATCH + 1))
-          VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "Latest release tag: $LATEST_TAG"
-          echo "New version: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          NEW=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          if [ -z "$NEW" ]; then
+            echo "Could not read version from pubspec.yaml" >&2
+            exit 1
+          fi
+
+          if git rev-parse "v$NEW" >/dev/null 2>&1; then
+            echo "Tag v$NEW already exists — bump pubspec version before releasing."
+            echo "SHOULD_RELEASE=false" >> $GITHUB_OUTPUT
+            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          OLD=$(git show HEAD~1:pubspec.yaml 2>/dev/null | grep '^version:' | awk '{print $2}' | cut -d+ -f1 || echo "")
+          HIGHER=$(printf '%s\n%s\n' "$OLD" "$NEW" | sort -V | tail -1)
+          if [ "$NEW" != "$OLD" ] && [ "$HIGHER" = "$NEW" ]; then
+            echo "Version bumped: $OLD -> $NEW"
+            echo "SHOULD_RELEASE=true" >> $GITHUB_OUTPUT
+            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
+          else
+            echo "No version bump (OLD=$OLD, NEW=$NEW) — skipping release."
+            echo "SHOULD_RELEASE=false" >> $GITHUB_OUTPUT
+            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
+          fi
 
   test:
     needs: prepare
+    if: needs.prepare.outputs.SHOULD_RELEASE == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -41,6 +59,7 @@ jobs:
 
   build-android:
     needs: [prepare, test]
+    if: needs.prepare.outputs.SHOULD_RELEASE == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -72,6 +91,7 @@ jobs:
 
   build-linux:
     needs: [prepare, test]
+    if: needs.prepare.outputs.SHOULD_RELEASE == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -94,6 +114,7 @@ jobs:
 
   publish-release:
     needs: [prepare, build-android, build-linux]
+    if: needs.prepare.outputs.SHOULD_RELEASE == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

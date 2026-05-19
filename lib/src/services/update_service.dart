@@ -96,6 +96,16 @@ class UpdateService {
     return release['html_url'] as String?;
   }
 
+  Future<File> getCachedApkFile() async {
+    Directory? dir;
+    if (Platform.isAndroid) {
+      // Using external cache is standard for FileProvider sharing
+      dir = await getExternalCacheDirectories().then((dirs) => dirs?.first);
+    }
+    dir ??= await getTemporaryDirectory();
+    return File('${dir.path}/DailyInc_update.apk');
+  }
+
   Future<File> downloadUpdate({
     void Function(int count, int total)? onProgress,
   }) async {
@@ -104,13 +114,8 @@ class UpdateService {
       throw Exception('No APK URL found');
     }
 
-    Directory? dir;
-    if (Platform.isAndroid) {
-      // Using external cache is standard for FileProvider sharing
-      dir = await getExternalCacheDirectories().then((dirs) => dirs?.first);
-    }
-    dir ??= await getTemporaryDirectory();
-    final finalPath = '${dir.path}/DailyInc_update.apk';
+    final file = await getCachedApkFile();
+    final finalPath = file.path;
 
     _log.info('Downloading APK to $finalPath');
 

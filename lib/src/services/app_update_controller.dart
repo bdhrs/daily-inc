@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'foreground_download_service.dart';
 import 'update_service.dart';
@@ -38,6 +40,9 @@ class AppUpdateState {
 }
 
 class AppUpdateController extends ChangeNotifier {
+  static const _cachedVersionKey = 'cachedUpdateApkVersion';
+
+  final _log = Logger('AppUpdateController');
   final _service = UpdateService();
   AppUpdateState state = const AppUpdateState();
 
@@ -68,6 +73,7 @@ class AppUpdateController extends ChangeNotifier {
     }
 
     if (!hasUpdate) {
+      await _clearCachedApk();
       _update(state.copyWith(status: AppUpdateStatus.idle));
       return;
     }
@@ -81,6 +87,28 @@ class AppUpdateController extends ChangeNotifier {
           return;
         }
       }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final cachedVersion = prefs.getString(_cachedVersionKey);
+    final cachedFile = await _service.getCachedApkFile();
+    if (cachedVersion == latestTag && await cachedFile.exists()) {
+      _log.info('Reusing cached APK for $latestTag at ${cachedFile.path}');
+      _update(state.copyWith(
+        status: AppUpdateStatus.readyToInstall,
+        apkPath: cachedFile.path,
+        latestTag: latestTag,
+        progress: 1,
+      ));
+      return;
+    }
+
+    if (cachedVersion != null && cachedVersion != latestTag) {
+      _log.info(
+          'Cached APK version $cachedVersion is stale (latest $latestTag); deleting.');
+      await _clearCachedApk();
+    } else if (await cachedFile.exists()) {
+      await _clearCachedApk();
     }
 
     await _download(latestTag);
@@ -104,6 +132,10 @@ class AppUpdateController extends ChangeNotifier {
           }
         },
       );
+      if (latestTag != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cachedVersionKey, latestTag);
+      }
       _update(state.copyWith(
         status: AppUpdateStatus.readyToInstall,
         apkPath: file.path,
@@ -112,6 +144,20 @@ class AppUpdateController extends ChangeNotifier {
       _update(state.copyWith(status: AppUpdateStatus.idle));
     } finally {
       await ForegroundDownloadService.stop();
+    }
+  }
+
+  Future<void> _clearCachedApk() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cachedVersionKey);
+      final file = await _service.getCachedApkFile();
+      if (await file.exists()) {
+        await file.delete();
+        _log.info('Deleted cached APK at ${file.path}');
+      }
+    } catch (e) {
+      _log.warning('Failed to clear cached APK: $e');
     }
   }
 
