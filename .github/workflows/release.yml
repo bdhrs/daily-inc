@@ -3,7 +3,6 @@ name: Release Build
 on:
   push:
     branches: [main]
-    paths: ['pubspec.yaml']
 
 jobs:
   prepare:
@@ -14,33 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Determine Version
         id: versioning
         run: |
-          NEW=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
-          if [ -z "$NEW" ]; then
+          VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          if [ -z "$VERSION" ]; then
             echo "Could not read version from pubspec.yaml" >&2
             exit 1
           fi
 
-          if git rev-parse "v$NEW" >/dev/null 2>&1; then
-            echo "Tag v$NEW already exists — bump pubspec version before releasing."
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — nothing to release."
             echo "SHOULD_RELEASE=false" >> $GITHUB_OUTPUT
-            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          OLD=$(git show HEAD~1:pubspec.yaml 2>/dev/null | grep '^version:' | awk '{print $2}' | cut -d+ -f1 || echo "")
-          HIGHER=$(printf '%s\n%s\n' "$OLD" "$NEW" | sort -V | tail -1)
-          if [ "$NEW" != "$OLD" ] && [ "$HIGHER" = "$NEW" ]; then
-            echo "Version bumped: $OLD -> $NEW"
-            echo "SHOULD_RELEASE=true" >> $GITHUB_OUTPUT
-            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           else
-            echo "No version bump (OLD=$OLD, NEW=$NEW) — skipping release."
-            echo "SHOULD_RELEASE=false" >> $GITHUB_OUTPUT
-            echo "VERSION=$NEW" >> $GITHUB_OUTPUT
+            echo "No tag for v$VERSION yet — releasing."
+            echo "SHOULD_RELEASE=true" >> $GITHUB_OUTPUT
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           fi
 
   test:
@@ -51,6 +41,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.38.7'
           channel: 'stable'
           cache: true
       - run: flutter pub get
@@ -65,6 +56,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.38.7'
           channel: 'stable'
           cache: true
       - run: flutter pub get
@@ -99,6 +91,7 @@ jobs:
         run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.38.7'
           channel: 'stable'
           cache: true
       - run: flutter pub get
