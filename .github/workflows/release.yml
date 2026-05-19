@@ -9,7 +9,7 @@ jobs:
     outputs:
       VERSION: ${{ steps.versioning.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Calculate Version
@@ -30,7 +30,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -43,7 +43,7 @@ jobs:
     needs: [prepare, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -65,7 +65,7 @@ jobs:
         run: |
           flutter build apk --release --build-name=${{ needs.prepare.outputs.VERSION }} --build-number=${{ github.run_number }}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/daily-inc-v${{ needs.prepare.outputs.VERSION }}.apk
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-release
           path: build/app/outputs/flutter-apk/daily-inc-v${{ needs.prepare.outputs.VERSION }}.apk
@@ -74,7 +74,7 @@ jobs:
     needs: [prepare, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
       - name: Install Linux dependencies
         run: sudo apt update && sudo apt install -y libgtk-3-dev pkg-config libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev zip
       - uses: subosito/flutter-action@v2
@@ -87,7 +87,7 @@ jobs:
           flutter build linux --release --build-name=${{ needs.prepare.outputs.VERSION }} --build-number=${{ github.run_number }}
           cd build/linux/x64/release/bundle
           zip -r daily-inc-v${{ needs.prepare.outputs.VERSION }}-linux.zip .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-release
           path: build/linux/x64/release/bundle/daily-inc-v${{ needs.prepare.outputs.VERSION }}-linux.zip
@@ -98,14 +98,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-release
           path: artifacts/android
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux-release
           path: artifacts/linux
@@ -123,7 +123,7 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Daily Inc v${{ needs.prepare.outputs.VERSION }}
           tag_name: v${{ needs.prepare.outputs.VERSION }}
