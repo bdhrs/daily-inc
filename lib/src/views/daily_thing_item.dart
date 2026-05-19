@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
@@ -320,10 +321,17 @@ class _DailyThingItemState extends State<DailyThingItem> {
                                       .where((c) => !c.completedForToday);
                                   final label = allMinutes
                                       ? TimeConverter.toSmartString(
-                                          incomplete.fold<double>(
+                                          seqChildren.fold<double>(
                                               0.0,
-                                              (sum, c) =>
-                                                  sum + c.todayValue))
+                                              (sum, c) => c.completedForToday
+                                                  ? sum
+                                                  : sum +
+                                                      math.max(
+                                                          0.0,
+                                                          c.todayValue -
+                                                              (c.todayHistoryEntry
+                                                                      ?.actualValue ??
+                                                                  0.0))))
                                       : '${incomplete.length}';
                                   return Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
