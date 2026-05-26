@@ -1,3 +1,11 @@
+apk:
+    flutter build apk --release --no-pub
+    @echo ""
+    @echo "========================================="
+    @echo "APK ready:"
+    @echo "  $(pwd)/build/app/outputs/flutter-apk/app-release.apk"
+    @echo "========================================="
+
 android-run:
     flutter run
 
