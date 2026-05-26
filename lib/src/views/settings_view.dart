@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:intl/intl.dart';
+import 'package:daily_inc/src/theme/app_palette.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
+import 'package:daily_inc/src/theme/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsView extends StatefulWidget {
@@ -346,7 +348,7 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               'Reset',
               style: TextStyle(color: ColorPalette.warningOrange),
             ),
@@ -599,6 +601,18 @@ class _SettingsViewState extends State<SettingsView> {
           const Divider(),
           const SizedBox(height: 16),
 
+          // Color Theme Section
+          const Text(
+            'Color theme',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          _ThemePicker(),
+          const SizedBox(height: 16),
+
+          const Divider(),
+          const SizedBox(height: 16),
+
           // Timer Options Section
           const Text(
             'Timer Options',
@@ -611,7 +625,8 @@ class _SettingsViewState extends State<SettingsView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Fade to black after 10 seconds to save battery'),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Text('Can also be toggled from the timer screen via '),
                     Icon(Icons.more_vert,
@@ -634,7 +649,8 @@ class _SettingsViewState extends State<SettingsView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Show only timer and comment when finished'),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Text('Can also be toggled from the timer screen via '),
                     Icon(Icons.more_vert,
@@ -743,7 +759,7 @@ class _SettingsViewState extends State<SettingsView> {
                   borderRadius: BorderRadius.circular(8.0),
                   border: Border.all(color: ColorPalette.warningOrange),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -753,8 +769,8 @@ class _SettingsViewState extends State<SettingsView> {
                         color: ColorPalette.warningOrange,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Backups are stored in app-specific internal storage. '
                       'If you uninstall the app, ALL backups will be PERMANENTLY DELETED. '
                       'Consider manually exporting important backups.',
@@ -810,6 +826,120 @@ class _SettingsViewState extends State<SettingsView> {
             label: const Text('Reset All Data'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemePicker extends StatefulWidget {
+  @override
+  State<_ThemePicker> createState() => _ThemePickerState();
+}
+
+class _ThemePickerState extends State<_ThemePicker> {
+  ThemeKey _current = ThemeController.instance.value;
+
+  static const _themes = [
+    (ThemeKey.classic, AppPalette.classicDark, AppPalette.classicLight),
+    (ThemeKey.monk, AppPalette.monkDark, AppPalette.monkLight),
+    (ThemeKey.sage, AppPalette.sageDark, AppPalette.sageLight),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _themes.map((entry) {
+        final (key, dark, light) = entry;
+        final isSelected = _current == key;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: GestureDetector(
+              onTap: () async {
+                await ThemeController.instance.set(key);
+                setState(() => _current = key);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).dividerColor,
+                    width: isSelected ? 2.5 : 1,
+                  ),
+                  color: Theme.of(context).cardColor,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _Dot(color: dark.primaryBlue),
+                        const SizedBox(width: 4),
+                        _Dot(color: dark.cardBackground),
+                        const SizedBox(width: 4),
+                        _Dot(color: dark.secondaryText),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _Dot(color: light.primaryBlue),
+                        const SizedBox(width: 4),
+                        _Dot(color: light.cardBackground),
+                        const SizedBox(width: 4),
+                        _Dot(color: light.secondaryText),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      key.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (isSelected)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  final Color color;
+  const _Dot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+          width: 0.5,
+        ),
       ),
     );
   }

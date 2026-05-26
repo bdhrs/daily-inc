@@ -662,7 +662,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
                   }
                 }
               },
-              child: const Text(
+              child: Text(
                 'github.com/bdhrs/daily-inc-timer',
                 style: TextStyle(
                   color: ColorPalette.primaryBlue,
@@ -695,15 +695,15 @@ class _DailyThingsViewState extends State<DailyThingsView>
                   }
                 }
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(
+                  const Image(
                     image: AssetImage('assets/icon/cc-license.png'),
                     width: 88,
                     height: 31,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     'CC BY-NC-SA 4.0',
                     style: TextStyle(

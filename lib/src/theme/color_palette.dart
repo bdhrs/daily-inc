@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:daily_inc/src/theme/app_palette_registry.dart';
 
 class ColorPalette {
-  static const Color primaryBlue = Color.fromARGB(255, 29, 153, 255);
-  static const Color darkBackground =
-      Color(0xFF121212); // A very dark gray for main background
-  static const Color cardBackground =
-      Color(0xFF1E1E1E); // Slightly lighter dark gray for cards
-  static const Color inputBackground =
-      Color(0xFF2C2C2C); // Darker gray for input fields
-  static const Color lightText = Colors.white;
-  static const Color blackText =
-      Colors.black; // New: Black text for light backgrounds
-  static const Color secondaryText =
-      Color(0xFFAAAAAA); // A lighter gray for secondary text
-  static const Color warningOrange =
-      Color.fromARGB(255, 196, 118, 0); // orange[200] - used for undone/error
-  // New: distinct yellow for partially completed tasks
-  static const Color partialYellow = Color(0xFFFFC107); // Amber 500
-  static const Color onPartialYellow =
-      Colors.black; // Ensure readable text/icons on yellow
-  static const Color scrollbarThumb = Color(0xFF424242);
+  static Color get primaryBlue => AppPaletteRegistry.current.primaryBlue;
+  static Color get darkBackground => AppPaletteRegistry.current.darkBackground;
+  static Color get cardBackground => AppPaletteRegistry.current.cardBackground;
+  static Color get inputBackground => AppPaletteRegistry.current.inputBackground;
+  static Color get lightText => AppPaletteRegistry.current.lightText;
+  static Color get blackText => AppPaletteRegistry.current.blackText;
+  static Color get secondaryText => AppPaletteRegistry.current.secondaryText;
+  static Color get warningOrange => AppPaletteRegistry.current.warningOrange;
+  static Color get partialYellow => AppPaletteRegistry.current.partialYellow;
+  static Color get onPartialYellow => AppPaletteRegistry.current.onPartialYellow;
+  static Color get scrollbarThumb => AppPaletteRegistry.current.scrollbarThumb;
 }

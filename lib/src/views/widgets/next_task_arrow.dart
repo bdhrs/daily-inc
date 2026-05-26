@@ -89,7 +89,7 @@ class _NextTaskArrowState extends State<NextTaskArrow>
             scale: _animation,
             child: IconButton(
               onPressed: widget.onTap,
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_forward,
                 color: ColorPalette.lightText,
                 size: 36,

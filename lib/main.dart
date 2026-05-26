@@ -10,6 +10,7 @@ import 'package:daily_inc/src/services/foreground_download_service.dart';
 import 'package:daily_inc/src/services/notification_service.dart';
 import 'package:daily_inc/src/services/weekly_review_service.dart';
 import 'package:daily_inc/src/theme/app_theme.dart';
+import 'package:daily_inc/src/theme/theme_controller.dart';
 import 'package:logging/logging.dart';
 
 final _notificationService = NotificationService();
@@ -44,6 +45,11 @@ void main() async {
       // Initialize notification service
       await _notificationService.initialize(navigatorKey: _navigatorKey);
       await _notificationService.requestPermissions();
+
+      await ThemeController.instance.load();
+      ThemeController.instance.syncPalette(
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      );
 
       // Load data and reschedule notifications
       final items = await _dataManager.loadData();
@@ -90,6 +96,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _notificationService.setOnWeeklyReviewRequested(null);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    ThemeController.instance.syncPalette(brightness);
   }
 
   @override
@@ -192,13 +204,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           }
         }
       },
-      child: MaterialApp(
-        title: 'Daily Increment Timer',
-        theme: ThemeData.light(),
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        navigatorKey: _navigatorKey,
-        home: const DailyThingsView(),
+      child: ValueListenableBuilder<ThemeKey>(
+        valueListenable: ThemeController.instance,
+        builder: (context, themeKey, _) {
+          final (darkPalette, lightPalette) =
+              ThemeController.instance.palettesFor(themeKey);
+          return MaterialApp(
+            title: 'Daily Increment Timer',
+            theme: AppTheme.build(lightPalette, brightness: Brightness.light),
+            darkTheme: AppTheme.build(darkPalette, brightness: Brightness.dark),
+            themeMode: ThemeMode.system,
+            navigatorKey: _navigatorKey,
+            home: const DailyThingsView(),
+          );
+        },
       ),
     );
   }

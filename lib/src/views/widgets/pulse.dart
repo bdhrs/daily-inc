@@ -3,7 +3,7 @@ import 'package:daily_inc/src/theme/color_palette.dart';
 
 class Pulse extends StatefulWidget {
   final Widget child;
-  final Color pulseColor;
+  final Color? pulseColor;
   final double borderWidth;
   final Duration duration;
   final bool enableShadow;
@@ -12,7 +12,7 @@ class Pulse extends StatefulWidget {
   const Pulse({
     super.key,
     required this.child,
-    this.pulseColor = ColorPalette.warningOrange,
+    this.pulseColor,
     this.borderWidth = 2.0,
     this.duration = const Duration(milliseconds: 1000),
     this.enableShadow = true,
@@ -71,7 +71,7 @@ class _PulseState extends State<Pulse> with SingleTickerProviderStateMixin {
           borderRadius: widget.borderRadius ??
               const BorderRadius.all(Radius.circular(8.0)),
           side: BorderSide(
-            color: widget.pulseColor.withValues(alpha: _colorAnimation.value),
+            color: (widget.pulseColor ?? ColorPalette.warningOrange).withValues(alpha: _colorAnimation.value),
             width: widget.borderWidth,
           ),
         );

@@ -42,14 +42,14 @@ Future<bool> confirmDeleteDialog(BuildContext context, String name) async {
             'Are you sure you want to delete "$name"? This cannot be undone.'),
         actions: <Widget>[
           TextButton(
-            child: const Text('Cancel',
+            child: Text('Cancel',
                 style: TextStyle(color: ColorPalette.warningOrange)),
             onPressed: () {
               Navigator.of(context).pop(false);
             },
           ),
           TextButton(
-            child: const Text('Delete',
+            child: Text('Delete',
                 style: TextStyle(color: ColorPalette.warningOrange)),
             onPressed: () {
               Navigator.of(context).pop(true);
