@@ -36,7 +36,6 @@ class SequenceHelper {
 
   static bool sequenceCompletedForToday(
       DailyThing seq, List<DailyThing> allItems) {
-    if (!seq.isDueToday) return true;
     final children = resolveChildren(seq, allItems);
     if (children.isEmpty) return false;
     return children.every((child) => child.completedForToday);
