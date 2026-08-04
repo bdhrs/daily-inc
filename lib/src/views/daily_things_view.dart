@@ -772,24 +772,12 @@ class _DailyThingsViewState extends State<DailyThingsView>
 
   Future<void> _resetAllData() async {
     _log.info('Resetting all data from main view...');
-    try {
-      await _dataManager.resetAllData();
-      // Clear the in-memory list
-      setState(() {
-        _dailyThings = [];
-      });
-      _log.info('Data reset completed and UI cleared');
-    } catch (e, s) {
-      _log.severe('Error resetting data from main view', e, s);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error resetting data: $e'),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
+    await _dataManager.resetAllData();
+    setState(() {
+      _dailyThings = [];
+    });
+    await _loadData();
+    _log.info('Data reset completed and defaults reloaded');
   }
 
   Widget _buildItemRow(

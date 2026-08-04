@@ -5,11 +5,13 @@ import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/services/backup_service.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
 class DataManager {
   static const String _dataFileName = 'daily_inc_data.json';
+  static const String _defaultItemsAsset = 'assets/default_items.json';
   final _log = Logger('DataManager');
 
   Future<List<DailyThing>> loadFromFile() async {
@@ -140,9 +142,27 @@ class DataManager {
     }
   }
 
+  /// Copies the bundled defaults into the store on a first run. The asset is
+  /// already in the store's own format, so it is written verbatim.
+  Future<void> _seedDefaultItems(File file) async {
+    try {
+      final defaults = await rootBundle.loadString(_defaultItemsAsset);
+      await file.writeAsString(defaults);
+      _log.info('Seeded default items into ${file.path}');
+    } catch (e, s) {
+      _log.severe('Error seeding default items', e, s);
+    }
+  }
+
   Future<List<DailyThing>> loadData() async {
     _log.fine('loadData called');
     try {
+      final storeFile = File(await _getFilePath());
+      if (!storeFile.existsSync()) {
+        _log.info('No store file found, seeding defaults.');
+        await _seedDefaultItems(storeFile);
+      }
+
       final raw = await _readRawStore();
       final list = (raw['dailyThings'] as List<dynamic>? ?? []);
       final loadedThings = list

@@ -17,6 +17,14 @@ Ongoing. The project continuously evolves with new features and improvements.
 - Data persists reliably across sessions
 - Progression logic increments targets correctly
 
+## First Run
+A fresh install — or a store with no data file, which is also the state left by
+Reset All Data — is seeded with nine default items covering all seven activity
+types, each with an emoji icon. The defaults ship as `assets/default_items.json`
+in the store's own format and are copied into place verbatim by
+`DataManager.loadData()`. To retune them, build the set in the app and export via
+Settings → Save Template, then replace the asset.
+
 ## Theming
 The app has a pluggable theme system (`lib/src/theme/`). Three themes ship: Classic (blue), Monk (Kimbie warm), Sage (muted green/parchment). Each has dark and light variants. Adding a fourth theme requires only new `AppPalette` constants and a `palettesFor()` case in `ThemeController`. The user picks from Settings; choice persists via shared_preferences key `selected_theme`.
 

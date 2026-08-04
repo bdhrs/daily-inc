@@ -106,6 +106,7 @@ flutter:
   assets:
     - assets/bells/
     - assets/icon/
+    - assets/default_items.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
