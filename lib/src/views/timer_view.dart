@@ -36,7 +36,6 @@ class TimerView extends StatefulWidget {
   final bool initialMinimalistMode;
   final bool autoAdvance;
   final bool autoStart;
-  final bool chainAutoStart;
   final int chainDelaySeconds;
 
   const TimerView({
@@ -51,7 +50,6 @@ class TimerView extends StatefulWidget {
     this.initialMinimalistMode = false,
     this.autoAdvance = false,
     this.autoStart = false,
-    this.chainAutoStart = false,
     this.chainDelaySeconds = 20,
   });
 
@@ -346,7 +344,9 @@ class _TimerViewState extends State<TimerView> {
       WakelockPlus.enable();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (_isPaused) _toggleTimer();
+        // _hasStarted is already true for an item finished earlier today, where
+        // starting would silently accumulate overtime the user never asked for.
+        if (_isPaused && !_hasStarted) _toggleTimer();
       });
     }
   }
@@ -828,8 +828,7 @@ class _TimerViewState extends State<TimerView> {
               nextTaskName: nextTaskName,
               initialMinimalistMode: _minimalistMode,
               autoAdvance: widget.autoAdvance,
-              autoStart: widget.chainAutoStart,
-              chainAutoStart: widget.chainAutoStart,
+              autoStart: nextTask.autoStart,
               chainDelaySeconds: widget.chainDelaySeconds,
             ),
           ),
@@ -843,31 +842,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
-    return DailyThing(
-      id: _currentItem.id,
-      icon: _currentItem.icon,
-      name: _currentItem.name,
-      itemType: _currentItem.itemType,
-      startDate: _currentItem.startDate,
-      startValue: _currentItem.startValue,
-      duration: _currentItem.duration,
-      endValue: _currentItem.endValue,
-      history: updatedHistory,
-      nagTime: _currentItem.nagTime,
-      nagMessage: _currentItem.nagMessage,
-      category: _currentItem.category,
-      isPaused: _currentItem.isPaused,
-      intervalType: _currentItem.intervalType,
-      intervalValue: _currentItem.intervalValue,
-      intervalWeekdays: _currentItem.intervalWeekdays,
-      bellSoundPath: _currentItem.bellSoundPath,
-      subdivisions: _currentItem.subdivisions,
-      subdivisionBellSoundPath: _currentItem.subdivisionBellSoundPath,
-      notes: _currentItem.notes,
-      isArchived: _currentItem.isArchived,
-      notificationEnabled: _currentItem.notificationEnabled,
-      startBellSoundPath: _currentItem.startBellSoundPath,
-    );
+    return _currentItem.copyWith(history: updatedHistory);
   }
 
   @override

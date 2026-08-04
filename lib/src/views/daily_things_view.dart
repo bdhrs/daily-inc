@@ -157,8 +157,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           currentItemIndex: seq.autoPlay ? firstUndoneIndex : 0,
           initialMinimalistMode: minimalistMode,
           autoAdvance: seq.autoPlay,
-          autoStart: seq.autoPlay && seq.autoStart,
-          chainAutoStart: seq.autoPlay && seq.autoStart,
+          autoStart: firstUndone.autoStart,
           chainDelaySeconds: seq.chainDelaySeconds,
         ),
       ),
@@ -562,6 +561,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           allItems: displayedItems,
           currentItemIndex: currentIndex,
           initialMinimalistMode: minimalistMode,
+          autoStart: item.autoStart,
         ),
       ),
     );
@@ -599,6 +599,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
           allItems: displayedItems,
           currentItemIndex: currentIndex,
           initialMinimalistMode: minimalistMode,
+          autoStart: item.autoStart,
         ),
       ),
     );

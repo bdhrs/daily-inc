@@ -158,10 +158,10 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
           text: existingItem.subdivisions?.toString() ?? '1');
       _selectedSubdivisionBellSoundPath = existingItem.subdivisionBellSoundPath;
       _selectedStartBellSoundPath = existingItem.startBellSoundPath;
+      _autoStart = existingItem.autoStart;
       if (existingItem.itemType == ItemType.sequence) {
         _childIds = List<String>.from(existingItem.childIds);
         _autoPlay = existingItem.autoPlay;
-        _autoStart = existingItem.autoStart;
         final delayMins = existingItem.chainDelaySeconds ~/ 60;
         final delaySecs = existingItem.chainDelaySeconds % 60;
         _chainDelayMinutesController =
@@ -635,6 +635,12 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
     }
   }
 
+  static bool _isTimeBased(ItemType type) =>
+      type == ItemType.minutes || type == ItemType.stopwatch;
+
+  static bool _supportsAutoStart(ItemType type) =>
+      type == ItemType.sequence || _isTimeBased(type);
+
   int _parseChainDelay() {
     final mins = int.tryParse(_chainDelayMinutesController.text) ?? 0;
     final secs = int.tryParse(_chainDelaySecondsController.text) ?? 20;
@@ -798,7 +804,7 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
               ? _childIds
               : (widget.dailyThing?.childIds ?? const []),
           autoPlay: _selectedItemType == ItemType.sequence ? _autoPlay : false,
-          autoStart: _selectedItemType == ItemType.sequence ? _autoStart : false,
+          autoStart: _supportsAutoStart(_selectedItemType) ? _autoStart : false,
           chainDelaySeconds: _selectedItemType == ItemType.sequence
               ? _parseChainDelay()
               : (widget.dailyThing?.chainDelaySeconds ?? 20),
@@ -828,6 +834,21 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                       .toList(),
                 ));
               }
+            }
+          }
+        }
+
+        // A sequence's Auto-start switch is authoritative for its children, so
+        // every save re-asserts it rather than only reacting to a change. That
+        // keeps a child that was edited on its own from silently disagreeing.
+        if (_selectedItemType == ItemType.sequence) {
+          final freshItems = await widget.dataManager.loadData();
+          for (final child in freshItems) {
+            if (_childIds.contains(child.id) &&
+                _isTimeBased(child.itemType) &&
+                child.autoStart != _autoStart) {
+              await widget.dataManager
+                  .updateDailyThing(child.copyWith(autoStart: _autoStart));
             }
           }
         }
@@ -1241,6 +1262,17 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     _updateIncrementField();
                   },
                 ),
+                if (_isTimeBased(_selectedItemType)) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Auto-start'),
+                    subtitle: const Text(
+                        'Start the timer automatically when this item is opened'),
+                    value: _autoStart,
+                    onChanged: (v) => setState(() => _autoStart = v),
+                  ),
+                ],
                 if (_selectedItemType == ItemType.sequence) ...[
                   const SizedBox(height: 24),
                   Text(
@@ -1256,27 +1288,15 @@ class _AddEditDailyItemViewState extends State<AddEditDailyItemView> {
                     subtitle: const Text(
                         'Automatically play next item when the timer ends'),
                     value: _autoPlay,
-                    onChanged: (v) => setState(() {
-                      _autoPlay = v;
-                      if (!v) _autoStart = false;
-                    }),
+                    onChanged: (v) => setState(() => _autoPlay = v),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      'Auto-start',
-                      style: TextStyle(
-                        color: _autoPlay ? null : Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Start the next timer automatically without a tap',
-                      style: TextStyle(
-                        color: _autoPlay ? null : Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(100),
-                      ),
-                    ),
+                    title: const Text('Auto-start'),
+                    subtitle: const Text(
+                        'Start every item in this sequence automatically without a tap'),
                     value: _autoStart,
-                    onChanged: _autoPlay ? (v) => setState(() => _autoStart = v) : null,
+                    onChanged: (v) => setState(() => _autoStart = v),
                   ),
                   const SizedBox(height: 16),
                   Text('Delay between items',

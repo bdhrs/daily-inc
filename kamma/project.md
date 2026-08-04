@@ -1,7 +1,7 @@
 # Project Guide — Daily Inc
 
 ## What It Is and Why
-A habit tracker that helps users keep their habits and develop them incrementally over time. The app supports seven activity types — SEQUENCE, MINUTES, STOPWATCH, REPS, CHECK, PERCENTAGE, and TREND — with targets that auto-adjust based on consistency. Sequences chain ordered child items into a single play session with optional auto-advance and auto-start.
+A habit tracker that helps users keep their habits and develop them incrementally over time. The app supports seven activity types — SEQUENCE, MINUTES, STOPWATCH, REPS, CHECK, PERCENTAGE, and TREND — with targets that auto-adjust based on consistency. Sequences chain ordered child items into a single play session with optional auto-advance; auto-start is a per-item setting that a sequence can set for all its children.
 
 ## One-Off or Ongoing
 Ongoing. The project continuously evolves with new features and improvements.

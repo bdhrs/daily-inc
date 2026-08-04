@@ -34,7 +34,7 @@ class DailyThing {
   final bool notificationEnabled; // Enable nag notifications
   final List<String> childIds; // Ordered child item IDs for sequence type
   final bool autoPlay; // Sequence: auto-advance to next item when timer ends
-  final bool autoStart; // Sequence: auto-start next timer when chain-navigated (requires autoPlay)
+  final bool autoStart; // Start this item's timing session immediately when it opens
   final int chainDelaySeconds; // Sequence: seconds to wait between chained items
   final String? startBellSoundPath; // Bell sound played when the timer starts
 

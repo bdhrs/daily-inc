@@ -29,6 +29,7 @@ class StopwatchView extends StatefulWidget {
   final int? currentItemIndex;
   final String? nextTaskName;
   final bool initialMinimalistMode;
+  final bool autoStart;
 
   const StopwatchView({
     super.key,
@@ -39,6 +40,7 @@ class StopwatchView extends StatefulWidget {
     this.currentItemIndex,
     this.nextTaskName,
     this.initialMinimalistMode = false,
+    this.autoStart = false,
   });
 
   @override
@@ -268,6 +270,16 @@ class _StopwatchViewState extends State<StopwatchView> {
     _commentFocusNode.addListener(() {
       setState(() {});
     });
+
+    if (widget.autoStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        // Only a fresh session today. Resuming restored time would both extend
+        // an already-logged item and fire a subdivision bell on the first tick,
+        // since _lastTriggeredSubdivision starts behind the restored elapsed.
+        if (_isPaused && _elapsedSeconds == 0) _toggleStopwatch();
+      });
+    }
   }
 
   void _initializeState() {
@@ -482,31 +494,7 @@ class _StopwatchViewState extends State<StopwatchView> {
   }
 
   DailyThing _createUpdatedItem(List<HistoryEntry> updatedHistory) {
-    return DailyThing(
-      id: _currentItem.id,
-      icon: _currentItem.icon,
-      name: _currentItem.name,
-      itemType: _currentItem.itemType,
-      startDate: _currentItem.startDate,
-      startValue: _currentItem.startValue,
-      duration: _currentItem.duration,
-      endValue: _currentItem.endValue,
-      history: updatedHistory,
-      nagTime: _currentItem.nagTime,
-      nagMessage: _currentItem.nagMessage,
-      category: _currentItem.category,
-      isPaused: _currentItem.isPaused,
-      intervalType: _currentItem.intervalType,
-      intervalValue: _currentItem.intervalValue,
-      intervalWeekdays: _currentItem.intervalWeekdays,
-      bellSoundPath: _currentItem.bellSoundPath,
-      subdivisions: _currentItem.subdivisions,
-      subdivisionBellSoundPath: _currentItem.subdivisionBellSoundPath,
-      notes: _currentItem.notes,
-      isArchived: _currentItem.isArchived,
-      notificationEnabled: _currentItem.notificationEnabled,
-      startBellSoundPath: _currentItem.startBellSoundPath,
-    );
+    return _currentItem.copyWith(history: updatedHistory);
   }
 
   @override
