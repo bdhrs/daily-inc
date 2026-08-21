@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class GraphStyle {
   static const Color lineColor = Colors.blue;
   static const double lineWidth = 2;
-  static const double stepDirection = 0.76;
+  static const double stepDirection = 1.0;
   static Color areaColor(BuildContext context) =>
       Colors.blue.withValues(alpha: 0.25);
   static FlDotData get dotData => const FlDotData(show: false);
@@ -23,13 +23,13 @@ extension on num {
 
 class GraphStyleHelpers {
   static double epochDays(DateTime d) {
-    final day = DateTime(d.year, d.month, d.day);
-    return day.millisecondsSinceEpoch / (24 * 60 * 60 * 1000);
+    return DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch /
+        (24 * 60 * 60 * 1000);
   }
 
   static DateTime dateFromEpochDays(double v) {
-    final ms = (v * 24 * 60 * 60 * 1000).round();
-    return DateTime.fromMillisecondsSinceEpoch(ms);
+    final utc = DateTime.utc(1970, 1, 1).add(Duration(days: v.round()));
+    return DateTime(utc.year, utc.month, utc.day);
   }
 
   /// Calculate a reasonable interval for Y-axis labels
