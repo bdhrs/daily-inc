@@ -14,6 +14,31 @@ import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:daily_inc/src/core/time_converter.dart';
 import 'package:daily_inc/src/views/widgets/mini_graph_widget.dart';
 
+/// Emoji render from a colour font, so a `TextStyle` colour is ignored. Repaint
+/// them instead: collapse each pixel to its luminance, then scale that by the
+/// tint. Dropping the original hue is what makes every emoji read as one status
+/// colour, and keeping the luminance is what preserves the glyph's shading.
+///
+/// Luminance drives a [_tintFloor]..1 band rather than 0..1. A plain multiply
+/// takes mid-tone pixels so far toward black that neighbouring status hues stop
+/// being tellable apart — undone orange and partially-done yellow both land on
+/// the same brown. Flooring keeps every pixel recognisably the tint colour and
+/// spends the remaining range on shading.
+const double _tintFloor = 0.55;
+
+ColorFilter _emojiTint(Color tint) {
+  const span = 1.0 - _tintFloor;
+  final r = tint.r;
+  final g = tint.g;
+  final b = tint.b;
+  return ColorFilter.matrix(<double>[
+    0.2126 * span * r, 0.7152 * span * r, 0.0722 * span * r, 0, 255 * _tintFloor * r, //
+    0.2126 * span * g, 0.7152 * span * g, 0.0722 * span * g, 0, 255 * _tintFloor * g, //
+    0.2126 * span * b, 0.7152 * span * b, 0.0722 * span * b, 0, 255 * _tintFloor * b, //
+    0, 0, 0, 1, 0, //
+  ]);
+}
+
 class DailyThingItem extends StatefulWidget {
   final DailyThing item;
   final DataManager dataManager;
@@ -260,16 +285,18 @@ class _DailyThingItemState extends State<DailyThingItem> {
                           ),
                         const SizedBox(width: 12),
                         if (widget.item.icon != null)
-                          Text(
-                            widget.item.icon!,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: effectiveDone
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.onSurface,
+                          ColorFiltered(
+                            colorFilter: _emojiTint(effectiveDone
+                                ? ColorPalette.doneBlue
+                                : _hasIncompleteProgress(widget.item)
+                                    ? ColorPalette.partialYellow
+                                    : ColorPalette.warningOrange),
+                            child: Text(
+                              widget.item.icon!,
+                              style: const TextStyle(fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
                         const SizedBox(width: 6),
                         Expanded(

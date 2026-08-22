@@ -13,4 +13,5 @@ class ColorPalette {
   static Color get partialYellow => AppPaletteRegistry.current.partialYellow;
   static Color get onPartialYellow => AppPaletteRegistry.current.onPartialYellow;
   static Color get scrollbarThumb => AppPaletteRegistry.current.scrollbarThumb;
+  static Color get doneBlue => AppPaletteRegistry.current.doneBlue;
 }

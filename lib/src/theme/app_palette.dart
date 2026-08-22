@@ -12,6 +12,7 @@ class AppPalette {
   final Color partialYellow;
   final Color onPartialYellow;
   final Color scrollbarThumb;
+  final Color doneBlue;
 
   const AppPalette({
     required this.primaryBlue,
@@ -25,6 +26,7 @@ class AppPalette {
     required this.partialYellow,
     required this.onPartialYellow,
     required this.scrollbarThumb,
+    required this.doneBlue,
   });
 
   // ── Classic (blue) ───────────────────────────────────────────────────────
@@ -41,6 +43,7 @@ class AppPalette {
     partialYellow: Color(0xFFFFC107),
     onPartialYellow: Colors.black,
     scrollbarThumb: Color(0xFF424242),
+    doneBlue: Color.fromARGB(255, 29, 153, 255),
   );
 
   static const AppPalette classicLight = AppPalette(
@@ -55,6 +58,7 @@ class AppPalette {
     partialYellow: Color(0xFFF9A825),
     onPartialYellow: Colors.black,
     scrollbarThumb: Color(0xFFBDBDBD),
+    doneBlue: Color(0xFF1565C0),
   );
 
   // ── Monk (Kimbie warm) ───────────────────────────────────────────────────
@@ -71,6 +75,7 @@ class AppPalette {
     partialYellow: Color(0xFFD4A83A),
     onPartialYellow: Color(0xFF221A0F),
     scrollbarThumb: Color(0xFF5B4A30),
+    doneBlue: Color(0xFF5DA9E0),
   );
 
   static const AppPalette monkLight = AppPalette(
@@ -85,6 +90,7 @@ class AppPalette {
     partialYellow: Color(0xFFB8860B),
     onPartialYellow: Colors.white,
     scrollbarThumb: Color(0xFFB5986A),
+    doneBlue: Color(0xFF2E6DA4),
   );
 
   // ── Sage (sage / parchment) ──────────────────────────────────────────────
@@ -101,6 +107,7 @@ class AppPalette {
     partialYellow: Color(0xFFA89050),
     onPartialYellow: Color(0xFF1A1F1B),
     scrollbarThumb: Color(0xFF4A5550),
+    doneBlue: Color(0xFF6FA8DC),
   );
 
   static const AppPalette sageLight = AppPalette(
@@ -115,5 +122,6 @@ class AppPalette {
     partialYellow: Color(0xFF7A7030),
     onPartialYellow: Colors.white,
     scrollbarThumb: Color(0xFFB0AA98),
+    doneBlue: Color(0xFF3A6EA5),
   );
 }
