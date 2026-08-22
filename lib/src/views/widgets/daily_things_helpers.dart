@@ -1,14 +1,23 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:daily_inc/src/core/sequence_helper.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
+import 'package:daily_inc/src/models/item_type.dart';
 import 'package:daily_inc/src/theme/color_palette.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 /// Pure helper to compute the next undone index in a displayed list.
-int getNextUndoneIndex(List<DailyThing> items) {
+///
+/// [allItems] is needed to resolve a sequence's children, since a sequence
+/// alone cannot report whether it is undone.
+int getNextUndoneIndex(List<DailyThing> items, List<DailyThing> allItems) {
   for (int i = 0; i < items.length; i++) {
-    if (items[i].isUndoneToday) {
+    final item = items[i];
+    final undone = item.itemType == ItemType.sequence
+        ? SequenceHelper.sequenceIsUndoneToday(item, allItems)
+        : item.isUndoneToday;
+    if (undone) {
       return i;
     }
   }

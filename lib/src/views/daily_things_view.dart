@@ -926,7 +926,7 @@ class _DailyThingsViewState extends State<DailyThingsView>
   }
 
   int _getNextUndoneIndex(List<DailyThing> items) {
-    return getNextUndoneIndex(items);
+    return getNextUndoneIndex(items, _dailyThings);
   }
 
   void _expandAllVisibleItems() {
