@@ -52,6 +52,15 @@ class GraphStyleHelpers {
     }
   }
 
+  /// With [GraphStyle.stepDirection] the riser is drawn at the spot, so a day's
+  /// bar spans from the previous spot up to its own. A touch therefore belongs
+  /// to the nearest spot at or to the right of the finger; spots to the left
+  /// are ranked far away so they only win when nothing lies to the right.
+  static double dayBandTouchDistance(Offset touch, Offset spot) {
+    final dx = spot.dx - touch.dx;
+    return dx >= 0 ? dx : -dx * 1e6;
+  }
+
   /// Generates the styles for the graph titles
   static FlTitlesData getTitlesData({
     required BuildContext context,

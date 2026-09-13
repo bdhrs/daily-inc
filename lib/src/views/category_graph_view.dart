@@ -318,6 +318,9 @@ class _CategoryGraphViewState extends State<CategoryGraphView>
                               FlDotData(show: false),
                             ))
                         .toList(),
+                    distanceCalculator:
+                        GraphStyleHelpers.dayBandTouchDistance,
+                    touchSpotThreshold: double.infinity,
                     touchTooltipData:
                         _buildCategoryTouchTooltipData(dateTotals),
                   ),

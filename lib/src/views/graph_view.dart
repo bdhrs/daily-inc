@@ -153,6 +153,8 @@ class _GraphViewState extends State<GraphView>
                       ))
                   .toList(),
               handleBuiltInTouches: true,
+              distanceCalculator: GraphStyleHelpers.dayBandTouchDistance,
+              touchSpotThreshold: double.infinity,
               touchTooltipData: buildTouchTooltipData(
                   _spots,
                   _tooltipHistory,
