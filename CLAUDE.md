@@ -20,3 +20,10 @@
 ## Testing
 - Run `flutter test --no-pub` before marking any implementation complete. New code can expose pre-existing test failures that must be fixed before review.
 - The suite has no widget tests: nothing covers `TimerView`, `StopwatchView`, or the add/edit form. A green `flutter test` says nothing about view behaviour — changes there need a real device run.
+
+## Running the Analyzer
+- The first `flutter analyze` in a fresh clone rewrites `analysis_options.yaml`
+  by itself ("Upgrading analysis_options.yaml to exclude build and platform
+  directories"). Check `git status` straight after your baseline run so the
+  change is not mistaken for your own edit or another session's.
+

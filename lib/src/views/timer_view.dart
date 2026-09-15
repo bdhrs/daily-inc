@@ -584,10 +584,16 @@ class _TimerViewState extends State<TimerView> {
     }
   }
 
-  Future<void> _exitTimerDisplay() async {
+  /// Returns false when the user cancelled out of the save dialog, so callers
+  /// that latched state on the way in can unwind it.
+  Future<bool> _exitTimerDisplay() async {
     _log.info('exitTimerDisplay called');
     _log.info(
         'Conditions: _hasStarted=$_hasStarted, _remainingSeconds=$_remainingSeconds, _isOvertime=$_isOvertime');
+
+    // Captured before the pause below, so a cancelled exit can put the timer
+    // back exactly as the user left it.
+    final wasRunning = !_isPaused;
 
     // Pause the timer and update the UI before showing any dialogs
     if (!_isPaused) {
@@ -619,7 +625,10 @@ class _TimerViewState extends State<TimerView> {
       } else if (shouldSave == false) {
         await _saveCommentOnly();
       } else if (shouldSave == null) {
-        return; // User cancelled, so don't exit.
+        if (wasRunning && mounted) {
+          _toggleTimer();
+        }
+        return false; // User cancelled, so don't exit.
       }
     }
     // If the timer finished but isn't in overtime yet, save it.
@@ -639,8 +648,11 @@ class _TimerViewState extends State<TimerView> {
     if (mounted) {
       Navigator.of(context).pop();
     }
+    return true;
   }
 
+  // The isOvertime variant has no caller; the overtime exit path saves without
+  // asking, so it would drop this dialog's Cancel result on the floor.
   Future<bool?> _showSaveDialog({bool isOvertime = false}) async {
     return showDialog<bool>(
       context: context,
@@ -655,12 +667,17 @@ class _TimerViewState extends State<TimerView> {
           ),
           actions: [
             TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Save'),
+            ),
+            TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text("Don't Save"),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Save'),
+              // A null result is read by _exitTimerDisplay as "stay in the task".
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
             ),
           ],
         );
@@ -787,7 +804,10 @@ class _TimerViewState extends State<TimerView> {
 
     if (nextTask == null) {
       // No more tasks, exit to main UI
-      await _exitTimerDisplay();
+      if (!await _exitTimerDisplay()) {
+        // Cancelled out, so release the latch or the arrow stays dead.
+        _isNavigatingNext = false;
+      }
       return;
     }
 
@@ -879,10 +899,8 @@ class _TimerViewState extends State<TimerView> {
         if (didPop) return;
         _log.info('System back button pressed');
 
-        // If timer is running, pause it first, then exit.
-        if (!_isPaused) {
-          _toggleTimer();
-        }
+        // _exitTimerDisplay pauses; pausing here would lose the running state
+        // it needs to resume from if the user cancels.
         await _exitTimerDisplay();
       },
       child: Stack(
@@ -902,10 +920,8 @@ class _TimerViewState extends State<TimerView> {
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () async {
                           _log.info('Back button pressed');
-                          // If timer is running, pause it first, then exit.
-                          if (!_isPaused) {
-                            _toggleTimer();
-                          }
+                          // _exitTimerDisplay pauses; pausing here would lose
+                          // the running state it resumes from on cancel.
                           await _exitTimerDisplay();
                         },
                       ),
