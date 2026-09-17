@@ -26,3 +26,14 @@
   in that nothing resets, so an early return leaves the control dead for the rest
   of the session. Before adding a "stay here" branch to any exit path, grep the
   callers for latch flags that only ever get set.
+- `DailyThing.todayValue` (→ `IncrementCalculator.calculateTodayValue`) is the
+  single authority for an item's current target. It is history-driven: base from
+  the last entry before today, then increment, grace period, missed-day penalty,
+  pause freeze and clamp. A second calendar-projection helper once existed for
+  pre-filling backdated history rows and drifted wildly from it (an item past
+  its ramp always projected its `endValue`); it has been deleted. Do not
+  reintroduce a parallel target calculation — anything needing "the target" calls
+  `todayValue`. Note the main list renders `displayValue`, which returns today's
+  *actual* when an entry for today exists and falls through to `todayValue`
+  otherwise, and formats per item type (minutes as `mm:ss`, reps as `12x`) while
+  the history editor shows raw decimals.
