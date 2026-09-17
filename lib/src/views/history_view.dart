@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:daily_inc/src/models/daily_thing.dart';
 import 'package:daily_inc/src/models/history_entry.dart';
 import 'package:daily_inc/src/data/data_manager.dart';
-import 'package:daily_inc/src/core/increment_calculator.dart';
 import 'package:intl/intl.dart';
 
 class HistoryView extends StatefulWidget {
@@ -33,9 +32,7 @@ class _HistoryViewState extends State<HistoryView> {
   late TextEditingController _newCommentController;
   bool _newDoneToday = false;
   bool _isDateInvalid = false;
-  // Tracks the last auto-filled target so we can detect a manual override
-  // and avoid clobbering it when the date changes.
-  String? _lastAutoFilledTarget;
+  bool _targetIsForToday = true;
 
   // Controllers for existing entries
   final Map<String, TextEditingController> _targetControllers = {};
@@ -50,18 +47,16 @@ class _HistoryViewState extends State<HistoryView> {
     _newDateController = TextEditingController(
       text: DateFormat('yy/MM/dd').format(DateTime.now()),
     );
-    final initialTargetText = _numberFormat.format(
-        IncrementCalculator.valueForDate(widget.item, DateTime.now()));
-    _newTargetValueController = TextEditingController(text: initialTargetText);
-    _lastAutoFilledTarget = initialTargetText;
+    _newTargetValueController = TextEditingController(
+      text: _numberFormat.format(widget.item.todayValue),
+    );
     _newActualValueController = TextEditingController();
     _newCommentController = TextEditingController();
     _isDateInvalid = false;
 
-    // Add listener to validate date and refresh the auto-filled target.
     _newDateController.addListener(() {
       _validateDate(_newDateController.text);
-      _maybeAutoFillTarget(_newDateController.text);
+      _syncTargetToDate(_newDateController.text);
     });
 
     // Initialize controllers for existing entries
@@ -115,22 +110,26 @@ class _HistoryViewState extends State<HistoryView> {
     );
   }
 
-  void _maybeAutoFillTarget(String dateStr) {
+  // Today's target is only meaningful for today. Blanking it for any other
+  // date stops a wrong-but-plausible value being saved on a backdated row,
+  // which would rebase every later target via calculateTodayValue.
+  void _syncTargetToDate(String dateStr) {
     final DateTime date;
     try {
       date = DateFormat('yy/MM/dd').parse(dateStr);
     } catch (_) {
       return;
     }
-    // Skip if the user has manually edited the target.
-    if (_newTargetValueController.text != (_lastAutoFilledTarget ?? '')) {
-      return;
-    }
-    final newText = _numberFormat
-        .format(IncrementCalculator.valueForDate(widget.item, date));
-    if (newText == _newTargetValueController.text) return;
-    _newTargetValueController.text = newText;
-    _lastAutoFilledTarget = newText;
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    // Only act on the flip, so a hand-typed target survives further editing
+    // of the date within the same category.
+    if (isToday == _targetIsForToday) return;
+    _targetIsForToday = isToday;
+    _newTargetValueController.text =
+        isToday ? _numberFormat.format(widget.item.todayValue) : '';
   }
 
   void _validateDate(String dateStr) {
@@ -178,10 +177,9 @@ class _HistoryViewState extends State<HistoryView> {
       _isAddingEntry = true;
       // Reset the form fields
       _newDateController.text = DateFormat('yy/MM/dd').format(DateTime.now());
-      final targetText = _numberFormat.format(
-          IncrementCalculator.valueForDate(widget.item, DateTime.now()));
-      _newTargetValueController.text = targetText;
-      _lastAutoFilledTarget = targetText;
+      _targetIsForToday = true;
+      _newTargetValueController.text =
+          _numberFormat.format(widget.item.todayValue);
       _newActualValueController.text = '';
       _newCommentController.text = '';
       _newDoneToday = false;

@@ -305,9 +305,6 @@ This document provides a map of the project, listing the location of all functio
 ## lib/src/views/widgets/reorder_helpers.dart
 - `reorderDailyThings(...)` [`lib/src/views/widgets/reorder_helpers.dart:16`](lib/src/views/widgets/reorder_helpers.dart:16): Reorders the list of daily things.
 
-## lib/src/views/widgets/add_history_entry_dialog.dart
-- `AddHistoryEntryDialog` class [`lib/src/views/widgets/add_history_entry_dialog.dart:7`](lib/src/views/widgets/add_history_entry_dialog.dart:7): A dialog to add a new history entry (currently unused).
-
 ## lib/src/views/widgets/next_task_arrow.dart
 - `NextTaskArrow` class [`lib/src/views/widgets/next_task_arrow.dart:6`](lib/src/views/widgets/next_task_arrow.dart:6): A pulsing arrow button that appears when a timer completes, with visibility logic based on timer state, animation behavior, and tap gesture handling for navigation.
 
