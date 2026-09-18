@@ -4,7 +4,7 @@ default:
 
 # Build a release APK and print its path — builds only, installs nothing
 apk:
-    flutter build apk --release --no-pub
+    flutter build apk --release --no-pub --android-skip-build-dependency-validation
     @echo ""
     @echo "========================================="
     @echo "APK ready:"
@@ -13,7 +13,7 @@ apk:
 
 # Run on the connected phone from source, with hot reload — for development
 android-run:
-    flutter run
+    flutter run --android-skip-build-dependency-validation
 
 # Run on this desktop, with hot reload — fastest way to try a UI change
 linux:
@@ -29,22 +29,22 @@ debug:
 
 # Build a release APK and replace the app on the connected device, keeping its data
 update:
-    flutter build apk --release --no-pub
+    flutter build apk --release --no-pub --android-skip-build-dependency-validation
     adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 # Same as `update` but runs `pub get` first — only if you changed dependencies
 android-install:
-    flutter build apk --release
+    flutter build apk --release --android-skip-build-dependency-validation
     adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 # Identical to `update` — kept so old habits/notes still work
 android-install-offline:
-    flutter build apk --release --no-pub
+    flutter build apk --release --no-pub --android-skip-build-dependency-validation
     adb install -r build/app/outputs/flutter-apk/app-release.apk
 
 # Install a debug build instead — slower app, but shows full errors and logs
 android-install-debug:
-    flutter build apk --debug
+    flutter build apk --debug --android-skip-build-dependency-validation
     adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
 # Change the version in pubspec.yaml — CAUTION: a bump on main triggers a release

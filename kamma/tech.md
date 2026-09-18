@@ -14,6 +14,19 @@
 
 ## Constraints
 - Solo developer with limited time — favour small, focused changes over large refactors.
+- **AGP 9 is unreachable on Flutter 3.47.2** (verified 2026-09-18 by building every
+  combination, not by reading docs). Four independent blockers, any one fatal:
+  the legacy DSL is deprecated at ERROR level so `.kts` build files will not
+  compile; `android.newDsl=true` makes Flutter's own Gradle plugin throw
+  `ApplicationExtensionImpl cannot be cast to AbstractAppExtension`; AGP's
+  built-in Kotlin is 2.2.10, below Flutter's hard floor of 2.2.20 (true of AGP
+  9.4.0 too, so no AGP version fixes it); and with KGP retained, third-party
+  plugin modules fail JVM-target validation (Java 11 vs Kotlin 1.8). Nine
+  dependencies still apply KGP, so built-in Kotlin is blocked regardless.
+  Gradle 9.1.0 does build with AGP 8.11.1, but no AGP 8.x claims Gradle 9
+  support — deliberately not adopted. Recheck when Flutter's Gradle plugin
+  supports the new DSL; until then the build warnings are suppressed in the
+  justfile, not fixed.
 
 ## Conventions
 - Follow existing patterns in the codebase. Do not introduce new patterns without a clear reason.
